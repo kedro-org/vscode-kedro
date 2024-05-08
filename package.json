@@ -2,14 +2,14 @@
     "name": "Kedro",
     "displayName": "Kedro",
     "description": "A Kedro VSCode Extension.",
-    "version": "0.0.14",
+    "version": "0.0.1",
     "preview": true,
     "serverInfo": {
         "name": "Kedro",
         "module": "kedro"
     },
     "publisher": "kedro",
-    "license": "MIT",
+    "license": "Apache2",
     "homepage": "https://github.com/kedro-org/vscode-kedro",
     "repository": {
         "type": "git",

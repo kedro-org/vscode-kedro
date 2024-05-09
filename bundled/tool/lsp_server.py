@@ -600,44 +600,53 @@ def completions(server: KedroLanguageServer, params: CompletionParams):
 def hover(ls: KedroLanguageServer, params: HoverParams):
     import pprint
     from pathlib import Path
+
     pos = params.position
     document_uri = params.text_document.uri
+
+    def _highlight(text, language="python"):
+        return f"""```{language}
+{text}
+```"""
 
     if not _is_pipeline(document_uri):
         return
     document = ls.workspace.get_text_document(document_uri)
-    model_option = ls.dummy_catalog.load("params:model_options")
+    catalog = ls.dummy_catalog
 
     word = document.word_at_position(params.position, RE_START_WORD, RE_END_WORD)
     if not word.startswith("params:"):
-        return
-    param_value = ls.dummy_catalog.load(word)
-    highlight = pprint.pformat(param_value)
-    content = f"""```python
-{highlight}
-```"""
-    return Hover(contents = MarkupContent(kind=MarkupKind.Markdown, value=content),
-                 range=Range(
-            start=Position(line=pos.line, character=0),
-            end=Position(line=pos.line + 1, character=0),
-        ))
+        # Search catalog
+        ds = ls.dummy_catalog._datasets.get(word)
+        if not ds:
+            # Not a dataset or does not exist in catalog.yml
+            return
+        hover_content = catalog.conf_catalog.get(word)
+
+    else:
+        # parameters
+        hover_content = ls.dummy_catalog.load(word)
+
+    hover_content = pprint.pformat(hover_content)
+    highlight = _highlight(hover_content)
+
     return Hover(
-        contents=MarkupContent(
-            kind=MarkupKind.Markdown,
-            value="\n".join(str(model_option)),
-        ),
+        contents=MarkupContent(kind=MarkupKind.Markdown, value=highlight),
         range=Range(
             start=Position(line=pos.line, character=0),
             end=Position(line=pos.line + 1, character=0),
         ),
     )
 
+
 def _is_pipeline(uri):
     from pathlib import Path
+
     filename = Path(uri).name
     if "pipeline" in str(filename):
         return True
     return False
+
 
 ### End of Old kedro-lsp
 

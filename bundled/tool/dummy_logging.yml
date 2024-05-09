@@ -1,1 +1,7 @@
 version: 1
+
+# todo: Avoid setup_project_logging error
+
+loggers:
+  kedro:
+    level: INFO

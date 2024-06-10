@@ -1,23 +1,46 @@
 # vscode-kedro
 It's in a beta status so it's not uncommon to have breaking feature and bugs, report this in Github or Slack, we will try to fix ASAP.
 
+
+## Requirements
+1. VS Code 1.64.0 or greater
+2. Python extension for VS Code
+3. Kedro Project >= 0.19
+
 ## How to use this extension
 1. Install `Kedro` from the extension
 2. Select the correct Python interpreter that you use to run the Kedro project`Python: select interpreter`
 
-p.s. If you can `kedro run` with the environment it's good to go.
-
-## Requirements
-1. VS Code 1.64.0 or greater
-1. Python extension for VS Code
-
+p.s. If you can `kedro run` with the environment, you are good to go.
 
 The extension requires `bootstrap_project` in Kedro, you need to make sure you can do `kedro run` without getting any immediate error, otherwise you may get a server panic error.
 
 ## How to restart a server if there are error
 Click `Output` and select `Kedro` from the dropdown list. It may gives you some hints and report back if you think this is a bug.
 
-Hit `Cmd` + `Shift` + `P` to open the VSCode command, look for `kedro: restart server` in case it's panic
+Hit `Cmd` + `Shift` + `P` to open the VSCode command, look for `kedro: restart server` in case it's panic.
+
+## Assumptions
+### Configuration Source
+Currently, the extension assume the source of configuration is `conf/base`. If you have customised `CONF_SOURCE` in project settings, certain features will not be functional properly.
+
+### Configuration Environment
+The extension assumes `base` environment. However, you may want it to use different environments. This is still WIP.
+
+### Pipeline Discovery
+The extension follows Kedro [pipeline autodiscovery mechanism](https://docs.kedro.org/en/stable/nodes_and_pipelines/pipeline_registry.html#pipeline-autodiscovery). It means that in general it is looking for modular pipelines structure, i.e. `<src/package/pipelines/<pipeline>`. It can be visualised as follow:
+```
+.
+├── conf
+│   ├── base
+│   └── local
+├── notebooks
+├── src
+│   └── demo
+│       ├── pipelines
+│           ├── first_pipeline
+│           └── second_pipeline
+
 
 # Feature
 ## Go to Definition from pipeline.py to configuration files

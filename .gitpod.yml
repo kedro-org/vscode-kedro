@@ -5,7 +5,9 @@
 # Learn more from ready-to-use templates: https://www.gitpod.io/docs/introduction/getting-started/quickstart
 
 tasks:
-  - init: npm install && npm run compile && pip install -r requirements.txt
+  - init: |
+      npm install && npm run compile && pip install -r requirements.txt
+      make sign-off
     command: npm run watch
 
 

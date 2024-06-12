@@ -1,5 +1,5 @@
 # vscode-kedro
-The exrtension is in beta, so you may experience breaking changes and bugs. If you encounter issue, report it in [Github](https://github.com/kedro-org/vscode-kedro/issues) or [Slack](https://slack.kedro.org), we will try to fix ASAP.
+The extension is in beta, so you may experience breaking changes and bugs. If you encounter issue, report it in [Github](https://github.com/kedro-org/vscode-kedro/issues) or [Slack](https://slack.kedro.org), we will try to fix ASAP.
 
 
 ## Requirements

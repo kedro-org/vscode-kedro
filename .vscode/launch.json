@@ -11,7 +11,7 @@
             "request": "launch",
             "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
             "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-            "preLaunchTask": "npm: watch",
+            "preLaunchTask": "npm: compile",
             "presentation": {
                 "hidden": false,
                 "group": "",
@@ -76,7 +76,7 @@
             "name": "Debug Extension and Python",
             "configurations": ["Python debug server (hidden)", "Debug Extension (hidden)"],
             "stopAll": true,
-            "preLaunchTask": "npm: watch",
+            "preLaunchTask": "npm: compile",
             "presentation": {
                 "hidden": false,
                 "group": "",

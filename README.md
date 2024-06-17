@@ -9,7 +9,7 @@ The extension is in beta, so you may experience breaking changes and bugs. If yo
 
 ## How to use this extension
 1. Install `Kedro` from the extension
-2. Select the correct Python interpreter that you use to run the Kedro project`Python: select interpreter`
+2. Select the correct Python interpreter that you use to run the Kedro project with the `> Python: select interpreter` command
 
 p.s. If you can `kedro run` with the environment, you are good to go.
 
@@ -28,7 +28,7 @@ Currently, the extension assume the source of configuration is `conf/base`. If y
 The extension assumes `base` environment. However, you may want it to use different environments. This is still WIP.
 
 ### Pipeline Discovery
-The extension follows Kedro [pipeline autodiscovery mechanism](https://docs.kedro.org/en/stable/nodes_and_pipelines/pipeline_registry.html#pipeline-autodiscovery). It means that in general it is looking for modular pipelines structure, i.e. `<src/package/pipelines/<pipeline>`. It can be visualised as follow:
+The extension follows Kedro [pipeline autodiscovery mechanism](https://docs.kedro.org/en/stable/nodes_and_pipelines/pipeline_registry.html#pipeline-autodiscovery). It means that in general it is looking for modular pipelines structure, i.e. `<src/package/pipelines/<pipeline>`. It can be visualised as follows:
 ```
 .
 ├── conf

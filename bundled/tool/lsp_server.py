@@ -540,9 +540,6 @@ def references(
         # Use glob to find files matching the pattern recursively
         pipeline_files = glob.glob(f"{pipeline_dir}/**/*pipeline*.py", recursive=True)
         for pipeline_file in pipeline_files:
-            if not os.path.exists(pipeline_file):
-                continue
-
             # Read the line number and match keywords naively
             with open(pipeline_file) as f:
                 for i, line in enumerate(f):

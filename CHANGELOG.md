@@ -1,5 +1,8 @@
 # Change Log
 
+# 0.0.4
+- Expanded pipeline discovery to support `*pipeline*.py` patterns and improved handling of nested subdirectories.
+
 # 0.0.3
 - Add catalog config preview for mouse hover.
 

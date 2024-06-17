@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import copy
+import glob
 import json
 import os
 import pathlib
@@ -531,20 +532,19 @@ def references(
 
     pipelines_package = importlib_resources.files(f"{PACKAGE_NAME}.pipelines")
 
-    # Iterate on pipeplines/<pipeline_name>/pipeline.py
+    # Iterate on pipelines/<pipeline_name>/**/*pipeline*.py
     result = []
     for pipeline_dir in pipelines_package.iterdir():
         if not pipeline_dir.is_dir():
             continue
-        pipeline_file = pipeline_dir / "pipeline.py"
-        if not pipeline_file.exists():
-            continue
-
-        # Read the line number and match keywords naively
-        with open(pipeline_file) as f:
-            for i, line in enumerate(f):
-                if word in line:
-                    result.append((pipeline_file, i))
+        # Use glob to find files matching the pattern recursively
+        pipeline_files = glob.glob(f"{pipeline_dir}/**/*pipeline*.py", recursive=True)
+        for pipeline_file in pipeline_files:
+            # Read the line number and match keywords naively
+            with open(pipeline_file) as f:
+                for i, line in enumerate(f):
+                    if word in line:
+                        result.append((Path(pipeline_file), i))
 
     locations = []
     if result:

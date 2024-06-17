@@ -30,6 +30,15 @@ Use `Cmd` (Mac)/ `Ctrl` (Window) + `Click` or `F12` to trigger `Go to Definition
 - Use the shortcut `Shift` + `F12`
 ![find reference](assets/lsp-find-reference.gif)
 
+Note: You can find pipeline reference in all the files containing "pipeline" in their names, even in nested subdirectories. 
+`
+- pipelines
+  - sub_pipeline
+    - pipeline_data_processing.py
+    - sub_pipeline_1
+        - pipeline_data_processing_1.py
+`
+
 ## Autocompletion in Python
 Type `"` in any `pipeline.py` and it should trigger the autocompletion list.
 ![autocompletion](assets/lsp-autocompletion.gif)

@@ -95,7 +95,7 @@
                     "type": "array"
                 },
                 "kedro.environment": {
-                    "default": "base",
+                    "default": "",
                     "description": "Kedro environment to use when running commands.",
                     "scope": "resource",
                     "type": "string"

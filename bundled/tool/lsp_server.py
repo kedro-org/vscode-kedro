@@ -248,7 +248,7 @@ def _get_global_defaults():
         "args": GLOBAL_SETTINGS.get("args", []),
         "importStrategy": GLOBAL_SETTINGS.get("importStrategy", "useBundled"),
         "showNotifications": GLOBAL_SETTINGS.get("showNotifications", "off"),
-        "environment": GLOBAL_SETTINGS.get("environment", "base"),
+        "environment": GLOBAL_SETTINGS.get("environment", ""),
     }
 
 

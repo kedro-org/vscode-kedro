@@ -165,28 +165,28 @@ class KedroLanguageServer(LanguageServer):
         if self.project_metadata:
             return
         try:
-            root_path = pathlib.Path(self.workspace.root_path)  # From language server
-            # project_metadata = _get_project_metadata(
-            #     self.workspace.root_path
-            # )  # From the LanguageServer
+            root_path = pathlib.Path(
+                self.workspace.root_path
+            )  # todo: From language server, can we get it from client initialise response instead?
             project_metadata = bootstrap_project(root_path)
             session = KedroSession.create(root_path)
             # todo: less hacky way to override session hook manager
             # avoid initialise spark hooks etc
             session._hook_manager = _NullPluginManager()
-
             context = session.load_context()
             config_loader: OmegaConfigLoader = context.config_loader
-            return config_loader
+            base_env = config_loader.base_env
         except RuntimeError:
             project_metadata = None
             context = None
             config_loader = None
+            base_env = None
         finally:
             self.project_metadata = project_metadata
             self.context = context
             self.config_loader = config_loader
             self.dummy_catalog = self._get_dummy_catalog()
+            self.base_env = base_env
 
     def _get_dummy_catalog(self):
         # '**/catalog*' reads modular pipeline configs
@@ -308,6 +308,7 @@ def get_conf_paths(project_metadata):
     base_path = str(Path(config_loader.conf_source) / config_loader.base_env)
 
     # Extract from OmegaConfigLoader source code
+
     paths = []
     for pattern in patterns:
         for each in config_loader._fs.glob(
@@ -409,7 +410,7 @@ def definition(
     server: KedroLanguageServer, params: TextDocumentPositionParams
 ) -> Optional[List[Location]]:
     """Support Goto Definition for a dataset or parameter.
-    Currently only support catalog defined in `conf/base`
+    Currently assume catalog is located in `Path(config_loader.conf_source) / config_loader.base_env)`
     """
     _check_project()
     if not server.is_kedro_project():
@@ -494,33 +495,6 @@ def references(
         params.text_document.uri
     )
     word = document.word_at_position(params.position)
-
-    # dummy_locations = [
-    #         Location(
-    #         uri=f"file://Users/Nok_Lam_Chan/dev/pygls/examples/servers/old_kedro_project/conf/base/parameters.yml",
-    #         range=Range(
-    #             start=Position(line=3, character=0),
-    #             end=Position(
-    #                 line=4,
-    #                 character=0,
-    #             ),
-    #         ),
-    #     ),
-    #     Location(
-    #         uri=f"file://Users/Nok_Lam_Chan/dev/pygls/examples/servers/old_kedro_project/conf/base/parameters.yml",
-    #         range=Range(
-    #             start=Position(line=5, character=0),
-    #             end=Position(
-    #                 line=6,
-    #                 character=0,
-    #             ),
-    #         ),
-    #     )
-    # ]
-    # return dummy_locations
-
-    # dummy_locations=None
-    # locations = dummy_locations
 
     log_for_lsp_debug(f"Query Reference keyword: {word}")
     word = word.strip(":")

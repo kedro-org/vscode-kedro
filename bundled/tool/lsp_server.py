@@ -175,18 +175,21 @@ class KedroLanguageServer(LanguageServer):
             session._hook_manager = _NullPluginManager()
             context = session.load_context()
             config_loader: OmegaConfigLoader = context.config_loader
-            base_env = config_loader.base_env
+            # context.env is set when KEDRO_ENV or kedro run --env is set
+            env = context.env if context.env else config_loader.base_env
+            base_path = str(Path(config_loader.conf_source) / env)
+
         except RuntimeError:
             project_metadata = None
             context = None
             config_loader = None
-            base_env = None
+            base_path = None
         finally:
             self.project_metadata = project_metadata
             self.context = context
             self.config_loader = config_loader
             self.dummy_catalog = self._get_dummy_catalog()
-            self.base_env = base_env
+            self.base_path = base_path
 
     def _get_dummy_catalog(self):
         # '**/catalog*' reads modular pipeline configs
@@ -292,7 +295,7 @@ def _check_project():
 
 
 ### Kedro LSP logic
-def get_conf_paths(project_metadata):
+def get_conf_paths(lsp):
     """
     Get the configuration paths of data catalog based on the project metadata.
 
@@ -303,7 +306,7 @@ def get_conf_paths(project_metadata):
         A set of configuration paths.
 
     """
-    config_loader: OmegaConfigLoader = LSP_SERVER.config_loader
+    config_loader: OmegaConfigLoader = lsp.config_loader
     patterns = config_loader.config_patterns.get("catalog", [])
     base_path = str(Path(config_loader.conf_source) / config_loader.base_env)
 
@@ -410,7 +413,7 @@ def definition(
     server: KedroLanguageServer, params: TextDocumentPositionParams
 ) -> Optional[List[Location]]:
     """Support Goto Definition for a dataset or parameter.
-    Currently assume catalog is located in `Path(config_loader.conf_source) / config_loader.base_env)`
+    Currently assume catalog is located in server.base_path
     """
     _check_project()
     if not server.is_kedro_project():
@@ -429,7 +432,7 @@ def definition(
             log_for_lsp_debug(f"{param_location=}")
             return [param_location]
 
-    catalog_paths = get_conf_paths(server.project_metadata)
+    catalog_paths = get_conf_paths(server)
 
     catalog_word = document.word_at_position(params.position)
     log_for_lsp_debug(f"Attempt to search `{catalog_word}` from catalog")
@@ -453,18 +456,10 @@ def definition(
             log_for_lsp_debug(f"{location=}")
             return [location]
 
-    # pos = params.position
-    # fake_location = Location(uri = params.text_document.uri, range = Range(
-    #             start= Position(line= pos.line, character=pos.character ),
-    #             # end = Position(line= pos.line, character=pos.character )
-    #             )
-    # )
     uri = params.text_document.uri
     pos = params.position
     curr_pos = Position(line=pos.line, character=pos.character)
     return Location(uri=uri, range=Range(start=curr_pos, end=curr_pos))
-    # return params
-    # return None
 
 
 def reference_location(path, line):
@@ -558,15 +553,9 @@ def completions(server: KedroLanguageServer, params: CompletionParams):
     for item in server.dummy_catalog.list():
         completion_items.append(CompletionItem(label=item))
 
-    # todo: use MarkedUpContent
     return CompletionList(
         is_incomplete=False,
         items=completion_items,
-        # items=[
-        #     CompletionItem(label='model_options'),
-        #     CompletionItem(label='train_test_split_ratio'),
-        #     CompletionItem(label='learning_rate'),
-        # ]
     )
 
 

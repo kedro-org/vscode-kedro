@@ -32,8 +32,8 @@ update_sys_path(
 )
 after_update_path = sys.path.copy()
 
-logger.warn(f"{before_update_path=}")
-logger.warn(f"{after_update_path=}")
+logger.warning(f"{before_update_path=}")
+logger.warning(f"{after_update_path=}")
 # **********************************************************
 # Imports needed for the language server goes below this.
 # **********************************************************

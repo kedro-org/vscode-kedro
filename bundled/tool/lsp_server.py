@@ -165,19 +165,23 @@ class KedroLanguageServer(LanguageServer):
         if self.project_metadata:
             return
         try:
+            self.workspace_settings = next(iter(WORKSPACE_SETTINGS.values()))
             root_path = pathlib.Path(
                 self.workspace.root_path
             )  # todo: From language server, can we get it from client initialise response instead?
             project_metadata = bootstrap_project(root_path)
-            session = KedroSession.create(root_path)
+            env = None
+            if self.workspace_settings.get("environment"):
+                env = self.workspace_settings.get("environment")
+            session = KedroSession.create(root_path, env=env)
             # todo: less hacky way to override session hook manager
             # avoid initialise spark hooks etc
             session._hook_manager = _NullPluginManager()
             context = session.load_context()
             config_loader: OmegaConfigLoader = context.config_loader
             # context.env is set when KEDRO_ENV or kedro run --env is set
-            env = context.env if context.env else config_loader.base_env
-            base_path = str(Path(config_loader.conf_source) / env)
+            conf_env = context.env if context.env else config_loader.base_env
+            base_path = str(Path(config_loader.conf_source) / conf_env)
 
         except RuntimeError as e:
             log_for_lsp_debug(str(e))
@@ -240,8 +244,6 @@ async def initialize(params: lsp.InitializeParams) -> None:
     log_to_output(
         f"Workspace settings:\r\n{json.dumps(WORKSPACE_SETTINGS, indent=4, ensure_ascii=False)}\r\n"
     )
-    log_for_lsp_debug("DEBUG*")
-
     _check_project()
 
 
@@ -297,7 +299,7 @@ def _check_project():
 
 
 ### Kedro LSP logic
-def get_conf_paths(lsp):
+def get_conf_paths(server: KedroLanguageServer):
     """
     Get the configuration paths of data catalog based on the project metadata.
 
@@ -308,9 +310,9 @@ def get_conf_paths(lsp):
         A set of configuration paths.
 
     """
-    config_loader: OmegaConfigLoader = lsp.config_loader
+    config_loader: OmegaConfigLoader = server.config_loader
     patterns = config_loader.config_patterns.get("catalog", [])
-    base_path = str(Path(config_loader.conf_source) / config_loader.base_env)
+    base_path = server.base_path
 
     # Extract from OmegaConfigLoader source code
 

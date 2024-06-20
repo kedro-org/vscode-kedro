@@ -179,7 +179,8 @@ class KedroLanguageServer(LanguageServer):
             env = context.env if context.env else config_loader.base_env
             base_path = str(Path(config_loader.conf_source) / env)
 
-        except RuntimeError:
+        except RuntimeError as e:
+            log_for_lsp_debug(str(e))
             project_metadata = None
             context = None
             config_loader = None

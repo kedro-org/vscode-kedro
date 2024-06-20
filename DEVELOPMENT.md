@@ -1,4 +1,4 @@
-# Requirements 
+# Requirements
 
 1. VS Code 1.64.0 or greater
 2. Python 3.8 or greater
@@ -10,7 +10,7 @@
 
 
  # Dev Setup
- 1. `npm install` 
+ 1. `npm install`
  2. `pip install -r requirements.txt` in `vscode-kedro`
  3. `pip install -r requirements.txt` in the test project (to make sure you can do `kedro run`)
  4. `make sign-off` to make sure the DCO will pass.

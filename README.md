@@ -17,9 +17,11 @@ The extension requires `bootstrap_project` in Kedro, you need to make sure you c
 
 ## Settings
 ### Change Configuration Environment
-By default the extension look at the config loader's `base_env` (`base`) usually. If you want it to find configuration from other environment, there are two ways to change:
-1. VSCode extension settings (TBD)
-2. Set `KEDRO_ENV` and launch VSCode.
+By default the extension look at the config loader's `base_env` (`base`) usually. To change where the extension looks for configurations, you need to update the settings in VSCode. For example, you want it to look for configuration in `prod` folder:
+ ![alt text](assets/settings_environment.png)
+
+1. VSCode extension settings
+
 
 
 ## How to restart a server if there are error
@@ -29,7 +31,7 @@ Hit `Cmd` + `Shift` + `P` to open the VSCode command, look for `kedro: restart s
 
 ## Assumptions
 ### Configuration Source
-Currently, the extension assume the source of configuration is in the `base_env` defined by the config loader (if you didn't speficy, [usually it is `conf/base`](https://docs.kedro.org/en/stable/configuration/configuration_basics.html#configuration-loading)). 
+Currently, the extension assume the source of configuration is in the `base_env` defined by the config loader (if you didn't speficy, [usually it is `conf/base`](https://docs.kedro.org/en/stable/configuration/configuration_basics.html#configuration-loading)).
 
 This mean that if the configuration is overrided by the `default_run_env`(usually it is `local`), the extension may fails to resolve to the correct location.
 
@@ -59,7 +61,7 @@ Use `Cmd` (Mac)/ `Ctrl` (Window) + `Click` or `F12` to trigger `Go to Definition
 - Use the shortcut `Shift` + `F12`
 ![find reference](assets/lsp-find-reference.gif)
 
-**Note:** You can find pipeline reference in all the files containing "pipeline" in their names, even in nested subdirectories. 
+**Note:** You can find pipeline reference in all the files containing "pipeline" in their names, even in nested subdirectories.
 ```
 - pipelines
   - sub_pipeline

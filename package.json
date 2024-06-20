@@ -94,6 +94,12 @@
                     },
                     "type": "array"
                 },
+                "kedro.environment": {
+                    "default": "base",
+                    "description": "Kedro environment to use when running commands.",
+                    "scope": "resource",
+                    "type": "string"
+                },
                 "kedro.isExperimental": {
                     "default": "yes",
                     "description": "Enable experimental features like autocompletion.",

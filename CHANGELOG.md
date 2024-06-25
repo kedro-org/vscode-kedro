@@ -2,7 +2,8 @@
 
 # 0.0.4
 - Expanded pipeline discovery to support `*pipeline*.py` patterns and improved handling of nested subdirectories.
-- Add new extension setting `Kedro: Environment` to change the configuration source.
+- Add new extension setting `Kedro: Environment` to change the configuration environment.
+- Add new command `kedro: Select Environment` to change the configuration environment.
 
 # 0.0.3
 - Add catalog config preview for mouse hover.

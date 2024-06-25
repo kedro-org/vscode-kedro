@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-
+import { selectEnvironment } from './common/commands';
 import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
@@ -48,12 +48,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     traceLog(`Module: ${serverInfo.module}`);
     traceVerbose(`Full Server Info: ${JSON.stringify(serverInfo)}`);
 
-    const runServer = async () => {
+    const runServer = async (selectedEnvironment?: vscode.QuickPickItem) => {
         const interpreter = getInterpreterFromSetting(serverId);
+        let env = undefined;
+        if (selectedEnvironment){
+            env = selectedEnvironment.label;
+        };
+
         if (interpreter && interpreter.length > 0) {
             if (checkVersion(await resolveInterpreter(interpreter))) {
                 traceVerbose(`Using interpreter from ${serverInfo.module}.interpreter: ${interpreter.join(' ')}`);
-                lsClient = await restartServer(serverId, serverName, outputChannel, lsClient);
+                lsClient = await restartServer(serverId, serverName, outputChannel, lsClient, env);
             }
             return;
         }
@@ -64,7 +69,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         console.log('===============DEBUG============');
         if (interpreterDetails.path) {
             traceVerbose(`Using interpreter from Python extension: ${interpreterDetails.path.join(' ')}`);
-            lsClient = await restartServer(serverId, serverName, outputChannel, lsClient);
+            lsClient = await restartServer(serverId, serverName, outputChannel, lsClient, env);
             return;
         }
 
@@ -75,6 +80,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 'Please use Python 3.8 or greater.',
         );
     };
+
 
     context.subscriptions.push(
         onDidChangePythonInterpreter(async () => {
@@ -88,6 +94,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         registerCommand(`${serverId}.restart`, async () => {
             await runServer();
         }),
+        registerCommand(`${serverId}.selectEnvironment`, async () => {
+            const result = await selectEnvironment();
+            runServer(result);
+
+}),
     );
 
     setImmediate(async () => {

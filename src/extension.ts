@@ -19,11 +19,17 @@ import { createOutputChannel, onDidChangeConfiguration, registerCommand } from '
 
 let lsClient: LanguageClient | undefined;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+
+
     // This is required to get server name and module. This should be
     // the first thing that we do in this extension.
     const serverInfo = loadServerDefaults();
     const serverName = serverInfo.name;
     const serverId = serverInfo.module;
+
+    // List of commands
+    const CMD_RESTART_SERVER = `${serverId}.restart`;
+    const CMD_SELECT_ENV = `${serverId}.selectEnvironment`
 
     // Setup logging
     const outputChannel = createOutputChannel(serverName);
@@ -81,6 +87,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         );
     };
 
+    // Create a status bar item
+    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    // statusBarItem.text = 'Select Kedro environment';
+    statusBarItem.text = `$(kedro_logo)`;
+    statusBarItem.command = CMD_SELECT_ENV
+    statusBarItem.show();
+    context.subscriptions.push(statusBarItem);
+
+
 
     context.subscriptions.push(
         onDidChangePythonInterpreter(async () => {
@@ -91,12 +106,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 await runServer();
             }
         }),
-        registerCommand(`${serverId}.restart`, async () => {
+        registerCommand(CMD_RESTART_SERVER, async () => {
             await runServer();
         }),
-        registerCommand(`${serverId}.selectEnvironment`, async () => {
+        registerCommand(CMD_SELECT_ENV, async () => {
             const result = await selectEnvironment();
             runServer(result);
+            if (result){
+                statusBarItem.text = `$(kedro_logo)` + result.label;
+            }
 
 }),
     );
@@ -112,6 +130,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             await runServer();
         }
     });
+
 }
 
 export async function deactivate(): Promise<void> {

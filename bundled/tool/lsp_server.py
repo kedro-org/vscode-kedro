@@ -594,7 +594,7 @@ def hover(ls: KedroLanguageServer, params: HoverParams):
         # parameters
         hover_content = ls.dummy_catalog.load(word)
 
-    hover_content = pprint.pformat(hover_content)
+    hover_content = pprint.pformat(hover_content, sort_dicts=False)
     highlight = _highlight(hover_content)
 
     return Hover(

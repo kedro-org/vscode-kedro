@@ -7,6 +7,7 @@
 tasks:
   - init: |
       npm install && npm run compile && pip install -r requirements.txt
+      npm install -g @vscode/vsce
       make sign-off
     command: npm run watch
 

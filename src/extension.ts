@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-
+import { selectEnvironment } from './common/commands';
 import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
@@ -25,6 +25,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const serverName = serverInfo.name;
     const serverId = serverInfo.module;
 
+    // List of commands
+    const CMD_RESTART_SERVER = `${serverId}.restart`;
+    const CMD_SELECT_ENV = `${serverId}.selectEnvironment`;
+
     // Setup logging
     const outputChannel = createOutputChannel(serverName);
     context.subscriptions.push(outputChannel, registerLogger(outputChannel));
@@ -48,12 +52,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     traceLog(`Module: ${serverInfo.module}`);
     traceVerbose(`Full Server Info: ${JSON.stringify(serverInfo)}`);
 
-    const runServer = async () => {
+    const runServer = async (selectedEnvironment?: vscode.QuickPickItem) => {
         const interpreter = getInterpreterFromSetting(serverId);
+        let env = undefined;
+        if (selectedEnvironment) {
+            env = selectedEnvironment.label;
+        }
+
         if (interpreter && interpreter.length > 0) {
             if (checkVersion(await resolveInterpreter(interpreter))) {
                 traceVerbose(`Using interpreter from ${serverInfo.module}.interpreter: ${interpreter.join(' ')}`);
-                lsClient = await restartServer(serverId, serverName, outputChannel, lsClient);
+                lsClient = await restartServer(serverId, serverName, outputChannel, lsClient, env);
             }
             return;
         }
@@ -64,7 +73,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         console.log('===============DEBUG============');
         if (interpreterDetails.path) {
             traceVerbose(`Using interpreter from Python extension: ${interpreterDetails.path.join(' ')}`);
-            lsClient = await restartServer(serverId, serverName, outputChannel, lsClient);
+            lsClient = await restartServer(serverId, serverName, outputChannel, lsClient, env);
             return;
         }
 
@@ -76,6 +85,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         );
     };
 
+    // Create a status bar item
+    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    // statusBarItem.text = 'Select Kedro environment';
+    statusBarItem.text = `$(kedro-logo): Select an environment`;
+    statusBarItem.command = CMD_SELECT_ENV;
+    statusBarItem.show();
+    context.subscriptions.push(statusBarItem);
+
     context.subscriptions.push(
         onDidChangePythonInterpreter(async () => {
             await runServer();
@@ -85,8 +102,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 await runServer();
             }
         }),
-        registerCommand(`${serverId}.restart`, async () => {
+        registerCommand(CMD_RESTART_SERVER, async () => {
             await runServer();
+        }),
+        registerCommand(CMD_SELECT_ENV, async () => {
+            const result = await selectEnvironment();
+            runServer(result);
+            if (result) {
+                statusBarItem.text = `$(kedro-logo)` + ' ' + result.label;
+            }
         }),
     );
 

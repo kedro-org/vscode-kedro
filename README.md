@@ -21,6 +21,7 @@ By default the extension look at the config loader's `base_env` (`base`) usually
  ![alt text](assets/settings_environment.png)
 
 1. VSCode extension settings
+2. Use Command (`Cmd` + `Shift` + `P`) and choose `kedro: Select Environment`
 
 
 

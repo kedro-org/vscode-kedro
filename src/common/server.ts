@@ -25,6 +25,7 @@ async function createServer(
     serverName: string,
     outputChannel: LogOutputChannel,
     initializationOptions: IInitOptions,
+    environment?: string,
 ): Promise<LanguageClient> {
     const command = settings.interpreter[0];
     const cwd = settings.cwd;
@@ -58,6 +59,12 @@ async function createServer(
     };
 
     // Options to control the language client
+
+    // Override configuration environment if exists
+    if (environment) {
+        initializationOptions.settings.map((setting) => (setting.environment = environment));
+    }
+
     const clientOptions: LanguageClientOptions = {
         // Register the server for python documents
         documentSelector: isVirtualWorkspace()
@@ -94,11 +101,13 @@ async function createServer(
 }
 
 let _disposables: Disposable[] = [];
+
 export async function restartServer(
     serverId: string,
     serverName: string,
     outputChannel: LogOutputChannel,
     lsClient?: LanguageClient,
+    environment?: string,
 ): Promise<LanguageClient | undefined> {
     if (lsClient) {
         traceInfo(`Server: Stop requested`);
@@ -109,10 +118,17 @@ export async function restartServer(
     const projectRoot = await getProjectRoot();
     const workspaceSetting = await getWorkspaceSettings(serverId, projectRoot, true);
 
-    const newLSClient = await createServer(workspaceSetting, serverId, serverName, outputChannel, {
-        settings: await getExtensionSettings(serverId, true),
-        globalSettings: await getGlobalSettings(serverId, false),
-    });
+    const newLSClient = await createServer(
+        workspaceSetting,
+        serverId,
+        serverName,
+        outputChannel,
+        {
+            settings: await getExtensionSettings(serverId, true),
+            globalSettings: await getGlobalSettings(serverId, false),
+        },
+        environment,
+    );
     traceInfo(`Server: Start requested.`);
     _disposables.push(
         newLSClient.onDidChangeState((e) => {

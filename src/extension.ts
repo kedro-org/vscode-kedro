@@ -12,9 +12,15 @@ import {
     resolveInterpreter,
 } from './common/python';
 import { restartServer } from './common/server';
-import { checkIfConfigurationChanged, getInterpreterFromSetting } from './common/settings';
+import {
+    checkIfConfigurationChanged,
+    getExtensionSettings,
+    getGlobalSettings,
+    getInterpreterFromSetting,
+    getWorkspaceSettings,
+} from './common/settings';
 import { loadServerDefaults } from './common/setup';
-import { getLSClientTraceLevel } from './common/utilities';
+import { getLSClientTraceLevel, getProjectRoot } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 
 let lsClient: LanguageClient | undefined;
@@ -87,9 +93,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // Create a status bar item
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    // statusBarItem.text = 'Select Kedro environment';
-    statusBarItem.text = `$(kedro-logo): Select an environment`;
     statusBarItem.command = CMD_SELECT_ENV;
+    // https://code.visualstudio.com/api/references/vscode-api#WorkspaceConfiguration
+    const projectRoot = await getProjectRoot();
+    const workspaceSetting = await getWorkspaceSettings(serverId, projectRoot, true);
+    statusBarItem.text = `$(kedro-logo): ${workspaceSetting.environment}`;
     statusBarItem.show();
     context.subscriptions.push(statusBarItem);
 

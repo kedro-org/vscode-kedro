@@ -17,12 +17,12 @@ The extension requires `bootstrap_project` in Kedro, you need to make sure you c
 
 ## Settings
 ### Change Configuration Environment
-By default the extension look at the config loader's `base_env` (`base`) usually. To change where the extension looks for configurations, you need to update the settings in VSCode. For example, you want it to look for configuration in `prod` folder:
- ![alt text](assets/settings_environment.png)
+By default the extension look at the config loader's `base_env` (`base`) usually. There are 3 different ways to do this:
 
-1. VSCode extension settings
+1. Click on the Kedro Icon in the status bar (bottom right)
+ ![Status Bar](assets/status-bar.png)
 2. Use Command (`Cmd` + `Shift` + `P`) and choose `kedro: Select Environment`
-
+3. [Change default environment](assets/settings_environment.png)
 
 
 ## How to restart a server if there are error

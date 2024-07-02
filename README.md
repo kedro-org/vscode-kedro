@@ -17,7 +17,7 @@ The extension requires `bootstrap_project` in Kedro, you need to make sure you c
 
 ## Settings
 ### Change Configuration Environment
-By default the extension look at the config loader's `base_env` (`base`) usually. There are 3 different ways to do this:
+By default, the extension references the configuration loader's base_env (typically `base`). To change the directory where the extension looks for configurations, the extension provides 3 different ways to do this:
 
 1. Click on the Kedro Icon in the status bar (bottom right)
  ![Status Bar](assets/status-bar.png)

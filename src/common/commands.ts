@@ -15,7 +15,7 @@ export async function selectEnvironment() {
     const envs: QuickPickItem[] = directories.map((label) => ({ label }));
 
     const result = await window.showQuickPick(envs, {
-        placeHolder: 'Select Kedro Configuration Environment',
+        placeHolder: 'Select Kedro base environment',
     });
 
     return result;

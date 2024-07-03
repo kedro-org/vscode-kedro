@@ -63,6 +63,15 @@
         "vsce-package": "vsce package -o kedro.vsix"
     },
     "contributes": {
+        "icons": {
+        "kedro-logo": {
+            "description": "Kedro icon",
+            "default": {
+            "fontPath": "assets/kedro-logo/fonts/kedro-logo.woff",
+            "fontCharacter": "\\e900"
+            }
+        }
+    },
         "configuration": {
             "properties": {
                 "yaml.schemas": {

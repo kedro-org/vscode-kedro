@@ -299,35 +299,7 @@ def _check_project():
 
 
 ### Kedro LSP logic
-def get_conf_paths(server: KedroLanguageServer):
-    """
-    Get the configuration paths of data catalog based on the project metadata.
-
-    Args:
-        project_metadata: The metadata of the project.
-
-    Returns:
-        A set of configuration paths.
-
-    """
-    config_loader: OmegaConfigLoader = server.config_loader
-    patterns = config_loader.config_patterns.get("catalog", [])
-    base_path = server.base_path
-
-    # Extract from OmegaConfigLoader source code
-
-    paths = []
-    for pattern in patterns:
-        for each in config_loader._fs.glob(
-            Path(f"{str(base_path)}/{pattern}").as_posix()
-        ):
-            if not config_loader._is_hidden(each):
-                paths.append(Path(each))
-    paths = set(paths)
-    return paths
-
-
-def get_params_paths(project_metadata):
+def _get_conf_paths(server: KedroLanguageServer, key):
     """
     Get the configuration paths of parameters based on the project metadata.
 
@@ -339,18 +311,27 @@ def get_params_paths(project_metadata):
 
     """
     config_loader: OmegaConfigLoader = LSP_SERVER.config_loader
-    patterns = config_loader.config_patterns.get("parameters", [])
-    base_path = str(Path(config_loader.conf_source) / config_loader.base_env)
+    patterns = config_loader.config_patterns.get(key, [])
+    default_run_env = str(
+        Path(config_loader.conf_source) / config_loader.default_run_env
+    )
+    base_env = str(Path(config_loader.conf_source) / config_loader.base_env)
 
     # Extract from OmegaConfigLoader source code
     paths = []
-    for pattern in patterns:
-        for each in config_loader._fs.glob(
-            Path(f"{str(base_path)}/{pattern}").as_posix()
-        ):
-            if not config_loader._is_hidden(each):
-                paths.append(Path(each))
-    paths = set(paths)
+    # It is important to preserve the order. As Kedro gives default_run_env higher priority
+    # That is, if a config is found in both environment, the LSP should return the default_run_env one.
+    # The LSP start searching in default_run_env first, if there is match it will end eagerly.
+
+    for base_path in [default_run_env, base_env]:
+        tmp_paths = []
+        for pattern in patterns:
+            for each in config_loader._fs.glob(
+                Path(f"{str(base_path)}/{pattern}").as_posix()
+            ):
+                if not config_loader._is_hidden(each):
+                    tmp_paths.append(Path(each))
+        paths = paths + list(set(tmp_paths))
     return paths
 
 
@@ -384,7 +365,7 @@ def _get_param_location(
     log_to_output(f"Attempt to search `{param}` from parameters file")
 
     # TODO: cache -- we shouldn't have to re-read the file on every request
-    params_paths = get_params_paths(project_metadata)
+    params_paths = _get_conf_paths(project_metadata, "parameters")
     param_line_no = None
 
     for parameters_file in params_paths:
@@ -416,9 +397,7 @@ def _get_param_location(
 def definition(
     server: KedroLanguageServer, params: TextDocumentPositionParams
 ) -> Optional[List[Location]]:
-    """Support Goto Definition for a dataset or parameter.
-    Currently assume catalog is located in server.base_path
-    """
+    """Support Goto Definition for a dataset or parameter."""
     _check_project()
     if not server.is_kedro_project():
         return None
@@ -436,7 +415,7 @@ def definition(
             log_for_lsp_debug(f"{param_location=}")
             return [param_location]
 
-    catalog_paths = get_conf_paths(server)
+    catalog_paths = _get_conf_paths(server, "catalog")
 
     catalog_word = document.word_at_position(params.position)
     log_for_lsp_debug(f"Attempt to search `{catalog_word}` from catalog")

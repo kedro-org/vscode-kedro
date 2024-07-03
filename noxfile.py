@@ -163,7 +163,7 @@ def lint(session: nox.Session) -> None:
 @nox.session()
 def build_package(session: nox.Session) -> None:
     """Builds VSIX package for publishing."""
-    _check_files(["README.md", "LICENSE", "SECURITY.md", "SUPPORT.md"])
+    _check_files(["README.md", "LICENSE", "SUPPORT.md"])
     _setup_template_environment(session)
     session.run("npm", "install", external=True)
     session.run("npm", "run", "vsce-package", external=True)

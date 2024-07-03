@@ -10,11 +10,15 @@
 
 
  # Dev Setup
- 1. `npm install`
+ 1. `make dev-install`
  2. `pip install -r requirements.txt` in `vscode-kedro`
  3. `pip install -r requirements.txt` in the test project (to make sure you can do `kedro run`)
  4. `make sign-off` to make sure the DCO will pass.
 
+`make dev-install` installs a few different things:
+- `npm install` for the VSCode frontend
+- `pip isntall -r dev-requirements.txt` for the Python backend
+- `nox --sesssion build_pakcage` for building `bundled/libs` locally
 
 # Debug
 You can start debug with `F5`, this should lauch an "Extension Development Host". If it doesn't check if there is a process stuck in the terminal, try to hit `Cmd + C` or `Ctrl + C` to terminate the `npm watch` process.

@@ -7,3 +7,10 @@ sign-off:
 
 build:
 	vsce package
+
+
+dev-install:
+	npm install
+	pip install -r dev-requirements.txt
+	nox --session build_package
+

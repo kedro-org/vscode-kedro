@@ -12,9 +12,15 @@ import {
     resolveInterpreter,
 } from './common/python';
 import { restartServer } from './common/server';
-import { checkIfConfigurationChanged, getInterpreterFromSetting } from './common/settings';
+import {
+    checkIfConfigurationChanged,
+    getExtensionSettings,
+    getGlobalSettings,
+    getInterpreterFromSetting,
+    getWorkspaceSettings,
+} from './common/settings';
 import { loadServerDefaults } from './common/setup';
-import { getLSClientTraceLevel } from './common/utilities';
+import { getLSClientTraceLevel, getProjectRoot } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 
 let lsClient: LanguageClient | undefined;
@@ -24,6 +30,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const serverInfo = loadServerDefaults();
     const serverName = serverInfo.name;
     const serverId = serverInfo.module;
+
+    // List of commands
+    const CMD_RESTART_SERVER = `${serverId}.restart`;
+    const CMD_SELECT_ENV = `${serverId}.selectEnvironment`;
 
     // Setup logging
     const outputChannel = createOutputChannel(serverName);
@@ -51,9 +61,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const runServer = async (selectedEnvironment?: vscode.QuickPickItem) => {
         const interpreter = getInterpreterFromSetting(serverId);
         let env = undefined;
-        if (selectedEnvironment){
+        if (selectedEnvironment) {
             env = selectedEnvironment.label;
-        };
+        }
 
         if (interpreter && interpreter.length > 0) {
             if (checkVersion(await resolveInterpreter(interpreter))) {
@@ -81,6 +91,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         );
     };
 
+    // Create a status bar item
+    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    statusBarItem.command = CMD_SELECT_ENV;
+    // https://code.visualstudio.com/api/references/vscode-api#WorkspaceConfiguration
+    const projectRoot = await getProjectRoot();
+    const workspaceSetting = await getWorkspaceSettings(serverId, projectRoot, true);
+    let environment = 'base'; // todo: Assume base, better to take this from server as it could be changed in project settings.
+
+    if (workspaceSetting.environment) {
+        environment = workspaceSetting.environment;
+    }
+
+    statusBarItem.text = `$(kedro-logo) ${environment}`;
+    statusBarItem.show();
+    context.subscriptions.push(statusBarItem);
 
     context.subscriptions.push(
         onDidChangePythonInterpreter(async () => {
@@ -91,14 +116,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 await runServer();
             }
         }),
-        registerCommand(`${serverId}.restart`, async () => {
+        registerCommand(CMD_RESTART_SERVER, async () => {
             await runServer();
         }),
-        registerCommand(`${serverId}.selectEnvironment`, async () => {
+        registerCommand(CMD_SELECT_ENV, async () => {
             const result = await selectEnvironment();
             runServer(result);
-
-}),
+            if (result) {
+                statusBarItem.text = `$(kedro-logo)` + ' ' + result.label;
+            }
+        }),
     );
 
     setImmediate(async () => {

@@ -1,6 +1,7 @@
 name: Run nightly job on vscode-kedro
 
 on:
+  
   workflow_dispatch:
   schedule:
     # Run every day at midnight (UTC time)

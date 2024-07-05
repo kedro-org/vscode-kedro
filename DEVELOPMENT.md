@@ -14,6 +14,11 @@
  2. `pip install -r requirements.txt` in `vscode-kedro`
  3. `pip install -r requirements.txt` in the test project (to make sure you can do `kedro run`)
  4. `make sign-off` to make sure the DCO will pass.
+ 5. `nox --session build_package` (it builds `bundled/libs`)
+
+
+ # Release
+ `make build` and manually upload it to VSCode MarketPlace and Open VSX Registry.
 
 `make dev-install` installs a few different things:
 - `npm install` for the VSCode frontend

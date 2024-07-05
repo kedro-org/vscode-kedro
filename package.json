@@ -2,8 +2,8 @@
     "name": "Kedro",
     "displayName": "Kedro",
     "description": "A Kedro VSCode Extension.",
-    "version": "0.0.3",
-    "preview": true,
+    "version": "0.1.0",
+    "preview": false,
     "serverInfo": {
         "name": "Kedro",
         "module": "kedro"
@@ -25,13 +25,16 @@
     },
     "keywords": [
         "python",
-        "kedro"
+        "kedro",
+        "development tool",
+        "machine learning"
     ],
     "engines": {
         "vscode": "^1.78.0"
     },
     "categories": [
-        "Programming Languages"
+        "Programming Languages",
+        "Data Science"
     ],
     "extensionDependencies": [
         "ms-python.python",

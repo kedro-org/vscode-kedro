@@ -1,2 +1,5 @@
 -r requirements.txt
-pre-commit
+pre-commit>3.0.0
+nox
+pytest
+pytest-lsp

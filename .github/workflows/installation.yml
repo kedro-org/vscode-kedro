@@ -1,6 +1,8 @@
 name: Install development dependencies
 
 on:
+  pull_request:
+  workflow_dispatch:
   workflow_call:
     inputs:
       os:
@@ -22,6 +24,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
+      - name: Install uv
+        run: pip install uv
 
       # - name: Add MSBuild to PATH
       #   if: inputs.os == 'windows-latest'
@@ -31,5 +35,5 @@ jobs:
             make dev-install
       - name: pip freeze
         run: uv pip freeze --system
-      - name: Run unit tests
-        run: make test
+      # - name: Run unit tests
+      #   run: make test

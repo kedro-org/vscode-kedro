@@ -11,6 +11,9 @@ build:
 
 dev-install:
 	npm install
-	pip install -r dev-requirements.txt
+	pip install uv
+	uv pip install --system -r dev-requirements.txt
 	nox --session build_package
 
+test:
+	pytest

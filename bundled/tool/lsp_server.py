@@ -423,7 +423,8 @@ def definition(
     for catalog_path in catalog_paths:
         log_for_lsp_debug(f"    {catalog_path=}")
         catalog_conf = yaml.load(catalog_path.read_text(), Loader=SafeLineLoader)
-
+        if not catalog_conf:
+            continue
         if word in catalog_conf:
             line = catalog_conf[word]["__line__"]
             location = Location(

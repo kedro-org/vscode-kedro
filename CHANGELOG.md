@@ -6,7 +6,7 @@
 - Add new command `kedro: Select Environment` to change the configuration environment.
 - `Go to Definition` now search `default_run_env` first.
 - Add Kedro Icon and Status bar to select environment.
-
+- Fix a bug that cause server panic when config is empty.
 
 # 0.0.3
 - Add catalog config preview for mouse hover.

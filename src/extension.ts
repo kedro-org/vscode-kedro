@@ -22,6 +22,7 @@ import {
 import { loadServerDefaults } from './common/setup';
 import { getLSClientTraceLevel, getProjectRoot } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
+import KedroVizPanel from './webview/vizWebView';
 
 let lsClient: LanguageClient | undefined;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -50,6 +51,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }),
         vscode.env.onDidChangeLogLevel(async (e) => {
             await changeLogLevel(outputChannel.logLevel, e);
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('kedro.runKedroViz', () => {
+            vscode.window.showInformationMessage('Run kedro viz');
+            KedroVizPanel.createOrShow(context.extensionUri);
+        }),
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('kedro.updateTheme', () => {
+            if (KedroVizPanel.currentPanel) {
+                KedroVizPanel.currentPanel.updateTheme();
+            }
         }),
     );
 

@@ -63,7 +63,9 @@
         "lint": "eslint src --ext ts",
         "format-check": "prettier --check 'src/**/*.ts' 'build/**/*.yml' '.github/**/*.yml'",
         "test": "node ./out/test/runTest.js",
-        "vsce-package": "vsce package -o kedro.vsix"
+        "vsce-package": "vsce package -o kedro.vsix",
+        "build:webview": "npm run build --prefix ./webview",
+        "install:webview": "npm install --prefix ./webview"
     },
     "contributes": {
         "icons": {
@@ -155,6 +157,16 @@
                 "command": "pygls.server.executeCommand",
                 "title": "Execute Command",
                 "category": "pygls"
+            },
+            {
+                "command": "kedro.runKedroViz",
+                "category": "kedro",
+                "title": "Run Kedro Viz"
+            },
+            {
+                "command": "kedro.updateTheme",
+                "category": "kedro",
+                "title": "Update Theme"
             }
         ]
     },

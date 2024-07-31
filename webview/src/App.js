@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import "@quantumblack/kedro-viz/lib/styles/styles.min.css";
 import spaceflights from "@quantumblack/kedro-viz/lib/utils/data/spaceflights.mock.json";
 import KedroViz from "@quantumblack/kedro-viz";
+const vscodeApi = window.acquireVsCodeApi();
 
 function App() {
   const [theme, setTheme] = React.useState("dark");
@@ -27,10 +28,9 @@ function App() {
   }, [theme]);
 
   const sendMessageToExtension = () => {
-    const vscode = window.acquireVsCodeApi();
-    vscode.postMessage({
+    vscodeApi.postMessage({
       command: "fromWebview",
-      text: "Hello from the webview!",
+      text: "prm_spine_table",
     });
   };
 

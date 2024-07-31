@@ -52,7 +52,7 @@ function App() {
         style={{ position: "absolute", zIndex: 999, top: 0 }}
         onClick={sendMessageToExtension}
       >
-        Send Message to Extension
+      Goto: "prm_spine_table"
       </button>
     </div>
   );

@@ -27,15 +27,10 @@ export default class KedroVizPanel {
         }
 
         // Otherwise, create a new panel.
-        const panel = vscode.window.createWebviewPanel(
-            KedroVizPanel.viewType,
-            'Kedro Viz',
-            column || vscode.ViewColumn.One,
-            {
-                enableScripts: true,
-                retainContextWhenHidden: true,
-            },
-        );
+        const panel = vscode.window.createWebviewPanel(KedroVizPanel.viewType, 'Kedro Viz', vscode.ViewColumn.Two, {
+            enableScripts: true,
+            retainContextWhenHidden: true,
+        });
 
         KedroVizPanel.currentPanel = new KedroVizPanel(panel, extensionUri);
     }
@@ -106,6 +101,7 @@ export default class KedroVizPanel {
                 if (definitions && definitions.length > 0) {
                     await vscode.window.showTextDocument(definitions[0].uri, {
                         selection: definitions[0].range,
+                        viewColumn: vscode.ViewColumn.One,
                     });
                     return;
                 }

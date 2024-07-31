@@ -145,20 +145,13 @@ export default class KedroVizPanel {
 
     private _getHtmlForWebview(webview: vscode.Webview) {
         // Local path to main script run in the webview
-        const scriptPathOnDisk = vscode.Uri.joinPath(this._extensionUri, 'webview', 'build', 'static', 'js', 'main.js');
+        const scriptPathOnDisk = vscode.Uri.joinPath(this._extensionUri, 'webview', 'dist', 'assets', 'index.js');
 
         // And the uri we use to load this script in the webview
         const scriptUri = webview.asWebviewUri(scriptPathOnDisk);
 
         // Local path to css styles
-        const stylesPathMainPath = vscode.Uri.joinPath(
-            this._extensionUri,
-            'webview',
-            'build',
-            'static',
-            'css',
-            'main.css',
-        );
+        const stylesPathMainPath = vscode.Uri.joinPath(this._extensionUri, 'webview', 'dist', 'assets', 'index.css');
 
         // Uri to load styles into webview
         const stylesMainUri = webview.asWebviewUri(stylesPathMainPath);

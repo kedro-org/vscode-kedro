@@ -55,7 +55,7 @@
     "scripts": {
         "vscode:prepublish": "npm run package",
         "compile": "webpack",
-        "watch": "webpack --watch",
+        "watch": "concurrently \"npm:watch --prefix ./webview\" \"webpack --watch\"",
         "package": "webpack --mode production --devtool source-map --config ./webpack.config.js",
         "compile-tests": "tsc -p . --outDir out",
         "watch-tests": "tsc -p . -w --outDir out",
@@ -69,14 +69,14 @@
     },
     "contributes": {
         "icons": {
-        "kedro-logo": {
-            "description": "Kedro icon",
-            "default": {
-            "fontPath": "assets/kedro-logo/fonts/kedro-logo.woff",
-            "fontCharacter": "\\e900"
+            "kedro-logo": {
+                "description": "Kedro icon",
+                "default": {
+                    "fontPath": "assets/kedro-logo/fonts/kedro-logo.woff",
+                    "fontCharacter": "\\e900"
+                }
             }
-        }
-    },
+        },
         "configuration": {
             "properties": {
                 "yaml.schemas": {
@@ -177,18 +177,19 @@
     },
     "devDependencies": {
         "@types/fs-extra": "^11.0.4",
-        "@types/vscode": "1.78.0",
         "@types/glob": "^8.1.0",
         "@types/node": "16.x",
+        "@types/vscode": "1.78.0",
         "@typescript-eslint/eslint-plugin": "^7.14.1",
         "@typescript-eslint/parser": "^7.11.0",
         "@vscode/test-electron": "^2.3.8",
         "@vscode/vsce": "^2.22.0",
+        "concurrently": "^8.2.2",
         "eslint": "^8.56.0",
         "glob": "^10.3.10",
         "prettier": "^3.1.1",
-        "typescript": "^5.3.3",
         "ts-loader": "^9.5.1",
+        "typescript": "^5.3.3",
         "webpack": "^5.89.0",
         "webpack-cli": "^5.1.4"
     }

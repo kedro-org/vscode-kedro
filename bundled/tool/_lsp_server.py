@@ -1,5 +1,6 @@
 from kedro.io.data_catalog import DataCatalog
 from typing import Any, Dict, Optional, Sequence
+from yaml.loader import SafeLoader
 
 
 class DummyDataCatalog(DataCatalog):
@@ -47,3 +48,12 @@ class DummyDataCatalog(DataCatalog):
             _add_param_to_feed_dict(param_name, param_value)
 
         return feed_dict
+
+
+class SafeLineLoader(SafeLoader):  # pylint: disable=too-many-ancestors
+    """A YAML loader that annotates loaded nodes with line number."""
+
+    def construct_mapping(self, node, deep=False):
+        mapping = super().construct_mapping(node, deep=deep)
+        mapping["__line__"] = node.start_mark.line
+        return mapping

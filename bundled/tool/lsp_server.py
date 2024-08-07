@@ -4,16 +4,15 @@
 
 from __future__ import annotations
 
-import copy
+
 import glob
 import json
 import os
 import pathlib
 import re
 import sys
-import traceback
 import logging
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Optional
 
 from common import update_sys_path
 from pathlib import Path
@@ -87,12 +86,10 @@ from kedro.framework.startup import (
     bootstrap_project,
 )
 from pygls.server import LanguageServer
-from yaml.loader import SafeLoader
-from kedro.io.data_catalog import DataCatalog
+from _lsp_server import DummyDataCatalog, SafeLineLoader
+
 
 # Need to stop kedro.framework.project.LOGGING from changing logging settings, otherwise pygls fails with unknown reason.
-
-from _lsp_server import DummyDataCatalog
 
 
 class KedroLanguageServer(LanguageServer):
@@ -230,15 +227,6 @@ def _get_conf_paths(server: KedroLanguageServer, key):
                     tmp_paths.append(Path(each))
         paths = paths + list(set(tmp_paths))
     return paths
-
-
-class SafeLineLoader(SafeLoader):  # pylint: disable=too-many-ancestors
-    """A YAML loader that annotates loaded nodes with line number."""
-
-    def construct_mapping(self, node, deep=False):
-        mapping = super().construct_mapping(node, deep=deep)
-        mapping["__line__"] = node.start_mark.line
-        return mapping
 
 
 def _get_param_location(

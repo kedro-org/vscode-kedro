@@ -15,7 +15,6 @@ import traceback
 import logging
 from typing import Any, Dict, Optional, Sequence
 
-from kedro.config import OmegaConfigLoader
 from common import update_sys_path
 from pathlib import Path
 
@@ -38,17 +37,8 @@ logger.warning(f"{after_update_path=}")
 # Imports needed for the language server goes below this.
 # **********************************************************
 # pylint: disable=wrong-import-position,import-error
-import lsp_jsonrpc as jsonrpc
-import lsp_utils as utils
 import lsprotocol.types as lsp
 from pygls import workspace, uris
-
-
-WORKSPACE_SETTINGS = {}
-GLOBAL_SETTINGS = {}
-RUNNER = pathlib.Path(__file__).parent / "lsp_runner.py"
-
-MAX_WORKERS = 5
 
 
 # ******************************************************
@@ -89,6 +79,7 @@ os.environ["KEDRO_LOGGING_CONFIG"] = str(Path(__file__).parent / "dummy_logging.
 from typing import List
 
 import yaml
+from kedro.config import OmegaConfigLoader
 from kedro.framework.hooks.manager import _NullPluginManager
 from kedro.framework.session import KedroSession
 from kedro.framework.startup import (
@@ -102,6 +93,7 @@ from kedro.io.data_catalog import DataCatalog
 # Need to stop kedro.framework.project.LOGGING from changing logging settings, otherwise pygls fails with unknown reason.
 
 from _lsp_server import DummyDataCatalog
+
 
 class KedroLanguageServer(LanguageServer):
     """Store Kedro-specific information in the language server."""
@@ -173,6 +165,8 @@ RE_END_WORD = re.compile("^[A-Za-z_0-9:\.]*")
 GLOBAL_SETTINGS = {}
 WORKSPACE_SETTINGS = {}
 IS_EXPERIMENTAL = "yes"
+RUNNER = pathlib.Path(__file__).parent / "lsp_runner.py"
+MAX_WORKERS = 5
 
 
 @LSP_SERVER.feature(lsp.INITIALIZE)

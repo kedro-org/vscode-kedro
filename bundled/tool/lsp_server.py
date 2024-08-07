@@ -293,16 +293,6 @@ class SafeLineLoader(SafeLoader):  # pylint: disable=too-many-ancestors
         return mapping
 
 
-@LSP_SERVER.feature(WORKSPACE_DID_CHANGE_CONFIGURATION)
-def did_change_configuration(
-    server: KedroLanguageServer,  # pylint: disable=unused-argument
-    params: DidChangeConfigurationParams,  # pylint: disable=unused-argument
-) -> None:
-    """Implement event for workspace/didChangeConfiguration.
-    Currently does nothing, but necessary for pygls.
-    """
-
-
 def _get_param_location(
     project_metadata: ProjectMetadata, word: str
 ) -> Optional[Location]:
@@ -525,6 +515,16 @@ def hover(ls: KedroLanguageServer, params: HoverParams):
             end=Position(line=pos.line + 1, character=0),
         ),
     )
+
+
+@LSP_SERVER.feature(WORKSPACE_DID_CHANGE_CONFIGURATION)
+def did_change_configuration(
+    server: KedroLanguageServer,  # pylint: disable=unused-argument
+    params: DidChangeConfigurationParams,  # pylint: disable=unused-argument
+) -> None:
+    """Implement event for workspace/didChangeConfiguration.
+    Currently does nothing, but necessary for pygls.
+    """
 
 
 def _get_global_defaults():

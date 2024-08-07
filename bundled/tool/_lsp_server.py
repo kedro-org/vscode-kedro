@@ -1,5 +1,6 @@
+from typing import Any
+
 from kedro.io.data_catalog import DataCatalog
-from typing import Any, Dict, Optional, Sequence
 from yaml.loader import SafeLoader
 
 

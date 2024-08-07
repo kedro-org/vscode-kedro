@@ -4,18 +4,17 @@
 
 from __future__ import annotations
 
-
 import glob
 import json
+import logging
 import os
 import pathlib
 import re
 import sys
-import logging
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 from common import update_sys_path
-from pathlib import Path
 
 # **********************************************************
 # Update sys.path before importing any bundled libraries.
@@ -37,36 +36,31 @@ logger.warning(f"{after_update_path=}")
 # **********************************************************
 # pylint: disable=wrong-import-position,import-error
 import lsprotocol.types as lsp
-from pygls import workspace, uris
-
 
 # ******************************************************
 # Kedro LSP Server.
 # ******************************************************
-
 from lsprotocol.types import (
-    TEXT_DOCUMENT_DEFINITION,
-    TEXT_DOCUMENT_REFERENCES,
     TEXT_DOCUMENT_COMPLETION,
+    TEXT_DOCUMENT_DEFINITION,
     TEXT_DOCUMENT_HOVER,
+    TEXT_DOCUMENT_REFERENCES,
     WORKSPACE_DID_CHANGE_CONFIGURATION,
+    CompletionItem,
+    CompletionList,
     CompletionOptions,
     CompletionParams,
-    CompletionList,
-    CompletionItem,
     DidChangeConfigurationParams,
+    Hover,
+    HoverParams,
     Location,
+    MarkupContent,
+    MarkupKind,
     Position,
     Range,
     TextDocumentPositionParams,
-    HoverParams,
-    MarkupContent,
-    MarkupKind,
-    MarkedString,
-    Hover,
 )
-
-
+from pygls import uris, workspace
 from pygls.workspace import TextDocument
 
 """Kedro Language Server."""
@@ -78,6 +72,7 @@ os.environ["KEDRO_LOGGING_CONFIG"] = str(Path(__file__).parent / "dummy_logging.
 from typing import List
 
 import yaml
+from _lsp_server import DummyDataCatalog, SafeLineLoader
 from kedro.config import OmegaConfigLoader
 from kedro.framework.hooks.manager import _NullPluginManager
 from kedro.framework.session import KedroSession
@@ -86,8 +81,6 @@ from kedro.framework.startup import (
     bootstrap_project,
 )
 from pygls.server import LanguageServer
-from _lsp_server import DummyDataCatalog, SafeLineLoader
-
 
 # Need to stop kedro.framework.project.LOGGING from changing logging settings, otherwise pygls fails with unknown reason.
 
@@ -155,8 +148,8 @@ LSP_SERVER = KedroLanguageServer("pygls-kedro-example", "v0.1")
 ADDITION = re.compile(
     r"^\s*(\d+)\s*\+\s*(\d+)\s*=(?=\s*$)"
 )  # todo: remove this when mature
-RE_START_WORD = re.compile("[A-Za-z_0-9:\.]*$")
-RE_END_WORD = re.compile("^[A-Za-z_0-9:\.]*")
+RE_START_WORD = re.compile(r"[A-Za-z_0-9:\.]*$")
+RE_END_WORD = re.compile(r"^[A-Za-z_0-9:\.]*")
 
 ### Settings
 GLOBAL_SETTINGS = {}
@@ -413,7 +406,6 @@ def completions(server: KedroLanguageServer, params: CompletionParams):
 @LSP_SERVER.feature(TEXT_DOCUMENT_HOVER)
 def hover(ls: KedroLanguageServer, params: HoverParams):
     import pprint
-    from pathlib import Path
 
     pos = params.position
     document_uri = params.text_document.uri

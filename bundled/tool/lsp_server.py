@@ -247,57 +247,6 @@ async def initialize(params: lsp.InitializeParams) -> None:
     _check_project()
 
 
-def _get_global_defaults():
-    return {
-        "path": GLOBAL_SETTINGS.get("path", []),
-        "interpreter": GLOBAL_SETTINGS.get("interpreter", [sys.executable]),
-        "args": GLOBAL_SETTINGS.get("args", []),
-        "importStrategy": GLOBAL_SETTINGS.get("importStrategy", "useBundled"),
-        "showNotifications": GLOBAL_SETTINGS.get("showNotifications", "off"),
-        "environment": GLOBAL_SETTINGS.get("environment", ""),
-    }
-
-
-def _update_workspace_settings(settings):
-    if not settings:
-        key = os.getcwd()
-        WORKSPACE_SETTINGS[key] = {
-            "cwd": key,
-            "workspaceFS": key,
-            "workspace": uris.from_fs_path(key),
-            **_get_global_defaults(),
-        }
-        return
-
-    for setting in settings:
-        key = uris.to_fs_path(setting["workspace"])
-        WORKSPACE_SETTINGS[key] = {
-            "cwd": key,
-            **setting,
-            "workspaceFS": key,
-        }
-
-
-def get_cwd(settings: Dict[str, Any], document: Optional[workspace.Document]) -> str:
-    """Returns cwd for the given settings and document."""
-    if settings["cwd"] == "${workspaceFolder}":
-        return settings["workspaceFS"]
-
-    if settings["cwd"] == "${fileDirname}":
-        if document is not None:
-            return os.fspath(pathlib.Path(document.path).parent)
-        return settings["workspaceFS"]
-
-    return settings["cwd"]
-
-
-def _check_project():
-    """This was a workaround because the server.workspace.root_path is not available at __init__ time.
-    Ideally there should be some place to inject this logic after client send back the information.
-    For now this function will be triggered for every LSP feature"""
-    LSP_SERVER._set_project_with_workspace()
-
-
 ### Kedro LSP logic
 def _get_conf_paths(server: KedroLanguageServer, key):
     """
@@ -507,14 +456,6 @@ def references(
     return locations if locations else None
 
 
-def log_for_lsp_debug(msg: str):
-    """The log_to_output is too verbose for now, once the LSP is stable these log should
-    be removed. Default level set as warning otherwise user cannot see the log and report
-    back easily without touching configuration.
-    """
-    logger.warning(f"Kedro LSP: {msg}")
-
-
 @LSP_SERVER.feature(
     TEXT_DOCUMENT_COMPLETION, CompletionOptions(trigger_characters=['"'])
 )
@@ -586,6 +527,65 @@ def hover(ls: KedroLanguageServer, params: HoverParams):
     )
 
 
+def _get_global_defaults():
+    return {
+        "path": GLOBAL_SETTINGS.get("path", []),
+        "interpreter": GLOBAL_SETTINGS.get("interpreter", [sys.executable]),
+        "args": GLOBAL_SETTINGS.get("args", []),
+        "importStrategy": GLOBAL_SETTINGS.get("importStrategy", "useBundled"),
+        "showNotifications": GLOBAL_SETTINGS.get("showNotifications", "off"),
+        "environment": GLOBAL_SETTINGS.get("environment", ""),
+    }
+
+
+def _update_workspace_settings(settings):
+    if not settings:
+        key = os.getcwd()
+        WORKSPACE_SETTINGS[key] = {
+            "cwd": key,
+            "workspaceFS": key,
+            "workspace": uris.from_fs_path(key),
+            **_get_global_defaults(),
+        }
+        return
+
+    for setting in settings:
+        key = uris.to_fs_path(setting["workspace"])
+        WORKSPACE_SETTINGS[key] = {
+            "cwd": key,
+            **setting,
+            "workspaceFS": key,
+        }
+
+
+def get_cwd(settings: Dict[str, Any], document: Optional[workspace.Document]) -> str:
+    """Returns cwd for the given settings and document."""
+    if settings["cwd"] == "${workspaceFolder}":
+        return settings["workspaceFS"]
+
+    if settings["cwd"] == "${fileDirname}":
+        if document is not None:
+            return os.fspath(pathlib.Path(document.path).parent)
+        return settings["workspaceFS"]
+
+    return settings["cwd"]
+
+
+def _check_project():
+    """This was a workaround because the server.workspace.root_path is not available at __init__ time.
+    Ideally there should be some place to inject this logic after client send back the information.
+    For now this function will be triggered for every LSP feature"""
+    LSP_SERVER._set_project_with_workspace()
+
+
+def log_for_lsp_debug(msg: str):
+    """The log_to_output is too verbose for now, once the LSP is stable these log should
+    be removed. Default level set as warning otherwise user cannot see the log and report
+    back easily without touching configuration.
+    """
+    logger.warning(f"Kedro LSP: {msg}")
+
+
 def _is_pipeline(uri):
     from pathlib import Path
 
@@ -596,6 +596,7 @@ def _is_pipeline(uri):
 
 
 ### End of  kedro-lsp
+
 
 # *****************************************************
 # Logging and notification.

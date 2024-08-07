@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-import { selectEnvironment } from './common/commands';
+import { selectEnvironment, executeServerCommand } from './common/commands';
 import * as vscode from 'vscode';
-import { LanguageClient } from 'vscode-languageclient/node';
+import { LanguageClient, LanguageClientOptions, ServerOptions, State, integer } from 'vscode-languageclient/node';
+
 import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
 import {
     checkVersion,
@@ -25,12 +26,20 @@ import { createOutputChannel, onDidChangeConfiguration, registerCommand } from '
 import KedroVizPanel from './webview/vizWebView';
 
 let lsClient: LanguageClient | undefined;
+let logger: vscode.LogOutputChannel;
+
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     // This is required to get server name and module. This should be
     // the first thing that we do in this extension.
     const serverInfo = loadServerDefaults();
     const serverName = serverInfo.name;
     const serverId = serverInfo.module;
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('pygls.server.executeCommand', async () => {
+            await executeServerCommand(lsClient);
+        }),
+    );
 
     // List of commands
     const CMD_RESTART_SERVER = `${serverId}.restart`;

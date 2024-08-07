@@ -144,6 +144,11 @@
         },
         "commands": [
             {
+                "command": "pygls.server.executeCommand",
+                "title": "Execute Command",
+                "category": "pygls"
+            },
+            {
                 "title": "Restart Server",
                 "category": "kedro",
                 "command": "kedro.restart"
@@ -173,6 +178,7 @@
     "dependencies": {
         "@vscode/python-extension": "^1.0.5",
         "fs-extra": "^11.2.0",
+        "tsc-watch": "^6.2.0",
         "vscode-languageclient": "^8.1.0"
     },
     "devDependencies": {

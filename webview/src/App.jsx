@@ -6,6 +6,7 @@ const vscodeApi = window.acquireVsCodeApi();
 
 function App() {
   const [theme, setTheme] = React.useState("dark");
+  const [data, setData] = React.useState(spaceflights);
 
   useEffect(() => {
     // Handle messages sent from the extension to the webview
@@ -15,6 +16,9 @@ function App() {
       switch (message.command) {
         case "updateTheme":
           setTheme(message.theme);
+          break;
+        case "updateData":
+          setData(JSON.parse(message.data));
           break;
         default:
           break;  
@@ -37,7 +41,7 @@ function App() {
   return (
     <div style={{ height: `90vh`, width: `100%` }}>
       <KedroViz
-        data={spaceflights}
+        data={data}
         options={{
           display: {
             globalNavigation: false,

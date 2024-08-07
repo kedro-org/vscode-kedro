@@ -23,6 +23,7 @@ import { loadServerDefaults } from './common/setup';
 import { getLSClientTraceLevel, getProjectRoot } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import KedroVizPanel from './webview/vizWebView';
+import { runKedroViz } from './webview/commands';
 
 let lsClient: LanguageClient | undefined;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -67,6 +68,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             }
         }),
     );
+
+    context.subscriptions.push(vscode.commands.registerCommand('kedro.runCommand', runKedroViz));
 
     // Log Server information
     traceLog(`Name: ${serverInfo.name}`);

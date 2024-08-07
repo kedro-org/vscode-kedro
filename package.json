@@ -167,6 +167,11 @@
                 "command": "kedro.updateTheme",
                 "category": "kedro",
                 "title": "Update Theme"
+            },
+            {
+                "command": "kedro.runCommand",
+                "category": "kedro",
+                "title": "Run Command"
             }
         ]
     },

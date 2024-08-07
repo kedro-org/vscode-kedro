@@ -65,8 +65,8 @@ from pygls.workspace import TextDocument
 
 """Kedro Language Server."""
 # todo: we should either investigate why logging interact with lsp or find a better way.
+# Need to stop kedro.framework.project.LOGGING from changing logging settings, otherwise pygls fails with unknown reason.
 import os
-
 os.environ["KEDRO_LOGGING_CONFIG"] = str(Path(__file__).parent / "dummy_logging.yml")
 
 from typing import List
@@ -82,7 +82,6 @@ from kedro.framework.startup import (
 )
 from pygls.server import LanguageServer
 
-# Need to stop kedro.framework.project.LOGGING from changing logging settings, otherwise pygls fails with unknown reason.
 
 
 class KedroLanguageServer(LanguageServer):

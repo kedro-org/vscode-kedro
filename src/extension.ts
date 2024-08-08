@@ -22,6 +22,7 @@ import {
 import { loadServerDefaults } from './common/setup';
 import { getLSClientTraceLevel, getProjectRoot } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
+import { createStatusBar } from './common/status_bar';
 
 let lsClient: LanguageClient | undefined;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -34,6 +35,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // List of commands
     const CMD_RESTART_SERVER = `${serverId}.restart`;
     const CMD_SELECT_ENV = `${serverId}.selectEnvironment`;
+
+    // Status Bar
+    const statusBarItem = await createStatusBar(CMD_SELECT_ENV, serverId);
 
     // Setup logging
     const outputChannel = createOutputChannel(serverName);
@@ -91,20 +95,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         );
     };
 
-    // Create a status bar item
-    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    statusBarItem.command = CMD_SELECT_ENV;
-    // https://code.visualstudio.com/api/references/vscode-api#WorkspaceConfiguration
-    const projectRoot = await getProjectRoot();
-    const workspaceSetting = await getWorkspaceSettings(serverId, projectRoot, true);
-    let environment = 'base'; // todo: Assume base, better to take this from server as it could be changed in project settings.
 
-    if (workspaceSetting.environment) {
-        environment = workspaceSetting.environment;
-    }
-
-    statusBarItem.text = `$(kedro-logo) ${environment}`;
-    statusBarItem.show();
     context.subscriptions.push(statusBarItem);
 
     context.subscriptions.push(

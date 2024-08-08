@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-import { selectEnvironment } from './common/commands';
 import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
+import { selectEnvironment } from './common/commands';
 import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
 import {
     checkVersion,
@@ -12,17 +12,11 @@ import {
     resolveInterpreter,
 } from './common/python';
 import { restartServer } from './common/server';
-import {
-    checkIfConfigurationChanged,
-    getExtensionSettings,
-    getGlobalSettings,
-    getInterpreterFromSetting,
-    getWorkspaceSettings,
-} from './common/settings';
+import { checkIfConfigurationChanged, getInterpreterFromSetting } from './common/settings';
 import { loadServerDefaults } from './common/setup';
-import { getLSClientTraceLevel, getProjectRoot } from './common/utilities';
-import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import { createStatusBar } from './common/status_bar';
+import { getLSClientTraceLevel } from './common/utilities';
+import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 
 let lsClient: LanguageClient | undefined;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -32,12 +26,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const serverName = serverInfo.name;
     const serverId = serverInfo.module;
 
+    // Log Server information
+    traceLog(`Name: ${serverInfo.name}`);
+    traceLog(`Module: ${serverInfo.module}`);
+    traceVerbose(`Full Server Info: ${JSON.stringify(serverInfo)}`);
+
     // List of commands
     const CMD_RESTART_SERVER = `${serverId}.restart`;
     const CMD_SELECT_ENV = `${serverId}.selectEnvironment`;
 
     // Status Bar
     const statusBarItem = await createStatusBar(CMD_SELECT_ENV, serverId);
+    context.subscriptions.push(statusBarItem);
 
     // Setup logging
     const outputChannel = createOutputChannel(serverName);
@@ -56,11 +56,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             await changeLogLevel(outputChannel.logLevel, e);
         }),
     );
-
-    // Log Server information
-    traceLog(`Name: ${serverInfo.name}`);
-    traceLog(`Module: ${serverInfo.module}`);
-    traceVerbose(`Full Server Info: ${JSON.stringify(serverInfo)}`);
 
     const runServer = async (selectedEnvironment?: vscode.QuickPickItem) => {
         const interpreter = getInterpreterFromSetting(serverId);
@@ -94,9 +89,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 'Please use Python 3.8 or greater.',
         );
     };
-
-
-    context.subscriptions.push(statusBarItem);
 
     context.subscriptions.push(
         onDidChangePythonInterpreter(async () => {

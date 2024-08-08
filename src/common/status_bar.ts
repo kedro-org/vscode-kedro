@@ -1,9 +1,8 @@
 import * as vscode from 'vscode';
-import {getProjectRoot } from './utilities';
 import {
-
     getWorkspaceSettings,
 } from './settings';
+import { getProjectRoot } from './utilities';
 
 export async function createStatusBar(commandName: string, serverId:string): Promise<vscode.StatusBarItem>{
     // Create a status bar item

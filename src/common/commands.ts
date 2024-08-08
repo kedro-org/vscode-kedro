@@ -1,5 +1,5 @@
-import { QuickPickItem, window } from 'vscode';
 import * as fs from 'fs';
+import { QuickPickItem, window } from 'vscode';
 import { getWorkspaceFolders } from './vscodeapi';
 
 export async function selectEnvironment() {

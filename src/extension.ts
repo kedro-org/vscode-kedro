@@ -23,9 +23,11 @@ import { loadServerDefaults } from './common/setup';
 import { getLSClientTraceLevel, getProjectRoot } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import KedroVizPanel from './webview/vizWebView';
-import { runKedroViz } from './webview/commands';
+import { runKedroVizServer } from './webview/vizServer';
 
 let lsClient: LanguageClient | undefined;
+let kedroVizProcess: any;
+
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     // This is required to get server name and module. This should be
     // the first thing that we do in this extension.
@@ -68,8 +70,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             }
         }),
     );
-
-    context.subscriptions.push(vscode.commands.registerCommand('kedro.runCommand', runKedroViz));
 
     // Log Server information
     traceLog(`Name: ${serverInfo.name}`);
@@ -148,6 +148,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     setImmediate(async () => {
         const interpreter = getInterpreterFromSetting(serverId);
+        kedroVizProcess = await runKedroVizServer();
         if (interpreter === undefined || interpreter.length === 0) {
             traceLog(`Python extension loading`);
             traceLog(`Python Interpreter: ${interpreter}`);
@@ -162,5 +163,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 export async function deactivate(): Promise<void> {
     if (lsClient) {
         await lsClient.stop();
+    }
+    if (kedroVizProcess) {
+        kedroVizProcess.kill();
     }
 }

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TextDocumentPositionParams } from 'vscode-languageclient';
+import { goToDefinition } from './goToDefinition';
 
 /**
  * Manages Kedro viz webview panels
@@ -66,49 +66,13 @@ export default class KedroVizPanel {
             async (message) => {
                 switch (message.command) {
                     case 'fromWebview':
-                        // vscode.window.showInformationMessage(`Message from webview: ${message.text}`);
-                        await this._goToDefinition(message.text);
+                        await goToDefinition(message.node);
                         return;
                 }
             },
             null,
             this._disposables,
         );
-    }
-
-    private async _goToDefinition(word: string): Promise<void> {
-        const files = await vscode.workspace.findFiles('**/*.yml'); // Adjust the glob pattern as needed
-
-        for (const file of files) {
-            const document = await vscode.workspace.openTextDocument(file);
-            const text = document.getText();
-            const regex = new RegExp(`\\b${word}\\b`, 'g');
-            let match;
-
-            while ((match = regex.exec(text)) !== null) {
-                const position = document.positionAt(match.index);
-                const params: TextDocumentPositionParams = {
-                    textDocument: { uri: document.uri.toString() },
-                    position,
-                };
-
-                const definitions = await vscode.commands.executeCommand<vscode.Location[]>(
-                    'vscode.executeDefinitionProvider',
-                    document.uri,
-                    position,
-                );
-
-                if (definitions && definitions.length > 0) {
-                    await vscode.window.showTextDocument(definitions[0].uri, {
-                        selection: definitions[0].range,
-                        viewColumn: vscode.ViewColumn.One,
-                    });
-                    return;
-                }
-            }
-        }
-
-        vscode.window.showInformationMessage(`No definition found for: ${word}`);
     }
 
     public updateTheme() {

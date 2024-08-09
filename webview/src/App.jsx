@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
-import "@quantumblack/kedro-viz/lib/styles/styles.min.css";
-import spaceflights from "@quantumblack/kedro-viz/lib/utils/data/spaceflights.mock.json";
-import KedroViz from "@quantumblack/kedro-viz";
+import "my-kviz/lib/styles/styles.min.css";
+import spaceflights from "my-kviz/lib/utils/data/spaceflights.mock.json";
+import KedroViz from "my-kviz";
 const vscodeApi = window.acquireVsCodeApi();
 
 function App() {
@@ -38,13 +38,27 @@ function App() {
     });
   };
 
+  const handleNodeClick = (node) => {
+    if (node) {
+      vscodeApi.postMessage({
+        command: "fromWebview",
+        node: {
+          type:node.type,
+          text:node.fullName
+        },
+      });
+    }
+  };
+
   return (
     <div style={{ height: `90vh`, width: `100%` }}>
       <KedroViz
         data={data}
+        onNodeClickCallback={handleNodeClick}
         options={{
           display: {
             globalNavigation: false,
+            metadataPanel: false,
             miniMap: false,
             sidebar: false,
           },

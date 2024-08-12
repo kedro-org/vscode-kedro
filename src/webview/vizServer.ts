@@ -24,7 +24,7 @@ export async function runKedroVizServer() {
     }
     const workspacePath = workspaceFolders[0].uri.fsPath;
 
-    const command = `${pythonPath} -m kedro viz --no-browser -a`;
+    const command = `${pythonPath} -m kedro viz --no-browser -a --port=3131`;
     const kedroVizProcess = exec(command, { cwd: workspacePath });
 
     kedroVizProcess.stdout.on('data', (data: any) => {

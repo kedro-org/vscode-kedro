@@ -69,7 +69,7 @@ export async function getProjectRoot(): Promise<WorkspaceFolder> {
 }
 
 export async function fetchAndUpdateProjectData(): Promise<void> {
-    fetch('http://127.0.0.1:4141/api/main')
+    fetch('http://127.0.0.1:3131/api/main')
         .then((response: { text: () => any }) => response.text())
         .then((data: string) => KedroVizPanel.currentPanel?.updateData(data))
         .catch((err: { message: string }) => console.error('Error: ' + err.message));

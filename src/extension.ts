@@ -59,7 +59,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     context.subscriptions.push(
         vscode.commands.registerCommand('kedro.runKedroViz', () => {
-            vscode.window.showInformationMessage('Run kedro viz');
             KedroVizPanel.createOrShow(context.extensionUri);
         }),
     );
@@ -96,9 +95,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         console.log(interpreterDetails);
         console.log('===============DEBUG============');
 
-        if (!kedroVizProcess) {
-            kedroVizProcess = await runKedroVizServer();
-        }
+        // Start kedro viz server
+        kedroVizProcess = await runKedroVizServer();
 
         if (interpreterDetails.path) {
             traceVerbose(`Using interpreter from Python extension: ${interpreterDetails.path.join(' ')}`);

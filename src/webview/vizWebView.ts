@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import fetch from 'node-fetch';
 import { goToDefinition } from './goToDefinition';
+import { fetchAndUpdateProjectData } from '../common/utilities';
 
 /**
  * Manages Kedro viz webview panels
@@ -34,11 +35,7 @@ export default class KedroVizPanel {
         });
 
         KedroVizPanel.currentPanel = new KedroVizPanel(panel, extensionUri);
-
-        fetch('http://127.0.0.1:4141/api/main')
-            .then((response: { text: () => any }) => response.text())
-            .then((data: string) => KedroVizPanel.currentPanel?.updateData(data))
-            .catch((err: { message: string }) => console.error('Error: ' + err.message));
+        fetchAndUpdateProjectData();
     }
 
     public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {

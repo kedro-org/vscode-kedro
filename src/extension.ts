@@ -95,6 +95,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         console.log('===============DEBUG============');
         console.log(interpreterDetails);
         console.log('===============DEBUG============');
+
+        if (!kedroVizProcess) {
+            kedroVizProcess = await runKedroVizServer();
+        }
+
         if (interpreterDetails.path) {
             traceVerbose(`Using interpreter from Python extension: ${interpreterDetails.path.join(' ')}`);
             lsClient = await restartServer(serverId, serverName, outputChannel, lsClient, env);
@@ -148,7 +153,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     setImmediate(async () => {
         const interpreter = getInterpreterFromSetting(serverId);
-        kedroVizProcess = await runKedroVizServer();
         if (interpreter === undefined || interpreter.length === 0) {
             traceLog(`Python extension loading`);
             traceLog(`Python Interpreter: ${interpreter}`);

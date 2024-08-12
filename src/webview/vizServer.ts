@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { fetchAndUpdateProjectData } from '../common/utilities';
 const { exec } = require('child_process');
 
 async function getActivePythonInterpreter(): Promise<string | undefined> {
@@ -31,14 +32,11 @@ export async function runKedroVizServer() {
     if (!workspacePath) return;
 
     const command = `${pythonPath} -m kedro viz --no-browser -a`;
+    const kedroVizProcess = exec(command, { cwd: workspacePath });
 
-    // Execute the command with cwd set to the current workspace path
-    const kedroVizProcess = exec(command, { cwd: workspacePath }, (error: any, stdout: any, stderr: any) => {
-        if (error) {
-            vscode.window.showErrorMessage(`Error: ${stderr}`);
-            return;
-        }
-        vscode.window.showInformationMessage(`Output: ${stdout}`);
+    kedroVizProcess.stdout.on('data', (data: any) => {
+        console.log('Kedro Viz: ', data);
+        fetchAndUpdateProjectData();
     });
 
     return kedroVizProcess;

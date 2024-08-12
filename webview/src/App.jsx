@@ -1,24 +1,25 @@
 import React, { useEffect } from "react";
 import "my-kviz/lib/styles/styles.min.css";
-import spaceflights from "my-kviz/lib/utils/data/spaceflights.mock.json";
 import KedroViz from "my-kviz";
 const vscodeApi = window.acquireVsCodeApi();
 
 function App() {
   const [theme, setTheme] = React.useState("dark");
-  const [data, setData] = React.useState(spaceflights);
+  const [data, setData] = React.useState({ nodes: [], edges: [] });
+  const [loading, setLoading] = React.useState(true);
 
   useEffect(() => {
     // Handle messages sent from the extension to the webview
     window.addEventListener("message", (event) => {
       console.log("Received message from extension", event);
-      const message = event.data; // The json data that the extension sent
+      const message = event.data;
       switch (message.command) {
         case "updateTheme":
           setTheme(message.theme);
           break;
         case "updateData":
           setData(JSON.parse(message.data));
+          setLoading(false);
           break;
         default:
           break;  
@@ -30,13 +31,6 @@ function App() {
     };
 
   }, [theme]);
-
-  const sendMessageToExtension = () => {
-    vscodeApi.postMessage({
-      command: "fromWebview",
-      text: "prm_spine_table",
-    });
-  };
 
   const handleNodeClick = (node) => {
     if (node) {
@@ -51,27 +45,25 @@ function App() {
   };
 
   return (
-    <div style={{ height: `90vh`, width: `100%` }}>
-      <KedroViz
-        data={data}
-        onNodeClickCallback={handleNodeClick}
-        options={{
-          display: {
-            globalNavigation: false,
-            metadataPanel: false,
-            miniMap: false,
-            sidebar: false,
-          },
-          layer: {visible: false},
-          theme: theme,
-        }}
-      />
-      <button
-        style={{ position: "absolute", zIndex: 999, top: 0 }}
-        onClick={sendMessageToExtension}
-      >
-      Goto: "prm_spine_table"
-      </button>
+      <div style={{ height: `90vh`, width: `100%` }}>
+        {loading ? (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: `100vh` }}>
+            <h2>Loading Kedro Viz...</h2>
+          </div>
+        ) : (<KedroViz
+          data={data}
+          onNodeClickCallback={handleNodeClick}
+          options={{
+            display: {
+              globalNavigation: false,
+              metadataPanel: false,
+              miniMap: false,
+              sidebar: false,
+            },
+            layer: {visible: false},
+            theme: theme,
+          }}
+        />)}
     </div>
   );
 }

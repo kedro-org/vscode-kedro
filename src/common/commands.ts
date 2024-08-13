@@ -60,27 +60,39 @@ export async function executeServerCommand(lsClient: LanguageClient | undefined)
     logger.info(`${commandName} result: ${JSON.stringify(result, undefined, 2)}`);
 }
 
+export async function executeServerDefinitionCommand(lsClient: LanguageClient | undefined) {
+    if (!lsClient || lsClient.state !== State.Running) {
+        await vscode.window.showErrorMessage('There is no language server running.');
+        return;
+    }
+    if (!lsClient.initializeResult) {
+        await vscode.window.showErrorMessage('The Language Server fail to initialise.');
+        return;
+    }
 
+    const commandName = 'kedro.goToDefinitionFromFlowchart';
 
-export async function sendDefinitionRequest(lsClient: LanguageClient | undefined) {
-    lsClient?.sendRequest("textDocument/definition",
-        // {
-        //     'uri': 'dummy',
-        //     'languageId': 'dummy',
-        //     'version': 1,
-        //     'text': 'companies',
-        //     // 'special': 'dummy'
-        // };
+    logger.info(`executing command: '${commandName}'`);
 
-
-        {
-            "textDocument": {
-                "uri": "file:///Users/Nok_Lam_Chan/dev/kedro/tmp/spaceflights/src/spaceflights/pipelines/data_science/pipeline.py"
-            },
-            "position": {
-                "line": 11,
-                "character": 29
-            }
-        }
+    const result: any[] | undefined = await vscode.commands.executeCommand(
+        commandName /* if your command accepts arguments you can pass them here */,
     );
+    logger.info(`${commandName} result: ${JSON.stringify(result, undefined, 2)}`);
+    if (result && result.length > 0) {
+        const location = result[0];
+        const uri: vscode.Uri = vscode.Uri.parse(location.uri);
+        const range = location.range;
+
+        vscode.window.showTextDocument(uri,
+            {
+                selection: range,
+                viewColumn: vscode.ViewColumn.One,
+            }
+        );
+
 }
+
+
+
+
+

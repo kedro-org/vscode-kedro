@@ -543,7 +543,7 @@ def _is_pipeline(uri):
 
 
 ###### Commands
-@LSP_SERVER.command("KedroGoToDefinitionFromFlowchart")
+@LSP_SERVER.command("kedro.goToDefinitionFromFlowchart")
 def definition_from_flowchart(ls, word):
     """Starts counting down and showing message synchronously.
     It will `block` the main thread, which can be tested by trying to show
@@ -551,23 +551,6 @@ def definition_from_flowchart(ls, word):
     """
     result = definition(LSP_SERVER, params=None, word="companies")
     return result
-    # Fake request as if it's a "textDocument/definition" type
-    method_name = "textDocument/definition"
-    handler = ls.lsp._get_handler(method_name)
-    ls.lsp._send_response(10, result)
-    # We don't want to process the request, we bypass the request and simply send response
-
-    # ls.send_request
-    # self._execute_request(msg_id, handler, params)
-    logger.warning("DEBUG*")
-    # COUNT_DOWN_START_IN_SECONDS = 10
-    # COUNT_DOWN_SLEEP_IN_SECONDS = 1
-    # import time
-
-    # for i in range(COUNT_DOWN_START_IN_SECONDS):
-    #     ls.show_message(f"Counting down... {COUNT_DOWN_START_IN_SECONDS - i}")
-    #     time.sleep(COUNT_DOWN_SLEEP_IN_SECONDS)
-
 
 ### End of  kedro-lsp
 

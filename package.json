@@ -155,7 +155,13 @@
                 "command": "pygls.server.executeCommand",
                 "title": "Execute Command",
                 "category": "pygls"
+            },
+            {
+                "title": "Send Definition Request",
+                "category": "kedro",
+                "command": "kedro.sendDefinitionRequest"
             }
+
         ]
     },
     "dependencies": {

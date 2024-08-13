@@ -543,7 +543,7 @@ def _is_pipeline(uri):
 
 
 ###### Commands
-@LSP_SERVER.command("Kedro_countDownBlocking")
+@LSP_SERVER.command("KedroGoToDefinitionFromFlowchart")
 def definition_from_flowchart(ls, word):
     """Starts counting down and showing message synchronously.
     It will `block` the main thread, which can be tested by trying to show

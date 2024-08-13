@@ -59,3 +59,28 @@ export async function executeServerCommand(lsClient: LanguageClient | undefined)
     );
     logger.info(`${commandName} result: ${JSON.stringify(result, undefined, 2)}`);
 }
+
+
+
+export async function sendDefinitionRequest(lsClient: LanguageClient | undefined) {
+    lsClient?.sendRequest("textDocument/definition",
+        // {
+        //     'uri': 'dummy',
+        //     'languageId': 'dummy',
+        //     'version': 1,
+        //     'text': 'companies',
+        //     // 'special': 'dummy'
+        // };
+
+
+        {
+            "textDocument": {
+                "uri": "file:///Users/Nok_Lam_Chan/dev/kedro/tmp/spaceflights/src/spaceflights/pipelines/data_science/pipeline.py"
+            },
+            "position": {
+                "line": 11,
+                "character": 29
+            }
+        }
+    );
+}

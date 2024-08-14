@@ -1,6 +1,6 @@
 {
-  "name": "kedro-viz-standalone",
-  "version": "0.1.0",
+  "name": "kedro-viz-Webview",
+  "version": "0.0.1",
   "private": true,
   "dependencies": {
     "my-kviz": "^0.0.1-alpha.1",

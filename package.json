@@ -2,7 +2,7 @@
     "name": "Kedro",
     "displayName": "Kedro",
     "description": "A Kedro VSCode Extension.",
-    "version": "0.1.0",
+    "version": "0.2.0-rc0",
     "preview": false,
     "serverInfo": {
         "name": "Kedro",

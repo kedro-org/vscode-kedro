@@ -549,7 +549,8 @@ def definition_from_flowchart(ls, word):
     It will `block` the main thread, which can be tested by trying to show
     completion items.
     """
-    result = definition(LSP_SERVER, params=None, word="companies")
+    word = word[0]
+    result = definition(LSP_SERVER, params=None, word=word)
     return result
 
 ### End of  kedro-lsp

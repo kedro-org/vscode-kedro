@@ -71,11 +71,15 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
     }
 
     const commandName = 'kedro.goToDefinitionFromFlowchart';
-
+    const target = await window.showInputBox({
+        placeHolder: 'Type the name of the dataset/parameters, i.e. companies',
+    });
     logger.info(`executing command: '${commandName}'`);
 
     const result: any[] | undefined = await vscode.commands.executeCommand(
-        commandName /* if your command accepts arguments you can pass them here */,
+        commandName,
+        /* if your command accepts arguments you can pass them here */
+        target
     );
     logger.info(`${commandName} result: ${JSON.stringify(result, undefined, 2)}`);
     if (result && result.length > 0) {
@@ -90,7 +94,7 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
             }
         );
 
-}
+    }
 
 
 

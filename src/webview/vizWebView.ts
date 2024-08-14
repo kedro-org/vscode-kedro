@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import fetch from 'node-fetch';
 import { goToDefinition } from './goToDefinition';
 import { fetchAndUpdateProjectData } from '../common/utilities';
+import { LanguageClient } from 'vscode-languageclient/node';
+import { executeServerDefinitionCommand } from '../common/commands';
 
 /**
  * Manages Kedro viz webview panels
@@ -19,7 +21,7 @@ export default class KedroVizPanel {
     private readonly _extensionUri: vscode.Uri;
     private _disposables: vscode.Disposable[] = [];
 
-    public static createOrShow(extensionUri: vscode.Uri) {
+    public static createOrShow(extensionUri: vscode.Uri, lsClient: LanguageClient | undefined) {
         const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
         // If we already have a panel, show it.
@@ -34,7 +36,7 @@ export default class KedroVizPanel {
             retainContextWhenHidden: true,
         });
 
-        KedroVizPanel.currentPanel = new KedroVizPanel(panel, extensionUri);
+        KedroVizPanel.currentPanel = new KedroVizPanel(panel, extensionUri, lsClient);
         fetchAndUpdateProjectData();
     }
 
@@ -42,7 +44,7 @@ export default class KedroVizPanel {
         KedroVizPanel.currentPanel = new KedroVizPanel(panel, extensionUri);
     }
 
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, lsClient?: LanguageClient) {
         this._panel = panel;
         this._extensionUri = extensionUri;
 
@@ -69,7 +71,11 @@ export default class KedroVizPanel {
             async (message) => {
                 switch (message.command) {
                     case 'fromWebview':
-                        await goToDefinition(message.node);
+                        if (message.node.type === 'data') {
+                            await executeServerDefinitionCommand(lsClient, message.node.text);
+                        } else {
+                            await goToDefinition(message.node);
+                        }
                         return;
                 }
             },

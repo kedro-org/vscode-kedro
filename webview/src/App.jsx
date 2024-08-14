@@ -4,7 +4,6 @@ import KedroViz from "my-kviz";
 const vscodeApi = window.acquireVsCodeApi();
 
 function App() {
-  const [theme, setTheme] = React.useState("dark");
   const [data, setData] = React.useState({ nodes: [], edges: [] });
   const [loading, setLoading] = React.useState(true);
 
@@ -14,9 +13,6 @@ function App() {
       console.log("Received message from extension", event);
       const message = event.data;
       switch (message.command) {
-        case "updateTheme":
-          setTheme(message.theme);
-          break;
         case "updateData":
           setData(JSON.parse(message.data));
           setLoading(false);
@@ -30,7 +26,7 @@ function App() {
       window.removeEventListener("message", () => {console.log("removed")});
     };
 
-  }, [theme]);
+  }, []);
 
   const handleNodeClick = (node) => {
     if (node) {
@@ -61,7 +57,6 @@ function App() {
               sidebar: false,
             },
             layer: {visible: false},
-            theme: theme,
           }}
         />)}
     </div>

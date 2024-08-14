@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-import { selectEnvironment } from './common/commands';
+import { selectEnvironment, executeServerCommand,  executeServerDefinitionCommand } from './common/commands';
 import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
@@ -85,9 +85,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
         traceError(
             'Python interpreter missing:\r\n' +
-                '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
-                `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
-                'Please use Python 3.8 or greater.',
+            '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
+            `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
+            'Please use Python 3.8 or greater.',
         );
     };
 
@@ -125,6 +125,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             if (result) {
                 statusBarItem.text = `$(kedro-logo)` + ' ' + result.label;
             }
+
+        }),
+        registerCommand('pygls.server.executeCommand', async () => {
+            await executeServerCommand(lsClient);
+        }),
+        registerCommand('kedro.sendDefinitionRequest', async () => {
+            await executeServerDefinitionCommand(lsClient);
         }),
     );
 

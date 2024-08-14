@@ -83,6 +83,7 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
     const result: any[] | undefined = await vscode.commands.executeCommand(
         commandName /* if your command accepts arguments you can pass them here */,
         target,
+
     );
     logger.info(`${commandName} result: ${JSON.stringify(result, undefined, 2)}`);
     if (result && result.length > 0) {

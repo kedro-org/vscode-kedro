@@ -62,13 +62,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             KedroVizPanel.createOrShow(context.extensionUri, lsClient);
         }),
     );
-    context.subscriptions.push(
-        vscode.commands.registerCommand('kedro.updateTheme', () => {
-            if (KedroVizPanel.currentPanel) {
-                KedroVizPanel.currentPanel.updateTheme();
-            }
-        }),
-    );
 
     // Log Server information
     traceLog(`Name: ${serverInfo.name}`);
@@ -96,6 +89,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         console.log('===============DEBUG============');
 
         // Start kedro viz server
+        if (kedroVizProcess) {
+            process.kill(-kedroVizProcess.pid);
+        }
         kedroVizProcess = await runKedroVizServer();
 
         if (interpreterDetails.path) {
@@ -173,6 +169,7 @@ export async function deactivate(): Promise<void> {
         await lsClient.stop();
     }
     if (kedroVizProcess) {
-        kedroVizProcess.kill();
+        process.kill(-kedroVizProcess.pid);
+        kedroVizProcess = null; // Reset the reference after killing the process
     }
 }

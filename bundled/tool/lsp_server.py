@@ -84,7 +84,7 @@ from kedro.framework.startup import (
 from pygls.server import LanguageServer
 
 from kedro_viz.server import load_and_populate_data
-from kedro_viz.api.rest.responses import get_json_data
+from kedro_viz.api.rest.responses import get_kedro_project_json_data
 
 class KedroLanguageServer(LanguageServer):
     """Store Kedro-specific information in the language server."""
@@ -562,7 +562,7 @@ def get_porject_data_from_viz(lsClient):
     data = None
     try:
         load_and_populate_data(Path.cwd())
-        data = get_json_data()
+        data = get_kedro_project_json_data()
         return data
     except Exception as e:
         print(f"An error occurred: {e}")

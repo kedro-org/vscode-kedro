@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
-import fetch from 'node-fetch';
 import { goToDefinition } from './goToDefinition';
-import { fetchAndUpdateProjectData } from '../common/utilities';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { executeServerDefinitionCommand } from '../common/commands';
 
@@ -37,7 +35,6 @@ export default class KedroVizPanel {
         });
 
         KedroVizPanel.currentPanel = new KedroVizPanel(panel, extensionUri, lsClient);
-        fetchAndUpdateProjectData();
     }
 
     public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
@@ -82,11 +79,6 @@ export default class KedroVizPanel {
             null,
             this._disposables,
         );
-    }
-
-    public updateTheme() {
-        // Send a message to the webview.
-        this._panel.webview.postMessage({ command: 'updateTheme', theme: 'light' });
     }
 
     public updateData(data: any) {

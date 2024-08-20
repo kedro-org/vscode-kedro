@@ -11,7 +11,8 @@ export async function goToDefinition(message: Message) {
     let filePattern = '**/*.yml';
 
     if (message.type === 'task') {
-        filePattern = '**/*.py';
+        // Looking only in pipelines folders
+        filePattern = '**/pipelines/**/*.py';
     }
 
     const files = await vscode.workspace.findFiles(filePattern);

@@ -6,7 +6,6 @@ import * as path from 'path';
 import { LogLevel, Uri, WorkspaceFolder } from 'vscode';
 import { Trace } from 'vscode-jsonrpc/node';
 import { getWorkspaceFolders } from './vscodeapi';
-import fetch from 'node-fetch';
 import KedroVizPanel from '../webview/vizWebView';
 
 function logLevelToTrace(logLevel: LogLevel): Trace {
@@ -66,11 +65,4 @@ export async function getProjectRoot(): Promise<WorkspaceFolder> {
         }
         return rootWorkspace;
     }
-}
-
-export async function fetchAndUpdateProjectData(): Promise<void> {
-    fetch('http://127.0.0.1:3131/api/main')
-        .then((response: { text: () => any }) => response.text())
-        .then((data: string) => KedroVizPanel.currentPanel?.updateData(data))
-        .catch((err: { message: string }) => console.error('Error: ' + err.message));
 }

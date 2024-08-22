@@ -67,6 +67,7 @@ from pygls.workspace import TextDocument
 # todo: we should either investigate why logging interact with lsp or find a better way.
 # Need to stop kedro.framework.project.LOGGING from changing logging settings, otherwise pygls fails with unknown reason.
 import os
+
 os.environ["KEDRO_LOGGING_CONFIG"] = str(Path(__file__).parent / "dummy_logging.yml")
 
 from typing import List
@@ -81,7 +82,6 @@ from kedro.framework.startup import (
     bootstrap_project,
 )
 from pygls.server import LanguageServer
-
 
 
 class KedroLanguageServer(LanguageServer):
@@ -262,51 +262,71 @@ def _get_param_location(
 
 @LSP_SERVER.feature(TEXT_DOCUMENT_DEFINITION)
 def definition(
-    server: KedroLanguageServer, params: TextDocumentPositionParams
+    server: KedroLanguageServer, params: TextDocumentPositionParams, word=None
 ) -> Optional[List[Location]]:
     """Support Goto Definition for a dataset or parameter."""
     _check_project()
     if not server.is_kedro_project():
         return None
 
-    document: TextDocument = server.workspace.get_text_document(
-        params.text_document.uri
-    )
-    word = document.word_at_position(params.position, RE_START_WORD, RE_END_WORD)
-
-    log_for_lsp_debug(f"Query keyword for params: {word}")
-
-    if word.startswith("params:"):
-        param_location = _get_param_location(server.project_metadata, word)
-        if param_location:
-            log_for_lsp_debug(f"{param_location=}")
-            return [param_location]
-
-    catalog_paths = _get_conf_paths(server, "catalog")
-
-    catalog_word = document.word_at_position(params.position)
-    log_for_lsp_debug(f"Attempt to search `{catalog_word}` from catalog")
-    log_for_lsp_debug(f"{catalog_paths=}")
-    for catalog_path in catalog_paths:
-        log_for_lsp_debug(f"    {catalog_path=}")
-        catalog_conf = yaml.load(catalog_path.read_text(), Loader=SafeLineLoader)
-        if not catalog_conf:
-            continue
-        if word in catalog_conf:
-            line = catalog_conf[word]["__line__"]
-            location = Location(
-                uri=f"file://{catalog_path}",
-                range=Range(
-                    start=Position(line=line - 1, character=0),
-                    end=Position(
-                        line=line,
-                        character=0,
-                    ),
-                ),
+    def _query_parameter(document, word=None):
+        if not word:
+            word = document.word_at_position(
+                params.position, RE_START_WORD, RE_END_WORD
             )
-            log_for_lsp_debug(f"{location=}")
-            return [location]
 
+        log_for_lsp_debug(f"Query keyword for params: {word}")
+
+        if word.startswith("params:"):
+            param_location = _get_param_location(server.project_metadata, word)
+            if param_location:
+                log_for_lsp_debug(f"{param_location=}")
+                return [param_location]
+
+    def _query_catalog(document, word=None):
+        if not word:
+            word = document.word_at_position(params.position)
+        catalog_paths = _get_conf_paths(server, "catalog")
+        log_for_lsp_debug(f"Attempt to search `{word}` from catalog")
+        log_for_lsp_debug(f"{catalog_paths=}")
+
+        for catalog_path in catalog_paths:
+            log_for_lsp_debug(f"    {catalog_path=}")
+            catalog_conf = yaml.load(catalog_path.read_text(), Loader=SafeLineLoader)
+            if not catalog_conf:
+                continue
+            if word in catalog_conf:
+                line = catalog_conf[word]["__line__"]
+                location = Location(
+                    uri=f"file://{catalog_path}",
+                    range=Range(
+                        start=Position(line=line - 1, character=0),
+                        end=Position(
+                            line=line,
+                            character=0,
+                        ),
+                    ),
+                )
+                log_for_lsp_debug(f"{location=}")
+                return [location]
+
+    if params:
+        document: TextDocument = server.workspace.get_text_document(
+            params.text_document.uri
+        )
+    else:
+        document = None
+    result = _query_parameter(document, word)
+    if result:
+        return result
+    result = _query_catalog(document, word)
+    if result:
+        return result
+
+    # If no result, return current location
+    # This is a VSCode specific logic called Alternative Definition Command
+    # By default, it triggers Go to Reference so it supports using mouse click for both directions
+    # from pipline to config and config to pipeline
     uri = params.text_document.uri
     pos = params.position
     curr_pos = Position(line=pos.line, character=pos.character)
@@ -521,6 +541,17 @@ def _is_pipeline(uri):
         return True
     return False
 
+
+###### Commands
+@LSP_SERVER.command("kedro.goToDefinitionFromFlowchart")
+def definition_from_flowchart(ls, word):
+    """Starts counting down and showing message synchronously.
+    It will `block` the main thread, which can be tested by trying to show
+    completion items.
+    """
+    word = word[0]
+    result = definition(LSP_SERVER, params=None, word=word)
+    return result
 
 ### End of  kedro-lsp
 

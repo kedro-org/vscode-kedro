@@ -1,5 +1,10 @@
 # Change Log
 
+
+# 0.2.0
+- Changed default run environment to `local` to align with Kedro.
+- Changed the select environment action to update the run environment instead of base.
+
 # 0.1.0
 - Expanded pipeline discovery to support `*pipeline*.py` patterns and improved handling of nested subdirectories.
 - Add new extension setting `Kedro: Environment` to change the configuration environment.

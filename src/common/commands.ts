@@ -1,6 +1,7 @@
-import { QuickPickItem, window } from 'vscode';
 import * as fs from 'fs';
+import { QuickPickItem, window } from 'vscode';
 import * as vscode from 'vscode';
+
 import { getWorkspaceFolders } from './vscodeapi';
 import { LanguageClient, LanguageClientOptions, ServerOptions, State, integer } from 'vscode-languageclient/node';
 export async function selectEnvironment() {
@@ -97,3 +98,4 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
         });
     }
 }
+

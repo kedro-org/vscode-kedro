@@ -19,7 +19,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: $GITHUB_BASE_REF
+          ref: ${{ inputs.branch }}
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

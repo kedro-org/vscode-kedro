@@ -11,6 +11,8 @@ build:
 
 dev-install:
 	npm install
+	npm run install:webview
+	npm run build:webview
 	pip install uv
 	uv pip install --system -r dev-requirements.txt
 	nox --session build_package

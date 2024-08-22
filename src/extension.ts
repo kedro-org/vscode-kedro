@@ -97,7 +97,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // https://code.visualstudio.com/api/references/vscode-api#WorkspaceConfiguration
     const projectRoot = await getProjectRoot();
     const workspaceSetting = await getWorkspaceSettings(serverId, projectRoot, true);
-    let environment = 'local'; // todo: Assume base, better to take this from server as it could be changed in project settings.
+    let environment = 'local';
 
     if (workspaceSetting.environment) {
         environment = workspaceSetting.environment;

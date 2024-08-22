@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-import { selectEnvironment, executeServerCommand,  executeServerDefinitionCommand } from './common/commands';
 import * as vscode from 'vscode';
+import { selectEnvironment, executeServerCommand, executeServerDefinitionCommand } from './common/commands';
 import { LanguageClient } from 'vscode-languageclient/node';
-import { selectEnvironment } from './common/commands';
 import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
 import {
     checkVersion,

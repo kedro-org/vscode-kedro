@@ -96,8 +96,4 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
         );
 
     }
-
-
-
-
-
+}

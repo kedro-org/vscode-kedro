@@ -93,10 +93,7 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
                 viewColumn: vscode.ViewColumn.One,
             }
         );
-
     }
-
-
-
+}
 
 

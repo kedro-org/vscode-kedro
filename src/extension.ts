@@ -85,9 +85,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
         traceError(
             'Python interpreter missing:\r\n' +
-                '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
-                `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
-                'Please use Python 3.8 or greater.',
+            '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
+            `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
+            'Please use Python 3.8 or greater.',
         );
     };
 
@@ -97,7 +97,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // https://code.visualstudio.com/api/references/vscode-api#WorkspaceConfiguration
     const projectRoot = await getProjectRoot();
     const workspaceSetting = await getWorkspaceSettings(serverId, projectRoot, true);
-    let environment = 'base'; // todo: Assume base, better to take this from server as it could be changed in project settings.
+    let environment = 'local'; // todo: Assume base, better to take this from server as it could be changed in project settings.
 
     if (workspaceSetting.environment) {
         environment = workspaceSetting.environment;

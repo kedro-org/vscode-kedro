@@ -31,6 +31,11 @@ import KedroVizPanel from './webview/vizWebView';
 
 let lsClient: LanguageClient | undefined;
 
+export async function getlsClient() {
+    return lsClient;
+}
+
+
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     // This is required to get server name and module. This should be
     // the first thing that we do in this extension.
@@ -62,7 +67,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     context.subscriptions.push(
         vscode.commands.registerCommand('kedro.runKedroViz', async () => {
-            KedroVizPanel.createOrShow(context.extensionUri, lsClient);
+            KedroVizPanel.createOrShow(context.extensionUri);
             const projectData = await executeGetProjectDataCommand(lsClient);
             KedroVizPanel.currentPanel?.updateData(projectData);
         }),
@@ -101,9 +106,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
         traceError(
             'Python interpreter missing:\r\n' +
-                '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
-                `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
-                'Please use Python 3.8 or greater.',
+            '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
+            `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
+            'Please use Python 3.8 or greater.',
         );
     };
 
@@ -145,8 +150,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         registerCommand('pygls.server.executeCommand', async () => {
             await executeServerCommand(lsClient);
         }),
-        registerCommand('kedro.sendDefinitionRequest', async () => {
-            await executeServerDefinitionCommand(lsClient);
+        registerCommand('kedro.sendDefinitionRequest', async (word) => {
+            await executeServerDefinitionCommand(lsClient, word);
         }),
     );
 

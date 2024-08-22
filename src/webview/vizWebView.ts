@@ -19,7 +19,7 @@ export default class KedroVizPanel {
     private readonly _extensionUri: vscode.Uri;
     private _disposables: vscode.Disposable[] = [];
 
-    public static createOrShow(extensionUri: vscode.Uri, lsClient: LanguageClient | undefined) {
+    public static createOrShow(extensionUri: vscode.Uri) {
         const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
         // If we already have a panel, show it.
@@ -34,14 +34,14 @@ export default class KedroVizPanel {
             retainContextWhenHidden: true,
         });
 
-        KedroVizPanel.currentPanel = new KedroVizPanel(panel, extensionUri, lsClient);
+        KedroVizPanel.currentPanel = new KedroVizPanel(panel, extensionUri);
     }
 
     public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
         KedroVizPanel.currentPanel = new KedroVizPanel(panel, extensionUri);
     }
 
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, lsClient?: LanguageClient) {
+    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
         this._panel = panel;
         this._extensionUri = extensionUri;
 
@@ -69,7 +69,8 @@ export default class KedroVizPanel {
                 switch (message.command) {
                     case 'fromWebview':
                         if (message.node.type === 'data') {
-                            await executeServerDefinitionCommand(lsClient, message.node.text);
+                            // await executeServerDefinitionCommand(getlsClient(), message.node.text);
+                            await vscode.commands.executeCommand('kedro.sendDefinitionRequest', message.node.text)
                         } else {
                             await goToDefinition(message.node);
                         }

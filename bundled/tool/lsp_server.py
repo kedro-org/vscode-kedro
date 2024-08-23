@@ -83,7 +83,7 @@ from kedro.framework.startup import (
 )
 from pygls.server import LanguageServer
 
-from kedro_viz.server import load_and_populate_data
+from kedro_viz.load_data import load_and_populate_data
 from kedro_viz.api.rest.responses import get_kedro_project_json_data
 
 class KedroLanguageServer(LanguageServer):

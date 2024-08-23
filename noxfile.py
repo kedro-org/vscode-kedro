@@ -24,6 +24,17 @@ def _install_bundle(session: nox.Session) -> None:
         "./requirements.txt",
     )
 
+    session.install(
+        "-t",
+        "./bundled/libs",
+        "--no-cache-dir",
+        "--implementation",
+        "py",
+        "--no-deps",
+        "--upgrade",
+        "/path/to/kedro-viz/package",
+    )    
+
 
 def _check_files(names: List[str]) -> None:
     root_dir = pathlib.Path(__file__).parent

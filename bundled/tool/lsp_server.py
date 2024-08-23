@@ -115,21 +115,20 @@ class KedroLanguageServer(LanguageServer):
             context = session.load_context()
             config_loader: OmegaConfigLoader = context.config_loader
             # context.env is set when KEDRO_ENV or kedro run --env is set
-            conf_env = context.env if context.env else config_loader.base_env
-            base_path = str(Path(config_loader.conf_source) / conf_env)
+            run_env = context.env if context.env else config_loader.default_run_env
 
         except RuntimeError as e:
             log_for_lsp_debug(str(e))
             project_metadata = None
             context = None
             config_loader = None
-            base_path = None
+            run_env = None
         finally:
             self.project_metadata = project_metadata
             self.context = context
             self.config_loader = config_loader
             self.dummy_catalog = self._get_dummy_catalog()
-            self.base_path = base_path
+            self.run_env = run_env
 
     def _get_dummy_catalog(self):
         # '**/catalog*' reads modular pipeline configs
@@ -196,10 +195,11 @@ def _get_conf_paths(server: KedroLanguageServer, key):
         A set of configuration paths.
 
     """
-    config_loader: OmegaConfigLoader = LSP_SERVER.config_loader
+    config_loader: OmegaConfigLoader = server.config_loader
     patterns = config_loader.config_patterns.get(key, [])
-    default_run_env = str(
-        Path(config_loader.conf_source) / config_loader.default_run_env
+    # By default is local
+    run_env = str(
+        Path(config_loader.conf_source) / server.run_env
     )
     base_env = str(Path(config_loader.conf_source) / config_loader.base_env)
 
@@ -209,7 +209,7 @@ def _get_conf_paths(server: KedroLanguageServer, key):
     # That is, if a config is found in both environment, the LSP should return the default_run_env one.
     # The LSP start searching in default_run_env first, if there is match it will end eagerly.
 
-    for base_path in [default_run_env, base_env]:
+    for base_path in [run_env, base_env]:
         tmp_paths = []
         for pattern in patterns:
             for each in config_loader._fs.glob(

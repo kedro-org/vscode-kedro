@@ -1,5 +1,10 @@
 # Change Log
 
+
+# 0.2.0
+- `Select Environment` actions now update the run environment instead of base.
+- Modified status bar to show both environments, i.e.`base + local`, and `base` is no longer selectable.
+
 # 0.1.0
 - Expanded pipeline discovery to support `*pipeline*.py` patterns and improved handling of nested subdirectories.
 - Add new extension setting `Kedro: Environment` to change the configuration environment.

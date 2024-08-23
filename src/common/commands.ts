@@ -14,10 +14,10 @@ export async function selectEnvironment() {
         .filter((dirent) => dirent.isDirectory())
         .map((dirent) => dirent.name);
 
-    const envs: QuickPickItem[] = directories.map((label) => ({ label }));
+    const envs: QuickPickItem[] = directories.filter(dir => dir !== 'base').map((label) => ({ label }));
 
     const result = await window.showQuickPick(envs, {
-        placeHolder: 'Select Kedro base environment',
+        placeHolder: 'Select Kedro runtime environment',
     });
 
     return result;

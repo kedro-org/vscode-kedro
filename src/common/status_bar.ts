@@ -17,7 +17,7 @@ export async function createStatusBar(commandName: string, serverId: string): Pr
         environment = workspaceSetting.environment;
     }
 
-    statusBarItem.text = `$(kedro-logo) ${environment}`;
+    statusBarItem.text = `$(kedro-logo) base + ${environment}`;
     statusBarItem.show();
     return statusBarItem;
 }

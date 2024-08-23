@@ -2,8 +2,8 @@
 
 
 # 0.2.0
-- Changed default run environment to `local` to align with Kedro.
-- Changed the select environment action to update the run environment instead of base.
+- `Select Environment` actions now update the run environment instead of base.
+- Modified status bar to show both environments, i.e.`base + local`, and `base` is no longer selectable.
 
 # 0.1.0
 - Expanded pipeline discovery to support `*pipeline*.py` patterns and improved handling of nested subdirectories.

@@ -61,7 +61,7 @@ export async function executeServerCommand(lsClient: LanguageClient | undefined)
     logger.info(`${commandName} result: ${JSON.stringify(result, undefined, 2)}`);
 }
 
-export async function executeServerDefinitionCommand(lsClient: LanguageClient | undefined) {
+export async function executeServerDefinitionCommand(lsClient: LanguageClient | undefined, word?: string | undefined) {
     if (!lsClient || lsClient.state !== State.Running) {
         await vscode.window.showErrorMessage('There is no language server running.');
         return;
@@ -72,15 +72,19 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
     }
 
     const commandName = 'kedro.goToDefinitionFromFlowchart';
-    const target = await window.showInputBox({
-        placeHolder: 'Type the name of the dataset/parameters, i.e. companies',
-    });
+    let target: any = word;
+    if (!target) {
+        target = await window.showInputBox({
+            placeHolder: 'Type the name of the dataset/parameters, i.e. companies',
+        });
+    }
+
     logger.info(`executing command: '${commandName}'`);
 
     const result: any[] | undefined = await vscode.commands.executeCommand(
-        commandName,
-        /* if your command accepts arguments you can pass them here */
-        target
+        commandName /* if your command accepts arguments you can pass them here */,
+        target,
+
     );
     logger.info(`${commandName} result: ${JSON.stringify(result, undefined, 2)}`);
     if (result && result.length > 0) {
@@ -88,12 +92,10 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
         const uri: vscode.Uri = vscode.Uri.parse(location.uri);
         const range = location.range;
 
-        vscode.window.showTextDocument(uri,
-            {
-                selection: range,
-                viewColumn: vscode.ViewColumn.One,
-            }
-        );
+        vscode.window.showTextDocument(uri, {
+            selection: range,
+            viewColumn: vscode.ViewColumn.One,
+        });
     }
 }
 

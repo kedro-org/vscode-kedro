@@ -11,18 +11,7 @@
 
 
 # Overview
-
-This extension includes two components:
-- [Overview](#overview)
-- [Supported Feature](#supported-feature)
-- [Completion Provider](#completion-provider)
-  - [Backend LSP Server](#backend-lsp-server)
-  - [Client](#client)
-    - [Dataset YAML schema validation](#dataset-yaml-schema-validation)
-    - [User environment](#user-environment)
-- [todo](#todo)
-    - [lsp\_server.py](#lsp_serverpy)
-- [Questions](#questions)
+This extension includes two components
 
 # Supported Feature
 - Cmd + Click (pipeline.py -> catalog.yml or parameters.yml)
@@ -61,6 +50,40 @@ The extension requires loading a Kedro project instead of just parsing configura
 - To support environment resolution. i.e. user can have `base`, `local`, `prod`. The extension need to know which environment the user is using in order to resolve properly.
 
 todo: On the other hand, it's a heavy requirement for LSP to load a kedro project, this may also trigger connections with hooks etc and it should be avoided.
+
+
+# Webview
+The webview component is used to render the Kedro visualization within the VS Code extension. It is implemented using React and is bundled separately from the main extension code.
+
+## Components
+
+### KedroVizPanel
+The `KedroVizPanel` class in [`src/webview/vizWebView.ts`](src/webview/vizWebView.ts) manages the webview panels. It includes methods to set up the HTML content for the webview, update the data, and handle theme changes.
+
+- `_getHtmlForWebview(webview: vscode.Webview)`: Generates the HTML content for the webview, including linking to the necessary JavaScript and CSS files.
+- `updateData(data: any)`: Sends a message to the webview to update the data.
+
+### App
+The `App` component in [`webview/src/App.jsx`](webview/src/App.jsx) is the main React component rendered in the webview. It uses the `KedroViz` library to display the visualization.
+
+- `vscodeApi`: Acquires the VS Code API to communicate between the webview and the extension with `postMessage`.
+- `onActionCallback`: Callback function to be invoked when the specified action is dispatched from Kedro-Viz e.g. `const action = { type: NODE_CLICK, payload: node }; onActionCallback(action);`
+
+## Data fetching
+
+We are using the VSCode API (`vscode.commands.executeCommand`) to run the LSP server command, which in turn uses the Kedro-Viz Python package to fetch Kedro project JSON data. This data is then rendered as a flowchart in the webview managed by the `KedroVizPanel` class in [`src/webview/vizWebView.ts`](src/webview/vizWebView.ts).
+
+
+## Build and Bundle
+
+- Configuration: The webview component is built and bundled using Vite, a modern frontend build tool. The configuration for Vite is defined in [`webview/vite.config.js`](webview/vite.config.js).
+- Entry Point: The main entry point for the webview is [`webview/src/index.jsx`](webview/src/index.jsx).
+- Install Commands: Installation of React App dependencies is managed by scripts in the root `package.json`
+    - `npm run install:webview`: Installs the webview dependencies.
+- Build Commands: The build process is managed by scripts in the root `package.json`
+    - `npm run build:webview`: Builds the webview using Vite.
+- Output: The build output is configured to be in the `dist` directory with assets in dist/assets
+- Integration: The built assets are integrated into the webview by the `_getHtmlForWebview` method in [`src/webview/vizWebView.ts`](src/webview/vizWebView.ts).
 
 # todo
 - [] Static validation of `catalog.yml` against a defined JSON schema (planning to experiment with the JSON `kedro` provide and move that to `kedro-datasets` so it can supported different version easily)

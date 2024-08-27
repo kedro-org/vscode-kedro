@@ -11,8 +11,8 @@
 # Required packages
 pygls
 packaging
-aiofiles>=22.1.0
 networkx>=2.5
-pydantic>=2.0.0        
+sqlalchemy>=1.4, <3
+fastapi>=0.100.0,<0.200.0
 
 # TODO: Add your tool here

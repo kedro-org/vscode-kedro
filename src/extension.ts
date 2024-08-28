@@ -1,7 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+import {
+    selectEnvironment,
+    executeServerCommand,
+    executeServerDefinitionCommand,
+    executeGetProjectDataCommand,
+} from './common/commands';
+
 import * as vscode from 'vscode';
-import { selectEnvironment, executeServerCommand, executeServerDefinitionCommand } from './common/commands';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
 import {
@@ -18,10 +24,13 @@ import { createStatusBar } from './common/status_bar';
 import { getLSClientTraceLevel } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import KedroVizPanel from './webview/vizWebView';
-import { runKedroVizServer } from './webview/vizServer';
 
 let lsClient: LanguageClient | undefined;
-let kedroVizProcess: any;
+
+export async function getlsClient() {
+    return lsClient;
+}
+
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     // This is required to get server name and module. This should be
@@ -62,6 +71,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
 
 
+    context.subscriptions.push(
+        vscode.commands.registerCommand('kedro.runKedroViz', async () => {
+            KedroVizPanel.createOrShow(context.extensionUri);
+            const projectData = await executeGetProjectDataCommand(lsClient);
+            KedroVizPanel.currentPanel?.updateData(projectData);
+        }),
+    );
+
+
     // Log Server information
     traceLog(`Name: ${serverInfo.name}`);
     traceLog(`Module: ${serverInfo.module}`);
@@ -86,12 +104,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         console.log('===============DEBUG============');
         console.log(interpreterDetails);
         console.log('===============DEBUG============');
-
-        // Start kedro viz server
-        if (kedroVizProcess) {
-            process.kill(-kedroVizProcess.pid);
-        }
-        kedroVizProcess = await runKedroVizServer();
 
         if (interpreterDetails.path) {
             traceVerbose(`Using interpreter from Python extension: ${interpreterDetails.path.join(' ')}`);
@@ -129,8 +141,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         registerCommand('pygls.server.executeCommand', async () => {
             await executeServerCommand(lsClient);
         }),
-        registerCommand('kedro.sendDefinitionRequest', async () => {
-            await executeServerDefinitionCommand(lsClient);
+        registerCommand('kedro.sendDefinitionRequest', async (word) => {
+            await executeServerDefinitionCommand(lsClient, word);
         }),
         vscode.commands.registerCommand('kedro.runKedroViz', () => {
             KedroVizPanel.createOrShow(context.extensionUri, lsClient);
@@ -153,9 +165,5 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 export async function deactivate(): Promise<void> {
     if (lsClient) {
         await lsClient.stop();
-    }
-    if (kedroVizProcess) {
-        process.kill(-kedroVizProcess.pid);
-        kedroVizProcess = null; // Reset the reference after killing the process
     }
 }

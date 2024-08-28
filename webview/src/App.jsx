@@ -14,7 +14,7 @@ function App() {
       const message = event.data;
       switch (message.command) {
         case "updateData":
-          setData(JSON.parse(message.data));
+          setData(message.data);
           setLoading(false);
           break;
         default:

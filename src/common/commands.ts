@@ -84,7 +84,6 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
     const result: any[] | undefined = await vscode.commands.executeCommand(
         commandName /* if your command accepts arguments you can pass them here */,
         target,
-
     );
     logger.info(`${commandName} result: ${JSON.stringify(result, undefined, 2)}`);
     if (result && result.length > 0) {
@@ -97,5 +96,21 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
             viewColumn: vscode.ViewColumn.One,
         });
     }
+}
+
+export async function executeGetProjectDataCommand(lsClient: LanguageClient | undefined) {
+    if (!lsClient || lsClient.state !== State.Running) {
+        await vscode.window.showErrorMessage('There is no language server running.');
+        return;
+    }
+    if (!lsClient.initializeResult) {
+        await vscode.window.showErrorMessage('The Language Server fail to initialise.');
+        return;
+    }
+
+    const commandName = 'kedro.getProjectData';
+    logger.info(`executing command: '${commandName}'`);
+    const result = await vscode.commands.executeCommand(commandName);
+    return result;
 }
 

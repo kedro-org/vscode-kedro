@@ -13,6 +13,5 @@ pygls
 packaging
 networkx>=2.5
 sqlalchemy>=1.4, <3
-fastapi>=0.100.0,<0.200.0
 
 # TODO: Add your tool here

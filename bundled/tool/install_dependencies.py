@@ -5,15 +5,11 @@ import glob
 from pathlib import Path
 
 def install_dependencies(libsPath):
-    # Delete folders that start with "pydantic" which was installed by FASTAPI during the extension build process
-    for folder in glob.glob(f"{libsPath}/pydantic*"):
-        shutil.rmtree(folder, ignore_errors=True)
-
     try:
-        import pydantic
+        import fastapi
         import orjson
     except ImportError:
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pydantic', 'orjson', '-t', Path(libsPath), '--no-cache-dir'])
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'fastapi>=0.100.0,<0.200.0', 'orjson>=3.9, <4.0', '-t', Path(libsPath), '--no-cache-dir'])
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

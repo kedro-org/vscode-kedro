@@ -1,6 +1,7 @@
-import { QuickPickItem, window } from 'vscode';
 import * as fs from 'fs';
+import { QuickPickItem, window } from 'vscode';
 import * as vscode from 'vscode';
+
 import { getWorkspaceFolders } from './vscodeapi';
 import { LanguageClient, LanguageClientOptions, ServerOptions, State, integer } from 'vscode-languageclient/node';
 export async function selectEnvironment() {
@@ -13,10 +14,10 @@ export async function selectEnvironment() {
         .filter((dirent) => dirent.isDirectory())
         .map((dirent) => dirent.name);
 
-    const envs: QuickPickItem[] = directories.map((label) => ({ label }));
+    const envs: QuickPickItem[] = directories.filter(dir => dir !== 'base').map((label) => ({ label }));
 
     const result = await window.showQuickPick(envs, {
-        placeHolder: 'Select Kedro base environment',
+        placeHolder: 'Select Kedro runtime environment',
     });
 
     return result;
@@ -112,3 +113,4 @@ export async function executeGetProjectDataCommand(lsClient: LanguageClient | un
     const result = await vscode.commands.executeCommand(commandName);
     return result;
 }
+

@@ -6,6 +6,7 @@ import {
     executeServerDefinitionCommand,
     executeGetProjectDataCommand,
 } from './common/commands';
+
 import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
@@ -17,15 +18,10 @@ import {
     resolveInterpreter,
 } from './common/python';
 import { restartServer } from './common/server';
-import {
-    checkIfConfigurationChanged,
-    getExtensionSettings,
-    getGlobalSettings,
-    getInterpreterFromSetting,
-    getWorkspaceSettings,
-} from './common/settings';
+import { checkIfConfigurationChanged, getInterpreterFromSetting } from './common/settings';
 import { loadServerDefaults } from './common/setup';
-import { getLSClientTraceLevel, getProjectRoot } from './common/utilities';
+import { createStatusBar } from './common/status_bar';
+import { getLSClientTraceLevel } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import KedroVizPanel from './webview/vizWebView';
 
@@ -43,9 +39,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const serverName = serverInfo.name;
     const serverId = serverInfo.module;
 
+    // Log Server information
+    traceLog(`Name: ${serverInfo.name}`);
+    traceLog(`Module: ${serverInfo.module}`);
+    traceVerbose(`Full Server Info: ${JSON.stringify(serverInfo)}`);
+
     // List of commands
     const CMD_RESTART_SERVER = `${serverId}.restart`;
     const CMD_SELECT_ENV = `${serverId}.selectEnvironment`;
+
+    // Status Bar
+    const statusBarItem = await createStatusBar(CMD_SELECT_ENV, serverId);
+    context.subscriptions.push(statusBarItem);
 
     // Setup logging
     const outputChannel = createOutputChannel(serverName);
@@ -65,6 +70,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }),
     );
 
+
     context.subscriptions.push(
         vscode.commands.registerCommand('kedro.runKedroViz', async () => {
             KedroVizPanel.createOrShow(context.extensionUri);
@@ -72,6 +78,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             KedroVizPanel.currentPanel?.updateData(projectData);
         }),
     );
+
 
     // Log Server information
     traceLog(`Name: ${serverInfo.name}`);
@@ -112,22 +119,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         );
     };
 
-    // Create a status bar item
-    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    statusBarItem.command = CMD_SELECT_ENV;
-    // https://code.visualstudio.com/api/references/vscode-api#WorkspaceConfiguration
-    const projectRoot = await getProjectRoot();
-    const workspaceSetting = await getWorkspaceSettings(serverId, projectRoot, true);
-    let environment = 'base'; // todo: Assume base, better to take this from server as it could be changed in project settings.
-
-    if (workspaceSetting.environment) {
-        environment = workspaceSetting.environment;
-    }
-
-    statusBarItem.text = `$(kedro-logo) ${environment}`;
-    statusBarItem.show();
-    context.subscriptions.push(statusBarItem);
-
     context.subscriptions.push(
         onDidChangePythonInterpreter(async () => {
             await runServer();
@@ -152,6 +143,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }),
         registerCommand('kedro.sendDefinitionRequest', async (word) => {
             await executeServerDefinitionCommand(lsClient, word);
+        }),
+        vscode.commands.registerCommand('kedro.runKedroViz', () => {
+            KedroVizPanel.createOrShow(context.extensionUri, lsClient);
         }),
     );
 

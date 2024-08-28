@@ -2,7 +2,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-def install_dependencies(libsPath):
+def install_dependencies(extension_root_dir):
+    libs_path = Path(extension_root_dir) / "bundled" / "libs"
+    requirements_path = Path(extension_root_dir) / "kedro-viz-requirements.txt"
+
     try:
         import fastapi
         import orjson
@@ -13,11 +16,10 @@ def install_dependencies(libsPath):
                 "-m",
                 "pip",
                 "install",
-                "fastapi>=0.100.0,<0.200.0",
-                "pydantic>=2.0.0", # In case of FastAPI installs pydantic==1
-                "orjson>=3.9, <4.0",
+                "-r",
+                Path(requirements_path),
                 "-t",
-                Path(libsPath),
+                Path(libs_path),
                 "--no-cache-dir",
             ]
         )
@@ -25,7 +27,7 @@ def install_dependencies(libsPath):
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        libsPath = sys.argv[1]
+        extension_root_dir = sys.argv[1]
     else:
-        libsPath = None
-    install_dependencies(libsPath)
+        extension_root_dir = None
+    install_dependencies(extension_root_dir)

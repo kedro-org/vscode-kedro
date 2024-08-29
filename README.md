@@ -1,5 +1,5 @@
 # vscode-kedro
-The extension integrates Kedro projects with Visual Studio Code, providing features like enhanced code navigation and autocompletion for seamless development.
+The extension integrates [Kedro](https://github.com/kedro-org/kedro) projects with Visual Studio Code, providing features like enhanced code navigation and autocompletion for seamless development.
 
 If you encounter issue, report it in [Github](https://github.com/kedro-org/vscode-kedro/issues) or [Slack](https://slack.kedro.org), we will try to fix ASAP.
 

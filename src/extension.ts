@@ -44,6 +44,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // List of commands
     const CMD_RESTART_SERVER = `${serverId}.restart`;
     const CMD_SELECT_ENV = `${serverId}.selectEnvironment`;
+    const CMD_RUN_KEDRO_VIZ = `${serverId}.runKedroViz`;
 
     // Status Bar
     const statusBarItem = await createStatusBar(CMD_SELECT_ENV, serverId);
@@ -68,7 +69,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('kedro.runKedroViz', async () => {
+        registerCommand(CMD_RUN_KEDRO_VIZ, async () => {
             KedroVizPanel.createOrShow(context.extensionUri);
             const projectData = await executeGetProjectDataCommand(lsClient);
             KedroVizPanel.currentPanel?.updateData(projectData);
@@ -138,9 +139,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }),
         registerCommand('kedro.sendDefinitionRequest', async (word) => {
             await executeServerDefinitionCommand(lsClient, word);
-        }),
-        vscode.commands.registerCommand('kedro.runKedroViz', () => {
-            KedroVizPanel.createOrShow(context.extensionUri);
         }),
     );
 

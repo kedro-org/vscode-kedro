@@ -17,39 +17,16 @@ import {
     resolveInterpreter,
 } from './common/python';
 import { restartServer } from './common/server';
-import {
-    checkIfConfigurationChanged,
-    getExtensionSettings,
-    getGlobalSettings,
-    getInterpreterFromSetting,
-    getWorkspaceSettings,
-} from './common/settings';
+import { checkIfConfigurationChanged, getInterpreterFromSetting, getWorkspaceSettings } from './common/settings';
 import { loadServerDefaults } from './common/setup';
-import { getLSClientTraceLevel, getProjectRoot } from './common/utilities';
+import { getLSClientTraceLevel, getProjectRoot, installDependenciesIfNeeded } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import KedroVizPanel from './webview/vizWebView';
-import { installPythonDependencies } from './common/installPythonDependencies';
 
 let lsClient: LanguageClient | undefined;
 
-export async function getlsClient() {
-    return lsClient;
-}
-
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    const alreadyInstalled = context.globalState.get('dependenciesInstalled', false);
-
-    if (!alreadyInstalled) {
-        try {
-            await installPythonDependencies(context);
-            context.globalState.update('dependenciesInstalled', true);
-            vscode.window.showInformationMessage('Dependencies installed!');
-        } catch (error) {
-            vscode.window.showErrorMessage('Failed to install dependencies: ' + error);
-        }
-    } else {
-        vscode.window.showInformationMessage('Dependencies already installed.');
-    }
+    await installDependenciesIfNeeded(context);
 
     // This is required to get server name and module. This should be
     // the first thing that we do in this extension.

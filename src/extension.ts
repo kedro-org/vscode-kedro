@@ -31,7 +31,6 @@ export async function getlsClient() {
     return lsClient;
 }
 
-
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     // This is required to get server name and module. This should be
     // the first thing that we do in this extension.
@@ -70,7 +69,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }),
     );
 
-
     context.subscriptions.push(
         vscode.commands.registerCommand('kedro.runKedroViz', async () => {
             KedroVizPanel.createOrShow(context.extensionUri);
@@ -78,7 +76,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             KedroVizPanel.currentPanel?.updateData(projectData);
         }),
     );
-
 
     // Log Server information
     traceLog(`Name: ${serverInfo.name}`);
@@ -113,9 +110,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
         traceError(
             'Python interpreter missing:\r\n' +
-            '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
-            `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
-            'Please use Python 3.8 or greater.',
+                '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
+                `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
+                'Please use Python 3.8 or greater.',
         );
     };
 
@@ -145,7 +142,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             await executeServerDefinitionCommand(lsClient, word);
         }),
         vscode.commands.registerCommand('kedro.runKedroViz', () => {
-            KedroVizPanel.createOrShow(context.extensionUri, lsClient);
+            KedroVizPanel.createOrShow(context.extensionUri);
         }),
     );
 

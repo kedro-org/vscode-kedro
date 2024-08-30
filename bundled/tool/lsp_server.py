@@ -216,7 +216,13 @@ def _get_conf_paths(server: KedroLanguageServer, key):
             ):
                 if not config_loader._is_hidden(each):
                     tmp_paths.append(Path(each))
-        paths = paths + list(set(tmp_paths))
+
+        # Reuse OmegaConfigLoader logic as much as possible so we don't need to write our tests here
+        deduplicated_paths = set(tmp_paths)
+        valid_config_paths = [
+            path for path in deduplicated_paths if config_loader._is_valid_config_path(path)
+        ]
+        paths = paths + list(valid_config_paths)
     return paths
 
 

@@ -76,11 +76,14 @@ export async function installDependenciesIfNeeded(context: vscode.ExtensionConte
     if (!alreadyInstalled) {
         const pathToScript = 'bundled/tool/install_dependencies.py';
         try {
-            await callPythonScript(pathToScript, EXTENSION_ROOT_DIR, context);
-            context.globalState.update('dependenciesInstalled', true);
+            const stdout = await callPythonScript(pathToScript, EXTENSION_ROOT_DIR, context);
 
-            traceLog(`Python dependencies installed!`);
-            console.log('Python dependencies installed!');
+            // Check if the script output contains the success message
+            if (stdout.includes('Successfully installed')) {
+                context.globalState.update('dependenciesInstalled', true);
+                traceLog(`Python dependencies installed!`);
+                console.log('Python dependencies installed!');
+            }
         } catch (error) {
             traceError(`Failed to install Python dependencies:: ${error}`);
             console.error(`Failed to install Python dependencies:: ${error}`);

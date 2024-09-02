@@ -9,8 +9,8 @@ import { getInterpreterDetails } from './python';
  * @param context - The context object.
  * @returns A promise that resolves when the script execution is complete.
  */
-export async function callPythonScript(pathToScript: string, scriptArgv: string, context: any): Promise<void> {
-    return new Promise<void>(async (resolve, reject) => {
+export async function callPythonScript(pathToScript: string, scriptArgv: string, context: any): Promise<string> {
+    return new Promise<string>(async (resolve, reject) => {
         const script = context.asAbsolutePath(pathToScript);
         const interpreterDetails = await getInterpreterDetails();
         const pythonPath = interpreterDetails['path'] && interpreterDetails['path'][0];
@@ -21,7 +21,7 @@ export async function callPythonScript(pathToScript: string, scriptArgv: string,
                 reject(error);
             } else {
                 console.log(stdout);
-                resolve();
+                resolve(stdout);
             }
         });
     });

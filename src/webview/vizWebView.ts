@@ -69,8 +69,7 @@ export default class KedroVizPanel {
                 switch (message.command) {
                     case 'fromWebview':
                         if (message.node.type === 'data') {
-                            // await executeServerDefinitionCommand(getlsClient(), message.node.text);
-                            await vscode.commands.executeCommand('kedro.sendDefinitionRequest', message.node.text)
+                            await vscode.commands.executeCommand('kedro.sendDefinitionRequest', message.node.text);
                         } else {
                             await goToDefinition(message.node);
                         }

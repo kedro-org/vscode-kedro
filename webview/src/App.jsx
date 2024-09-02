@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-import "my-kviz/lib/styles/styles.min.css";
-import KedroViz from "my-kviz";
+import '@quantumblack/kedro-viz/lib/styles/styles.min.css';
+import KedroViz from "@quantumblack/kedro-viz";
 const vscodeApi = window.acquireVsCodeApi();
 
 function App() {

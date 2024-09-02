@@ -40,6 +40,18 @@ function App() {
     }
   };
 
+  const handleActionCallback = (action) => {
+    if (action) {
+      switch (action.type) {
+        case "TOGGLE_NODE_CLICKED":
+          handleNodeClick(action.payload);
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
   return (
       <div style={{ height: `90vh`, width: `100%` }}>
         {loading ? (
@@ -48,7 +60,7 @@ function App() {
           </div>
         ) : (<KedroViz
           data={data}
-          onNodeClickCallback={handleNodeClick}
+          onActionCallback={handleActionCallback}
           options={{
             display: {
               globalNavigation: false,

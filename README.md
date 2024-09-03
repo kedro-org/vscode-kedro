@@ -53,6 +53,13 @@ The extension follows Kedro [pipeline autodiscovery mechanism](https://docs.kedr
 │           └── second_pipeline
 
 ```
+
+## Visualisation with Kedro-Viz
+To visualized Kedro project within Kedro extension with the help of inbuilt pipeline visualisation tool Kedro-Viz.
+Use Command (`Cmd` + `Shift` + `P`) and choose `kedro: Run Kedro Viz`
+![start kedro viz](assets/viz-vsc-start.gif)
+
+
 # Feature
 ## Go to Definition from pipeline.py to configuration files
 Use `Cmd` (Mac)/ `Ctrl` (Window) + `Click` or `F12` to trigger `Go to Definition`
@@ -83,3 +90,12 @@ Type `"` in any `pipeline.py` and it should trigger the autocompletion list.
 ## Hover
 Just hover your mouse over any `params:`, datasets or hit the command `Show or Focus Hover`
 ![hover](assets/lsp-hover.gif)
+
+## Flowchart to Editor navigation
+
+Clicking on a node in flowchart navigate to the corresponding node function in the code.
+![schema validation](assets/viz-vsc-nav-function-node.gif)
+
+
+Clicking on a data node in flowchart navigate to the corresponding dataset yaml file.
+![schema validation](assets/viz-vsc-nav-data-node.gif)

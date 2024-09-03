@@ -94,8 +94,8 @@ Just hover your mouse over any `params:`, datasets or hit the command `Show or F
 ## Flowchart to Editor navigation
 
 Clicking on a node in flowchart navigate to the corresponding node function in the code.
-![schema validation](assets/viz-vsc-nav-function-node.gif)
+![navigation to node function](assets/viz-vsc-nav-function-node.gif)
 
 
 Clicking on a data node in flowchart navigate to the corresponding dataset yaml file.
-![schema validation](assets/viz-vsc-nav-data-node.gif)
+![navigation to dataset](assets/viz-vsc-nav-data-node.gif)

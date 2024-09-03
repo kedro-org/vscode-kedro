@@ -11,5 +11,7 @@
 # Required packages
 pygls
 packaging
+networkx>=2.5
+sqlalchemy>=1.4, <3
 
 # TODO: Add your tool here

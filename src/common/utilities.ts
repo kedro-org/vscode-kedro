@@ -3,10 +3,13 @@
 
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import * as vscode from 'vscode';
 import { LogLevel, Uri, WorkspaceFolder } from 'vscode';
 import { Trace } from 'vscode-jsonrpc/node';
 import { getWorkspaceFolders } from './vscodeapi';
-import KedroVizPanel from '../webview/vizWebView';
+import { callPythonScript } from './callPythonScript';
+import { EXTENSION_ROOT_DIR } from './constants';
+import { traceError, traceLog } from './log/logging';
 
 function logLevelToTrace(logLevel: LogLevel): Trace {
     switch (logLevel) {
@@ -64,5 +67,26 @@ export async function getProjectRoot(): Promise<WorkspaceFolder> {
             }
         }
         return rootWorkspace;
+    }
+}
+
+export async function installDependenciesIfNeeded(context: vscode.ExtensionContext): Promise<void> {
+    const alreadyInstalled = context.globalState.get('dependenciesInstalled', false);
+
+    if (!alreadyInstalled) {
+        const pathToScript = 'bundled/tool/install_dependencies.py';
+        try {
+            const stdout = await callPythonScript(pathToScript, EXTENSION_ROOT_DIR, context);
+
+            // Check if the script output contains the success message
+            if (stdout.includes('Successfully installed')) {
+                context.globalState.update('dependenciesInstalled', true);
+                traceLog(`Python dependencies installed!`);
+                console.log('Python dependencies installed!');
+            }
+        } catch (error) {
+            traceError(`Failed to install Python dependencies:: ${error}`);
+            console.error(`Failed to install Python dependencies:: ${error}`);
+        }
     }
 }

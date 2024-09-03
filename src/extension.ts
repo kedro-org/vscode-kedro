@@ -21,17 +21,15 @@ import { restartServer } from './common/server';
 import { checkIfConfigurationChanged, getInterpreterFromSetting } from './common/settings';
 import { loadServerDefaults } from './common/setup';
 import { createStatusBar } from './common/status_bar';
-import { getLSClientTraceLevel } from './common/utilities';
+import { getLSClientTraceLevel, installDependenciesIfNeeded } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import KedroVizPanel from './webview/vizWebView';
 
 let lsClient: LanguageClient | undefined;
 
-export async function getlsClient() {
-    return lsClient;
-}
-
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    await installDependenciesIfNeeded(context);
+
     // This is required to get server name and module. This should be
     // the first thing that we do in this extension.
     const serverInfo = loadServerDefaults();
@@ -46,6 +44,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // List of commands
     const CMD_RESTART_SERVER = `${serverId}.restart`;
     const CMD_SELECT_ENV = `${serverId}.selectEnvironment`;
+    const CMD_RUN_KEDRO_VIZ = `${serverId}.runKedroViz`;
 
     // Status Bar
     const statusBarItem = await createStatusBar(CMD_SELECT_ENV, serverId);
@@ -70,7 +69,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('kedro.runKedroViz', async () => {
+        registerCommand(CMD_RUN_KEDRO_VIZ, async () => {
             KedroVizPanel.createOrShow(context.extensionUri);
             const projectData = await executeGetProjectDataCommand(lsClient);
             KedroVizPanel.currentPanel?.updateData(projectData);
@@ -140,9 +139,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }),
         registerCommand('kedro.sendDefinitionRequest', async (word) => {
             await executeServerDefinitionCommand(lsClient, word);
-        }),
-        vscode.commands.registerCommand('kedro.runKedroViz', () => {
-            KedroVizPanel.createOrShow(context.extensionUri);
         }),
     );
 

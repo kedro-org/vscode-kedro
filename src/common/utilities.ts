@@ -71,22 +71,48 @@ export async function getProjectRoot(): Promise<WorkspaceFolder> {
 }
 
 export async function installDependenciesIfNeeded(context: vscode.ExtensionContext): Promise<void> {
+    // Install necessary dependencies for the flowcharts and telemetry
     const alreadyInstalled = context.globalState.get('dependenciesInstalled', false);
 
     if (!alreadyInstalled) {
-        const pathToScript = 'bundled/tool/install_dependencies.py';
+        const vizPathToScript = 'bundled/tool/install_viz_dependencies.py';
+        const telemetryPathToScript = 'bundled/tool/install_telemetry_dependencies.py';
         try {
-            const stdout = await callPythonScript(pathToScript, EXTENSION_ROOT_DIR, context);
-
+            const stdoutViz = await callPythonScript(vizPathToScript, EXTENSION_ROOT_DIR, context);
+            const stdoutTelemetry = await callPythonScript(telemetryPathToScript, EXTENSION_ROOT_DIR, context);
             // Check if the script output contains the success message
-            if (stdout.includes('Successfully installed')) {
-                context.globalState.update('dependenciesInstalled', true);
-                traceLog(`Python dependencies installed!`);
-                console.log('Python dependencies installed!');
+            if (stdoutViz.includes('Successfully installed')) {
+                traceLog(`Kedro-viz dependencies installed!`);
+                console.log('Kedro-viz dependencies installed!');
             }
+            if (stdoutTelemetry.includes('Successfully installed')) {
+                traceLog(`kedro-telemetry dependencies installed!`);
+                console.log('kedro-telemetry dependencies installed!');
+            }
+            context.globalState.update('dependenciesInstalled', true);
         } catch (error) {
             traceError(`Failed to install Python dependencies:: ${error}`);
             console.error(`Failed to install Python dependencies:: ${error}`);
         }
     }
+}
+
+
+
+export async function checkKedroProjectConsent(context: vscode.ExtensionContext): Promise<Boolean> {
+
+    const pathToScript = 'bundled/tool/check_consent.py'
+    try {
+        const stdout = await callPythonScript(pathToScript, EXTENSION_ROOT_DIR, context);
+
+        // Check if the script output contains the success message
+        if (stdout.includes('true')) {
+            context.globalState.update('dependenciesInstalled', true);
+            console.log('Consent from Kedro Project: true !');
+        }
+        return true
+    } catch (error) {
+        traceError(`Failed to check for telemetry consent:: ${error}`);
+    }
+    return false
 }

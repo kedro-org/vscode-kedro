@@ -21,14 +21,18 @@ import { restartServer } from './common/server';
 import { checkIfConfigurationChanged, getInterpreterFromSetting } from './common/settings';
 import { loadServerDefaults } from './common/setup';
 import { createStatusBar } from './common/status_bar';
-import { getLSClientTraceLevel, installDependenciesIfNeeded } from './common/utilities';
+import { checkKedroProjectConsent, getLSClientTraceLevel, installDependenciesIfNeeded } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import KedroVizPanel from './webview/vizWebView';
 
 let lsClient: LanguageClient | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    await installDependenciesIfNeeded(context);
+    await installDependenciesIfNeeded(context, );
+
+    // Check for consent in the Kedro Project
+    const consent = await checkKedroProjectConsent(context);
+
 
     // This is required to get server name and module. This should be
     // the first thing that we do in this extension.
@@ -109,9 +113,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
         traceError(
             'Python interpreter missing:\r\n' +
-                '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
-                `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
-                'Please use Python 3.8 or greater.',
+            '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
+            `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
+            'Please use Python 3.8 or greater.',
         );
     };
 

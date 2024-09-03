@@ -55,7 +55,7 @@ The extension follows Kedro [pipeline autodiscovery mechanism](https://docs.kedr
 ```
 
 ## Visualisation with Kedro-Viz
-To visualized Kedro project within Kedro extension with the help of inbuilt pipeline visualisation tool Kedro-Viz.
+To visualize Kedro project within Kedro extension with the help of inbuilt pipeline visualisation tool Kedro-Viz.
 Use Command (`Cmd` + `Shift` + `P`) and choose `kedro: Run Kedro Viz`
 ![start kedro viz](assets/viz-vsc-start.gif)
 

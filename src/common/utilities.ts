@@ -104,13 +104,13 @@ export async function checkKedroProjectConsent(context: vscode.ExtensionContext)
     const pathToScript = 'bundled/tool/check_consent.py';
     try {
         const stdout = await callPythonScript(pathToScript, EXTENSION_ROOT_DIR, context);
-        const telemetry_result = parseTelemetryConsent(stdout);
+        const telemetryResult = parseTelemetryConsent(stdout);
 
         // Check if the script output contains the success message
-        if (telemetry_result) {
-            const consent = telemetry_result['consent']
+        if (telemetryResult) {
+            const consent = telemetryResult['consent']
             // Step 2: Create a Map from the record
-            const projectMetadata = new Map(Object.entries(telemetry_result));
+            const projectMetadata = new Map(Object.entries(telemetryResult));
             context.globalState.update(PROJECT_METADATA, projectMetadata);
             projectMetadata.delete('consent');
 

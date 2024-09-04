@@ -32,8 +32,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // Check for consent in the Kedro Project
     const consent = await checkKedroProjectConsent(context);
-
-
+    
     // This is required to get server name and module. This should be
     // the first thing that we do in this extension.
     const serverInfo = loadServerDefaults();

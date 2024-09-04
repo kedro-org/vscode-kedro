@@ -8,7 +8,7 @@ import { LogLevel, Uri, WorkspaceFolder } from 'vscode';
 import { Trace } from 'vscode-jsonrpc/node';
 import { getWorkspaceFolders } from './vscodeapi';
 import { callPythonScript } from './callPythonScript';
-import { EXTENSION_ROOT_DIR } from './constants';
+import { DEPENDENCIES_INSTALLED, EXTENSION_ROOT_DIR, TELEMETRY_CONSENT } from './constants';
 import { traceError, traceLog } from './log/logging';
 
 function logLevelToTrace(logLevel: LogLevel): Trace {
@@ -72,7 +72,7 @@ export async function getProjectRoot(): Promise<WorkspaceFolder> {
 
 export async function installDependenciesIfNeeded(context: vscode.ExtensionContext): Promise<void> {
     // Install necessary dependencies for the flowcharts and telemetry
-    const alreadyInstalled = context.globalState.get('dependenciesInstalled', false);
+    const alreadyInstalled = context.globalState.get(DEPENDENCIES_INSTALLED, false);
 
     if (!alreadyInstalled) {
         const vizPathToScript = 'bundled/tool/install_viz_dependencies.py';
@@ -89,7 +89,7 @@ export async function installDependenciesIfNeeded(context: vscode.ExtensionConte
                 traceLog(`kedro-telemetry dependencies installed!`);
                 console.log('kedro-telemetry dependencies installed!');
             }
-            context.globalState.update('dependenciesInstalled', true);
+            context.globalState.update(DEPENDENCIES_INSTALLED, true);
         } catch (error) {
             traceError(`Failed to install Python dependencies:: ${error}`);
             console.error(`Failed to install Python dependencies:: ${error}`);
@@ -106,13 +106,13 @@ export async function checkKedroProjectConsent(context: vscode.ExtensionContext)
         const stdout = await callPythonScript(pathToScript, EXTENSION_ROOT_DIR, context);
 
         // Check if the script output contains the success message
-        if (stdout.includes('true')) {
-            context.globalState.update('dependenciesInstalled', true);
+        if (stdout.includes('True')) {
+            context.globalState.update(TELEMETRY_CONSENT, true);
             console.log('Consent from Kedro Project: true !');
         }
-        return true
+        return true;
     } catch (error) {
         traceError(`Failed to check for telemetry consent:: ${error}`);
     }
-    return false
+    return false;
 }

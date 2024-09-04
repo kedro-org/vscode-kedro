@@ -13,7 +13,7 @@ def install_dependencies(extension_root_dir):
     """
     ...
     libs_path = Path(extension_root_dir) / "bundled" / "libs"
-    requirements_path = Path(extension_root_dir) / "kedro-viz-requirements.txt"
+    requirements_path = Path(extension_root_dir) / "kedro-telemetry-requirements.txt"
 
     try:
         import kedro_telemetry

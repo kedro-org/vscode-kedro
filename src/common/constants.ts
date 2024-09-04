@@ -12,5 +12,6 @@ export const DEBUG_SERVER_SCRIPT_PATH = path.join(BUNDLED_PYTHON_SCRIPTS_DIR, 't
 
 
 // Global state
-export const DEPENDENCIES_INSTALLED = 'dependenciesInstalled'
-export const TELEMETRY_CONSENT = 'telemetryConsent'
+export const DEPENDENCIES_INSTALLED = 'kedro.dependenciesInstalled'
+export const TELEMETRY_CONSENT = 'kedro.telemetryConsent';
+export const PROJECT_METADATA = 'kedro.projectMetadata';

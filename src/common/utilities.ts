@@ -8,7 +8,7 @@ import { LogLevel, Uri, WorkspaceFolder } from 'vscode';
 import { Trace } from 'vscode-jsonrpc/node';
 import { getWorkspaceFolders } from './vscodeapi';
 import { callPythonScript } from './callPythonScript';
-import { DEPENDENCIES_INSTALLED, EXTENSION_ROOT_DIR, TELEMETRY_CONSENT } from './constants';
+import { DEPENDENCIES_INSTALLED, EXTENSION_ROOT_DIR, PROJECT_METADATA, TELEMETRY_CONSENT } from './constants';
 import { traceError, traceLog } from './log/logging';
 
 function logLevelToTrace(logLevel: LogLevel): Trace {
@@ -101,18 +101,46 @@ export async function installDependenciesIfNeeded(context: vscode.ExtensionConte
 
 export async function checkKedroProjectConsent(context: vscode.ExtensionContext): Promise<Boolean> {
 
-    const pathToScript = 'bundled/tool/check_consent.py'
+    const pathToScript = 'bundled/tool/check_consent.py';
     try {
         const stdout = await callPythonScript(pathToScript, EXTENSION_ROOT_DIR, context);
+        const telemetry_result = parseTelemetryConsent(stdout);
 
         // Check if the script output contains the success message
-        if (stdout.includes('True')) {
-            context.globalState.update(TELEMETRY_CONSENT, true);
-            console.log('Consent from Kedro Project: true !');
+        if (telemetry_result) {
+            const consent = telemetry_result['consent']
+            // Step 2: Create a Map from the record
+            const projectMetadata = new Map(Object.entries(telemetry_result));
+            context.globalState.update(PROJECT_METADATA, projectMetadata);
+            projectMetadata.delete('consent');
+
+            context.globalState.update(TELEMETRY_CONSENT, consent);
+            console.log(`Consent from Kedro Project: true ${consent}`);
+            return consent;
         }
-        return true;
+        return false;
+
     } catch (error) {
         traceError(`Failed to check for telemetry consent:: ${error}`);
     }
     return false;
+}
+
+function parseTelemetryConsent(logMessage: string): Record<string, any> | null {
+    // Step 1: Define a regular expression to match the telemetry consent data
+    const telemetryRegex = /telemetry consent: ({.*})/;
+    const match = logMessage.match(telemetryRegex);
+
+    if (match && match[1]) {
+        try {
+            const telemetryData = JSON.parse(match[1]);
+            return telemetryData;
+        } catch (error) {
+            console.error("Failed to parse telemetry consent data:", error);
+            return null;
+        }
+    } else {
+        console.log("Telemetry consent data not found in log message.");
+        return null;
+    }
 }

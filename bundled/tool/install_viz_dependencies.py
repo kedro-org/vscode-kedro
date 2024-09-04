@@ -18,8 +18,6 @@ def install_dependencies(extension_root_dir):
     try:
         import fastapi
         import orjson
-        import kedro_telemetry
-        from packaging.version import parse
 
     except ImportError:
         subprocess.check_call(

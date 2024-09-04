@@ -115,7 +115,7 @@ export async function checkKedroProjectConsent(context: vscode.ExtensionContext)
             projectMetadata.delete('consent');
 
             context.globalState.update(TELEMETRY_CONSENT, consent);
-            console.log(`Consent from Kedro Project: true ${consent}`);
+            console.log(`Consent from Kedro Project: ${consent}`);
             return consent;
         }
         return false;

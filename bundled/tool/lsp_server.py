@@ -280,7 +280,7 @@ def definition(
         log_for_lsp_debug(f"Query keyword for params: {word}")
 
         if word.startswith("params:"):
-            param_location = _get_param_location(server.project_metadata, word)
+            param_location = _get_param_location(server, word)
             if param_location:
                 log_for_lsp_debug(f"{param_location=}")
                 return [param_location]

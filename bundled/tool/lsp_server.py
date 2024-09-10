@@ -224,7 +224,7 @@ def _get_conf_paths(server: KedroLanguageServer, key):
 
 
 def _get_param_location(
-    project_metadata: ProjectMetadata, word: str
+    server: KedroLanguageServer, word: str
 ) -> Optional[Location]:
     words = word.split("params:")
     if len(words) > 1:
@@ -234,7 +234,7 @@ def _get_param_location(
     log_to_output(f"Attempt to search `{param}` from parameters file")
 
     # TODO: cache -- we shouldn't have to re-read the file on every request
-    params_paths = _get_conf_paths(project_metadata, "parameters")
+    params_paths = _get_conf_paths(server, "parameters")
     param_line_no = None
 
     for parameters_file in params_paths:
@@ -280,7 +280,7 @@ def definition(
         log_for_lsp_debug(f"Query keyword for params: {word}")
 
         if word.startswith("params:"):
-            param_location = _get_param_location(server.project_metadata, word)
+            param_location = _get_param_location(server, word)
             if param_location:
                 log_for_lsp_debug(f"{param_location=}")
                 return [param_location]

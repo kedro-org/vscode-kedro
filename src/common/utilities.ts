@@ -4,12 +4,15 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { LanguageClient } from 'vscode-languageclient/node';
 import { LogLevel, Uri, WorkspaceFolder } from 'vscode';
 import { Trace } from 'vscode-jsonrpc/node';
 import { getWorkspaceFolders } from './vscodeapi';
 import { callPythonScript } from './callPythonScript';
 import { EXTENSION_ROOT_DIR } from './constants';
 import { traceError, traceLog } from './log/logging';
+import { executeGetProjectDataCommand } from './commands';
+import KedroVizPanel from '../webview/vizWebView';
 
 function logLevelToTrace(logLevel: LogLevel): Trace {
     switch (logLevel) {
@@ -89,4 +92,9 @@ export async function installDependenciesIfNeeded(context: vscode.ExtensionConte
             console.error(`Failed to install Python dependencies:: ${error}`);
         }
     }
+}
+
+export async function updateKedroVizPanel(lsClient: LanguageClient | undefined): Promise<void> {
+    const projectData = await executeGetProjectDataCommand(lsClient);
+    KedroVizPanel.currentPanel?.updateData(projectData);
 }

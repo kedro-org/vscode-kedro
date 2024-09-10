@@ -21,7 +21,7 @@ import { restartServer } from './common/server';
 import { checkIfConfigurationChanged, getInterpreterFromSetting } from './common/settings';
 import { loadServerDefaults } from './common/setup';
 import { createStatusBar } from './common/status_bar';
-import { getLSClientTraceLevel, installDependenciesIfNeeded } from './common/utilities';
+import { getLSClientTraceLevel, installDependenciesIfNeeded, updateKedroVizPanel } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import KedroVizPanel from './webview/vizWebView';
 
@@ -71,8 +71,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     context.subscriptions.push(
         registerCommand(CMD_RUN_KEDRO_VIZ, async () => {
             KedroVizPanel.createOrShow(context.extensionUri);
-            const projectData = await executeGetProjectDataCommand(lsClient);
-            KedroVizPanel.currentPanel?.updateData(projectData);
+            updateKedroVizPanel(lsClient);
         }),
     );
 
@@ -126,6 +125,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }),
         registerCommand(CMD_RESTART_SERVER, async () => {
             await runServer();
+
+            // If KedroVizPanel is open, update the data on server restart
+            if (KedroVizPanel.currentPanel) {
+                updateKedroVizPanel(lsClient);
+            }
         }),
         registerCommand(CMD_SELECT_ENV, async () => {
             const result = await selectEnvironment();

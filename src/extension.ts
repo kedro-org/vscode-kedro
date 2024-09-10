@@ -22,7 +22,12 @@ import { restartServer } from './common/server';
 import { checkIfConfigurationChanged, getInterpreterFromSetting } from './common/settings';
 import { loadServerDefaults } from './common/setup';
 import { createStatusBar } from './common/status_bar';
-import { checkKedroProjectConsent, getLSClientTraceLevel, installDependenciesIfNeeded } from './common/utilities';
+import {
+    checkKedroProjectConsent,
+    getLSClientTraceLevel,
+    installDependenciesIfNeeded,
+    updateKedroVizPanel,
+} from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import KedroVizPanel from './webview/vizWebView';
 import { PROJECT_METADATA, TELEMETRY_CONSENT } from './common/constants';
@@ -30,7 +35,7 @@ import { PROJECT_METADATA, TELEMETRY_CONSENT } from './common/constants';
 let lsClient: LanguageClient | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    await installDependenciesIfNeeded(context,);
+    await installDependenciesIfNeeded(context);
 
     // Check for consent in the Kedro Project
     const consent = await checkKedroProjectConsent(context);
@@ -51,7 +56,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const CMD_SELECT_ENV = `${serverId}.selectEnvironment`;
     const CMD_RUN_KEDRO_VIZ = `${serverId}.runKedroViz`;
     const CMD_DEFINITION_REQUEST = 'kedro.sendDefinitionRequest';
-
 
     // Status Bar
     const statusBarItem = await createStatusBar(CMD_SELECT_ENV, serverId);
@@ -108,9 +112,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
         traceError(
             'Python interpreter missing:\r\n' +
-            '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
-            `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
-            'Please use Python 3.8 or greater.',
+                '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
+                `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
+                'Please use Python 3.8 or greater.',
         );
     };
 
@@ -118,13 +122,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     let heapUserId: string = '';
     projectMetadata = context.globalState.get(PROJECT_METADATA);
     if (projectMetadata) {
-        heapUserId = projectMetadata.get("username");
+        heapUserId = projectMetadata.get('username');
     }
 
     const sendHeapEventWithMetadata = async (eventName: string): Promise<void> => {
         sendHeapEvent(eventName, projectMetadata, heapUserId);
-
-    }
+    };
 
     context.subscriptions.push(
         onDidChangePythonInterpreter(async () => {
@@ -138,6 +141,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         registerCommand(CMD_RESTART_SERVER, async () => {
             await runServer();
             await sendHeapEventWithMetadata(CMD_RESTART_SERVER);
+
+            // If KedroVizPanel is open, update the data on server restart
+            if (KedroVizPanel.currentPanel) {
+                updateKedroVizPanel(lsClient);
+            }
         }),
         registerCommand(CMD_SELECT_ENV, async () => {
             const result = await selectEnvironment();
@@ -156,8 +164,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }),
         registerCommand(CMD_RUN_KEDRO_VIZ, async () => {
             KedroVizPanel.createOrShow(context.extensionUri);
-            const projectData = await executeGetProjectDataCommand(lsClient);
-            KedroVizPanel.currentPanel?.updateData(projectData);
+            updateKedroVizPanel(lsClient);
             await sendHeapEventWithMetadata(CMD_RUN_KEDRO_VIZ);
         }),
     );

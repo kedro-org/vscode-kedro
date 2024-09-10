@@ -66,6 +66,8 @@ This will launch Kedro-Viz and display your pipeline visually within the extensi
 
 ![start kedro viz](assets/viz-vsc-start.gif)
 
+**Note:** To update the Kedro-Viz flowchart after making any changes to your Kedro project, please hit `Cmd` + `Shift` + `P` to open the VSCode command and look for `kedro: restart server`.
+
 
 # Feature
 ## Go to Definition from pipeline.py to configuration files

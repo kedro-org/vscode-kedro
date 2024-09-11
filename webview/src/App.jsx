@@ -68,6 +68,9 @@ function App() {
               miniMap: false,
               sidebar: false,
             },
+            visible: {
+              slicing: false,
+            },
             layer: {visible: false},
           }}
         />)}

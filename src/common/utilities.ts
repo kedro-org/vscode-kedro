@@ -97,10 +97,7 @@ export async function installDependenciesIfNeeded(context: vscode.ExtensionConte
     }
 }
 
-
-
 export async function checkKedroProjectConsent(context: vscode.ExtensionContext): Promise<Boolean> {
-
     const pathToScript = 'bundled/tool/check_consent.py';
     try {
         const stdout = await callPythonScript(pathToScript, EXTENSION_ROOT_DIR, context);
@@ -108,18 +105,15 @@ export async function checkKedroProjectConsent(context: vscode.ExtensionContext)
 
         // Check if the script output contains the success message
         if (telemetryResult) {
-            const consent = telemetryResult['consent']
-            // Step 2: Create a Map from the record
-            const projectMetadata = new Map(Object.entries(telemetryResult));
-            context.globalState.update(PROJECT_METADATA, projectMetadata);
-            projectMetadata.delete('consent');
+            const consent = telemetryResult['consent'];
+            context.globalState.update(PROJECT_METADATA, telemetryResult);
+            delete telemetryResult['consent'];
 
             context.globalState.update(TELEMETRY_CONSENT, consent);
             console.log(`Consent from Kedro Project: ${consent}`);
             return consent;
         }
         return false;
-
     } catch (error) {
         traceError(`Failed to check for telemetry consent:: ${error}`);
     }
@@ -136,11 +130,11 @@ function parseTelemetryConsent(logMessage: string): Record<string, any> | null {
             const telemetryData = JSON.parse(match[1]);
             return telemetryData;
         } catch (error) {
-            console.error("Failed to parse telemetry consent data:", error);
+            console.error('Failed to parse telemetry consent data:', error);
             return null;
         }
     } else {
-        console.log("Telemetry consent data not found in log message.");
+        console.log('Telemetry consent data not found in log message.');
         return null;
     }
 }

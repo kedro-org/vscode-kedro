@@ -30,7 +30,7 @@ import { PROJECT_METADATA, TELEMETRY_CONSENT } from './common/constants';
 let lsClient: LanguageClient | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    await installDependenciesIfNeeded(context,);
+    await installDependenciesIfNeeded(context);
 
     // Check for consent in the Kedro Project
     const consent = await checkKedroProjectConsent(context);
@@ -51,7 +51,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const CMD_SELECT_ENV = `${serverId}.selectEnvironment`;
     const CMD_RUN_KEDRO_VIZ = `${serverId}.runKedroViz`;
     const CMD_DEFINITION_REQUEST = 'kedro.sendDefinitionRequest';
-
 
     // Status Bar
     const statusBarItem = await createStatusBar(CMD_SELECT_ENV, serverId);
@@ -108,23 +107,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
         traceError(
             'Python interpreter missing:\r\n' +
-            '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
-            `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
-            'Please use Python 3.8 or greater.',
+                '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
+                `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
+                'Please use Python 3.8 or greater.',
         );
     };
 
-    let projectMetadata: Map<string, any> | undefined;
+    let projectMetadata: undefined;
     let heapUserId: string = '';
     projectMetadata = context.globalState.get(PROJECT_METADATA);
     if (projectMetadata) {
-        heapUserId = projectMetadata.get("username");
+        heapUserId = projectMetadata['username'];
     }
 
     const sendHeapEventWithMetadata = async (eventName: string): Promise<void> => {
         sendHeapEvent(eventName, projectMetadata, heapUserId);
-
-    }
+    };
 
     context.subscriptions.push(
         onDidChangePythonInterpreter(async () => {

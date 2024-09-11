@@ -135,7 +135,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             const result = await selectEnvironment();
             runServer(result);
             if (result) {
-                statusBarItem.text = `$(kedro-logo)` + ' ' + result.label;
+                statusBarItem.text = `$(kedro-logo) base + ${result.label}`;
             }
         }),
         registerCommand('pygls.server.executeCommand', async () => {

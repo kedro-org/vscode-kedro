@@ -1,3 +1,1 @@
-fastapi>=0.100.0,<0.200.0
-pydantic>=2.0.0 # In case of FastAPI installs pydantic==1
-orjson>=3.9, <4.0
+kedro-viz>=10.0.0

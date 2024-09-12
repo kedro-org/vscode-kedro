@@ -10,6 +10,10 @@ import { getWorkspaceFolders } from './vscodeapi';
 import { callPythonScript } from './callPythonScript';
 import { DEPENDENCIES_INSTALLED, EXTENSION_ROOT_DIR, PROJECT_METADATA, TELEMETRY_CONSENT } from './constants';
 import { traceError, traceLog } from './log/logging';
+import KedroVizPanel from '../webview/vizWebView';
+import { executeGetProjectDataCommand } from './commands';
+import { LanguageClient } from 'vscode-languageclient/node';
+import { sendHeapEventWithMetadata } from './telemetry';
 
 function logLevelToTrace(logLevel: LogLevel): Trace {
     switch (logLevel) {
@@ -70,31 +74,62 @@ export async function getProjectRoot(): Promise<WorkspaceFolder> {
     }
 }
 
-export async function installDependenciesIfNeeded(context: vscode.ExtensionContext): Promise<void> {
-    // Install necessary dependencies for the flowcharts and telemetry
+export async function installTelemetryDependenciesIfNeeded(context: vscode.ExtensionContext): Promise<void> {
+    // Install necessary dependencies for the telemetry
     const alreadyInstalled = context.globalState.get(DEPENDENCIES_INSTALLED, false);
 
     if (!alreadyInstalled) {
-        const vizPathToScript = 'bundled/tool/install_viz_dependencies.py';
         const telemetryPathToScript = 'bundled/tool/install_telemetry_dependencies.py';
         try {
-            const stdoutViz = await callPythonScript(vizPathToScript, EXTENSION_ROOT_DIR, context);
             const stdoutTelemetry = await callPythonScript(telemetryPathToScript, EXTENSION_ROOT_DIR, context);
             // Check if the script output contains the success message
-            if (stdoutViz.includes('Successfully installed')) {
-                traceLog(`Kedro-viz dependencies installed!`);
-                console.log('Kedro-viz dependencies installed!');
-            }
             if (stdoutTelemetry.includes('Successfully installed')) {
-                traceLog(`kedro-telemetry dependencies installed!`);
-                console.log('kedro-telemetry dependencies installed!');
+                traceLog(`kedro-telemetry and its dependencies installed!`);
+                console.log('kedro-telemetry  and its dependencies installed!');
             }
             context.globalState.update(DEPENDENCIES_INSTALLED, true);
         } catch (error) {
-            traceError(`Failed to install Python dependencies:: ${error}`);
-            console.error(`Failed to install Python dependencies:: ${error}`);
+            traceError(`Failed to install kedro-telemetry and its dependencies:: ${error}`);
+            console.error(`Failed to install kedro-telemetry and its dependencies:: ${error}`);
         }
     }
+}
+
+export async function installKedroViz(context: vscode.ExtensionContext): Promise<boolean> {
+    const vizPathToScript = 'bundled/tool/install_viz_dependencies.py';
+    try {
+        const stdoutTelemetry = await callPythonScript(vizPathToScript, EXTENSION_ROOT_DIR, context);
+
+        // Check if the script output contains the success message
+        if (stdoutTelemetry.includes('Successfully installed')) {
+            traceLog('Kedro-Viz and its dependencies installed!');
+            console.log('Kedro-Viz and its dependencies installed!');
+            return true;
+        }
+        context.globalState.update(DEPENDENCIES_INSTALLED, true);
+    } catch (error) {
+        traceError(`Failed to install 'Kedro-Viz and its dependencies:: ${error}`);
+        console.error(`Failed to install 'Kedro-Viz and its dependencies:: ${error}`);
+        return false;
+    }
+    return false;
+}
+
+export async function checkKedroViz(context: vscode.ExtensionContext): Promise<boolean> {
+    const vizPathToScript = 'bundled/tool/check_viz_dependencies.py';
+    try {
+        const stdoutViz = await callPythonScript(vizPathToScript, EXTENSION_ROOT_DIR, context);
+
+        // Check if Kedro-viz dependencies are installed
+        if (stdoutViz.includes('Missing dependencies')) {
+            return false;
+        }
+    } catch (error) {
+        traceError(`Failed to check if Kedro-Viz is installed:: ${error}`);
+        console.error(`Failed to check  if Kedro-Viz is installed:: ${error}`);
+        return false;
+    }
+    return true;
 }
 
 export async function checkKedroProjectConsent(context: vscode.ExtensionContext): Promise<Boolean> {
@@ -137,4 +172,18 @@ function parseTelemetryConsent(logMessage: string): Record<string, any> | null {
         console.log('Telemetry consent data not found in log message.');
         return null;
     }
+}
+
+export async function updateKedroVizPanel(lsClient: LanguageClient | undefined): Promise<void> {
+    const projectData = await executeGetProjectDataCommand(lsClient);
+    KedroVizPanel.currentPanel?.updateData(projectData);
+}
+
+export async function createOrShowKedroVizPanel(
+    context: vscode.ExtensionContext,
+    lsClient: LanguageClient | undefined,
+): Promise<void> {
+    KedroVizPanel.createOrShow(context.extensionUri);
+    updateKedroVizPanel(lsClient);
+    await sendHeapEventWithMetadata('kedro.runKedroViz', context);
 }

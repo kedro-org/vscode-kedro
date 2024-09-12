@@ -4,12 +4,15 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { LanguageClient } from 'vscode-languageclient/node';
 import { LogLevel, Uri, WorkspaceFolder } from 'vscode';
 import { Trace } from 'vscode-jsonrpc/node';
 import { getWorkspaceFolders } from './vscodeapi';
 import { callPythonScript } from './callPythonScript';
 import { DEPENDENCIES_INSTALLED, EXTENSION_ROOT_DIR, PROJECT_METADATA, TELEMETRY_CONSENT } from './constants';
 import { traceError, traceLog } from './log/logging';
+import { executeGetProjectDataCommand } from './commands';
+import KedroVizPanel from '../webview/vizWebView';
 
 function logLevelToTrace(logLevel: LogLevel): Trace {
     switch (logLevel) {
@@ -97,6 +100,7 @@ export async function installDependenciesIfNeeded(context: vscode.ExtensionConte
     }
 }
 
+
 export async function checkKedroProjectConsent(context: vscode.ExtensionContext): Promise<Boolean> {
     const pathToScript = 'bundled/tool/check_consent.py';
     try {
@@ -137,4 +141,10 @@ function parseTelemetryConsent(logMessage: string): Record<string, any> | null {
         console.log('Telemetry consent data not found in log message.');
         return null;
     }
+}
+
+export async function updateKedroVizPanel(lsClient: LanguageClient | undefined): Promise<void> {
+    const projectData = await executeGetProjectDataCommand(lsClient);
+    KedroVizPanel.currentPanel?.updateData(projectData);
+
 }

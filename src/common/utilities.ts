@@ -173,17 +173,3 @@ function parseTelemetryConsent(logMessage: string): Record<string, any> | null {
         return null;
     }
 }
-
-export async function updateKedroVizPanel(lsClient: LanguageClient | undefined): Promise<void> {
-    const projectData = await executeGetProjectDataCommand(lsClient);
-    KedroVizPanel.currentPanel?.updateData(projectData);
-}
-
-export async function createOrShowKedroVizPanel(
-    context: vscode.ExtensionContext,
-    lsClient: LanguageClient | undefined,
-): Promise<void> {
-    KedroVizPanel.createOrShow(context.extensionUri);
-    updateKedroVizPanel(lsClient);
-    await sendHeapEventWithMetadata('kedro.runKedroViz', context);
-}

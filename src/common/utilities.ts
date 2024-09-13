@@ -4,6 +4,7 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { LanguageClient } from 'vscode-languageclient/node';
 import { LogLevel, Uri, WorkspaceFolder } from 'vscode';
 import { Trace } from 'vscode-jsonrpc/node';
 import { getWorkspaceFolders } from './vscodeapi';
@@ -12,8 +13,6 @@ import { DEPENDENCIES_INSTALLED, EXTENSION_ROOT_DIR, PROJECT_METADATA, TELEMETRY
 import { traceError, traceLog } from './log/logging';
 import KedroVizPanel from '../webview/vizWebView';
 import { executeGetProjectDataCommand } from './commands';
-import { LanguageClient } from 'vscode-languageclient/node';
-import { sendHeapEventWithMetadata } from './telemetry';
 
 function logLevelToTrace(logLevel: LogLevel): Trace {
     switch (logLevel) {
@@ -172,4 +171,9 @@ function parseTelemetryConsent(logMessage: string): Record<string, any> | null {
         console.log('Telemetry consent data not found in log message.');
         return null;
     }
+}
+
+export async function updateKedroVizPanel(lsClient: LanguageClient | undefined): Promise<void> {
+    const projectData = await executeGetProjectDataCommand(lsClient);
+    KedroVizPanel.currentPanel?.updateData(projectData);
 }

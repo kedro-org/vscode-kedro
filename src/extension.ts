@@ -18,12 +18,14 @@ import { checkIfConfigurationChanged, getInterpreterFromSetting } from './common
 import { loadServerDefaults } from './common/setup';
 import { createStatusBar } from './common/status_bar';
 import {
-    checkKedroProjectConsent,
     getLSClientTraceLevel,
+    updateKedroVizPanel,
+    checkKedroProjectConsent,
     installTelemetryDependenciesIfNeeded,
 } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
-import { handleKedroViz } from './webview/createOrShowKedroVizPanel';
+import KedroVizPanel from './webview/vizWebView';
+import { PROJECT_METADATA, TELEMETRY_CONSENT } from './common/constants';
 
 let lsClient: LanguageClient | undefined;
 
@@ -123,12 +125,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         registerCommand(CMD_RESTART_SERVER, async () => {
             await runServer();
             await sendHeapEventWithMetadata(CMD_RESTART_SERVER, context);
+
+            // If KedroVizPanel is open, update the data on server restart
+            if (KedroVizPanel.currentPanel) {
+                updateKedroVizPanel(lsClient);
+            }
         }),
         registerCommand(CMD_SELECT_ENV, async () => {
             const result = await selectEnvironment();
             runServer(result);
             if (result) {
-                statusBarItem.text = `$(kedro-logo)` + ' ' + result.label;
+                statusBarItem.text = `$(kedro-logo) base + ${result.label}`;
             }
             await sendHeapEventWithMetadata(CMD_SELECT_ENV, context);
         }),

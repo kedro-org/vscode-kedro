@@ -25,7 +25,7 @@ import {
 } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import KedroVizPanel from './webview/vizWebView';
-import { PROJECT_METADATA, TELEMETRY_CONSENT } from './common/constants';
+import { handleKedroViz } from './webview/createOrShowKedroVizPanel';
 
 let lsClient: LanguageClient | undefined;
 

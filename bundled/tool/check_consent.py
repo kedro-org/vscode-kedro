@@ -1,10 +1,3 @@
-from kedro_telemetry.plugin import _check_for_telemetry_consent
-from kedro_telemetry.plugin import (
-    _get_project_properties,
-    _get_or_create_uuid,
-)
-
-
 from common import update_sys_path
 from pathlib import Path
 import os
@@ -14,6 +7,13 @@ import json
 update_sys_path(
     os.fspath(Path(__file__).parent.parent / "libs"),
     os.getenv("LS_IMPORT_STRATEGY", "useBundled"),
+)
+
+# important to keep this after sys.path is updated
+from kedro_telemetry.plugin import _check_for_telemetry_consent
+from kedro_telemetry.plugin import (
+    _get_project_properties,
+    _get_or_create_uuid,
 )
 
 if __name__ == "__main__":

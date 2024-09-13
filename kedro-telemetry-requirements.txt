@@ -1,0 +1,2 @@
+packaging
+kedro-telemetry>=0.6.0 # First version that does not prompt for telemetry

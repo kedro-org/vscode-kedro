@@ -556,7 +556,7 @@ def definition_from_flowchart(ls, word):
     return result
 
 @LSP_SERVER.command("kedro.getProjectData")
-def get_porject_data_from_viz(lsClient):
+def get_project_data_from_viz(lsClient):
     """Get project data from kedro viz
     """
     data = None

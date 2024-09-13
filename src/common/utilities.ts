@@ -9,7 +9,7 @@ import { LogLevel, Uri, WorkspaceFolder } from 'vscode';
 import { Trace } from 'vscode-jsonrpc/node';
 import { getWorkspaceFolders } from './vscodeapi';
 import { callPythonScript } from './callPythonScript';
-import { EXTENSION_ROOT_DIR } from './constants';
+import { DEPENDENCIES_INSTALLED, EXTENSION_ROOT_DIR, PROJECT_METADATA, TELEMETRY_CONSENT } from './constants';
 import { traceError, traceLog } from './log/logging';
 import { executeGetProjectDataCommand } from './commands';
 import KedroVizPanel from '../webview/vizWebView';
@@ -74,19 +74,25 @@ export async function getProjectRoot(): Promise<WorkspaceFolder> {
 }
 
 export async function installDependenciesIfNeeded(context: vscode.ExtensionContext): Promise<void> {
-    const alreadyInstalled = context.globalState.get('dependenciesInstalled', false);
+    // Install necessary dependencies for the flowcharts and telemetry
+    const alreadyInstalled = context.globalState.get(DEPENDENCIES_INSTALLED, false);
 
     if (!alreadyInstalled) {
-        const pathToScript = 'bundled/tool/install_dependencies.py';
+        const vizPathToScript = 'bundled/tool/install_viz_dependencies.py';
+        const telemetryPathToScript = 'bundled/tool/install_telemetry_dependencies.py';
         try {
-            const stdout = await callPythonScript(pathToScript, EXTENSION_ROOT_DIR, context);
-
+            const stdoutViz = await callPythonScript(vizPathToScript, EXTENSION_ROOT_DIR, context);
+            const stdoutTelemetry = await callPythonScript(telemetryPathToScript, EXTENSION_ROOT_DIR, context);
             // Check if the script output contains the success message
-            if (stdout.includes('Successfully installed')) {
-                context.globalState.update('dependenciesInstalled', true);
-                traceLog(`Python dependencies installed!`);
-                console.log('Python dependencies installed!');
+            if (stdoutViz.includes('Successfully installed')) {
+                traceLog(`Kedro-viz dependencies installed!`);
+                console.log('Kedro-viz dependencies installed!');
             }
+            if (stdoutTelemetry.includes('Successfully installed')) {
+                traceLog(`kedro-telemetry dependencies installed!`);
+                console.log('kedro-telemetry dependencies installed!');
+            }
+            context.globalState.update(DEPENDENCIES_INSTALLED, true);
         } catch (error) {
             traceError(`Failed to install Python dependencies:: ${error}`);
             console.error(`Failed to install Python dependencies:: ${error}`);
@@ -94,7 +100,51 @@ export async function installDependenciesIfNeeded(context: vscode.ExtensionConte
     }
 }
 
+
+export async function checkKedroProjectConsent(context: vscode.ExtensionContext): Promise<Boolean> {
+    const pathToScript = 'bundled/tool/check_consent.py';
+    try {
+        const stdout = await callPythonScript(pathToScript, EXTENSION_ROOT_DIR, context);
+        const telemetryResult = parseTelemetryConsent(stdout);
+
+        // Check if the script output contains the success message
+        if (telemetryResult) {
+            const consent = telemetryResult['consent'];
+            context.globalState.update(PROJECT_METADATA, telemetryResult);
+            delete telemetryResult['consent'];
+
+            context.globalState.update(TELEMETRY_CONSENT, consent);
+            console.log(`Consent from Kedro Project: ${consent}`);
+            return consent;
+        }
+        return false;
+    } catch (error) {
+        traceError(`Failed to check for telemetry consent:: ${error}`);
+    }
+    return false;
+}
+
+function parseTelemetryConsent(logMessage: string): Record<string, any> | null {
+    // Step 1: Define a regular expression to match the telemetry consent data
+    const telemetryRegex = /telemetry consent: ({.*})/;
+    const match = logMessage.match(telemetryRegex);
+
+    if (match && match[1]) {
+        try {
+            const telemetryData = JSON.parse(match[1]);
+            return telemetryData;
+        } catch (error) {
+            console.error('Failed to parse telemetry consent data:', error);
+            return null;
+        }
+    } else {
+        console.log('Telemetry consent data not found in log message.');
+        return null;
+    }
+}
+
 export async function updateKedroVizPanel(lsClient: LanguageClient | undefined): Promise<void> {
     const projectData = await executeGetProjectDataCommand(lsClient);
     KedroVizPanel.currentPanel?.updateData(projectData);
+
 }

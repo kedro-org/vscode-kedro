@@ -18,6 +18,7 @@ def install_dependencies(extension_root_dir):
     try:
         import fastapi
         import orjson
+
     except ImportError:
         subprocess.check_call(
             [

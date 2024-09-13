@@ -1,3 +1,10 @@
+from kedro_telemetry.plugin import _check_for_telemetry_consent
+from kedro_telemetry.plugin import (
+    _get_project_properties,
+    _get_or_create_uuid,
+)
+
+
 from common import update_sys_path
 from pathlib import Path
 import os
@@ -22,9 +29,9 @@ if __name__ == "__main__":
     # Project Metadata
 
     user_uuid = _get_or_create_uuid()
-    properties=_get_project_properties(user_uuid, project_path)
+    properties = _get_project_properties(user_uuid, project_path)
     # Extension will parse this message
-    properties['consent'] = consent
+    properties["consent"] = consent
     print("telemetry consent: ", end="")
     # It is important to use json.dump, if the message is printed together Python
     # convert it to single quote and the result is no longer valid JSON. The message

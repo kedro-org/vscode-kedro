@@ -53,6 +53,22 @@ The extension follows Kedro [pipeline autodiscovery mechanism](https://docs.kedr
 │           └── second_pipeline
 
 ```
+
+## Visualisation with Kedro-Viz
+To visualize your Kedro project using Kedro-Viz in Visual Studio Code, follow these steps:
+
+1. **Open the Command Palette**: 
+Press `Cmd` + `Shift` + `P` (on macOS) or `Ctrl` + `Shift` + `P` (on Windows/Linux).
+
+2. **Run Kedro-Viz**:
+Type `kedro: Run Kedro Viz` and select the command.
+This will launch Kedro-Viz and display your pipeline visually within the extension.
+
+![start kedro viz](assets/viz-vsc-start.gif)
+
+**Note:** To update the Kedro-Viz flowchart after making any changes to your Kedro project, please hit `Cmd` + `Shift` + `P` to open the VSCode command and look for `kedro: restart server`.
+
+
 # Feature
 ## Go to Definition from pipeline.py to configuration files
 Use `Cmd` (Mac)/ `Ctrl` (Window) + `Click` or `F12` to trigger `Go to Definition`
@@ -83,3 +99,14 @@ Type `"` in any `pipeline.py` and it should trigger the autocompletion list.
 ## Hover
 Just hover your mouse over any `params:`, datasets or hit the command `Show or Focus Hover`
 ![hover](assets/lsp-hover.gif)
+
+## To navigate between the flowchart and the code editor in Kedro-Viz:
+
+Navigate to Node Functions:
+Click on a node in the Kedro-Viz flowchart, and it will automatically navigate to the corresponding node function in your code.
+![navigation to node function](assets/viz-vsc-nav-function-node.gif)
+
+
+Navigate to DataCatalog:
+Clicking on a data node in the flowchart will open the corresponding dataset in the Data Catalog.
+![navigation to dataset](assets/viz-vsc-nav-data-node.gif)

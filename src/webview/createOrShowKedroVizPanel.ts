@@ -48,6 +48,9 @@ export async function handleKedroViz(
                 createOrShowKedroVizPanel(context, lsClient);
             }
         }
+        vscode.window.showInformationMessage(
+            'You can install Kedro-Viz later manually with "pip install kedro-viz". It is necessary to visualize your Pipeline.',
+        );
         return;
     }
 }

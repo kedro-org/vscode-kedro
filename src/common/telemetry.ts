@@ -19,7 +19,7 @@ export async function sendHeapEvent(commandName: string, properties?: any, ident
 
     if (properties) {
         telemetryData = { ...properties };
-        telemetryData["command_name"] = eventName;
+        telemetryData["command_name"] = commandName;
     }
 
 

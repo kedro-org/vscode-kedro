@@ -2,16 +2,14 @@ import * as vscode from 'vscode';
 import KedroVizPanel from './vizWebView';
 import { sendHeapEventWithMetadata } from '../common/telemetry';
 import { LanguageClient } from 'vscode-languageclient/node';
-import { checkKedroViz, installKedroViz } from '../common/utilities';
-import { executeGetProjectDataCommand } from '../common/commands';
+import { checkKedroViz, installKedroViz, updateKedroVizPanel } from '../common/utilities';
 
 async function createOrShowKedroVizPanel(
     context: vscode.ExtensionContext,
     lsClient: LanguageClient | undefined,
 ): Promise<void> {
     KedroVizPanel.createOrShow(context.extensionUri);
-    const projectData = await executeGetProjectDataCommand(lsClient);
-    KedroVizPanel.currentPanel?.updateData(projectData);
+    updateKedroVizPanel(lsClient);
     await sendHeapEventWithMetadata('kedro.runKedroViz', context);
 }
 

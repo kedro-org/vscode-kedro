@@ -105,7 +105,6 @@ export async function installKedroViz(context: vscode.ExtensionContext): Promise
             console.log('Kedro-Viz and its dependencies installed!');
             return true;
         }
-        context.globalState.update(DEPENDENCIES_INSTALLED, true);
     } catch (error) {
         traceError(`Failed to install 'Kedro-Viz and its dependencies:: ${error}`);
         console.error(`Failed to install 'Kedro-Viz and its dependencies:: ${error}`);

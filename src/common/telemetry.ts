@@ -1,4 +1,6 @@
 import axios from 'axios';
+import * as vscode from 'vscode';
+import { PROJECT_METADATA } from './constants';
 
 // from kedro_telemetry.plugin
 interface HeapData {
@@ -15,13 +17,12 @@ const HEAP_HEADERS = { 'Content-Type': 'application/json' };
 
 export async function sendHeapEvent(commandName: string, properties?: any, identity?: string): Promise<void> {
     var telemetryData;
-    const eventName = "Kedro VSCode Command";
+    const eventName = 'Kedro VSCode Command';
 
     if (properties) {
         telemetryData = { ...properties };
-        telemetryData["command_name"] = commandName;
+        telemetryData['command_name'] = commandName;
     }
-
 
     const data: HeapData = {
         app_id: HEAP_APPID_PROD,
@@ -46,3 +47,13 @@ export async function sendHeapEvent(commandName: string, properties?: any, ident
         console.error('Error sending Heap event:', error);
     }
 }
+
+export const sendHeapEventWithMetadata = async (eventName: string, context: vscode.ExtensionContext): Promise<void> => {
+    let projectMetadata: undefined;
+    let heapUserId: string = '';
+    projectMetadata = context.globalState.get(PROJECT_METADATA);
+    if (projectMetadata) {
+        heapUserId = projectMetadata['username'];
+    }
+    sendHeapEvent(eventName, projectMetadata, heapUserId);
+};

@@ -83,9 +83,6 @@ from kedro.framework.startup import (
 )
 from pygls.server import LanguageServer
 
-from kedro_viz.server import load_and_populate_data
-from kedro_viz.api.rest.responses import get_kedro_project_json_data
-
 class KedroLanguageServer(LanguageServer):
     """Store Kedro-specific information in the language server."""
 
@@ -559,6 +556,9 @@ def definition_from_flowchart(ls, word):
 def get_project_data_from_viz(lsClient):
     """Get project data from kedro viz
     """
+    from kedro_viz.server import load_and_populate_data
+    from kedro_viz.api.rest.responses import get_kedro_project_json_data
+
     data = None
     try:
         load_and_populate_data(Path.cwd())

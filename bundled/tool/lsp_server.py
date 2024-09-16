@@ -228,7 +228,7 @@ def _get_param_location(
 ) -> Optional[Location]:
     words = word.split("params:")
     if len(words) > 1:
-        words = words[1].split(".") ["params:", "feature.x.y"]
+        words = words[1].split(".") # ["params:", "feature.x.y"]
         param = words[0]  # Top level key ["feature","x","y"]
     else:
         return None

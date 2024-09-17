@@ -231,7 +231,8 @@ def _get_param_location(
 ) -> Optional[Location]:
     words = word.split("params:")
     if len(words) > 1:
-        param = words[0]  # Top key
+        words = words[1].split(".") # ["params:", "a.b.c"]
+        param = words[0]  # Top level key ["a","b","c"]
     else:
         return None
     log_to_output(f"Attempt to search `{param}` from parameters file")

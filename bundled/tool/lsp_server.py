@@ -216,7 +216,13 @@ def _get_conf_paths(server: KedroLanguageServer, key):
             ):
                 if not config_loader._is_hidden(each):
                     tmp_paths.append(Path(each))
-        paths = paths + list(set(tmp_paths))
+
+        # Reuse OmegaConfigLoader logic as much as possible so we don't need to write our tests here
+        deduplicated_paths = set(tmp_paths)
+        valid_config_paths = [
+            path for path in deduplicated_paths if config_loader._is_valid_config_path(path)
+        ]
+        paths = paths + list(valid_config_paths)
     return paths
 
 
@@ -225,7 +231,8 @@ def _get_param_location(
 ) -> Optional[Location]:
     words = word.split("params:")
     if len(words) > 1:
-        param = words[0]  # Top key
+        words = words[1].split(".") # ["params:", "a.b.c"]
+        param = words[0]  # Top level key ["a","b","c"]
     else:
         return None
     log_to_output(f"Attempt to search `{param}` from parameters file")
@@ -533,10 +540,12 @@ def log_for_lsp_debug(msg: str):
 
 
 def _is_pipeline(uri):
-    from pathlib import Path
-
-    filename = Path(uri).name
+    path = Path(uri)
+    filename = path.name
     if "pipeline" in str(filename):
+        return True
+    # Inside pipelines folder
+    if "pipelines" in path.parts: # [file:, Users, dummy, pipelines, pipeline_name, file.py]
         return True
     return False
 

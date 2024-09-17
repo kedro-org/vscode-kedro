@@ -83,3 +83,11 @@ def test_definition(client):
     print(td.word_at_position(pos, RE_START_WORD, RE_END_WORD))
     print(td.word_at_position(pos))
     assert False
+
+@pytest.mark.parametrize("filepath",[
+'file:///Users/pipelines/dummy/feature.py',
+'file:///Users/pipelines/dummy/pipeline.py',
+'file:///Users/pipelines/dummy/dummy_pipeline.py'
+  ])
+def test_is_pipeline(path):
+    assert _is_pipeline(path)

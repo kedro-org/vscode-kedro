@@ -290,7 +290,7 @@ def definition(
 
     def _query_catalog(document, word=None):
         if not word:
-            word = document.word_at_position(params.position)
+            word = document.word_at_position(params.position, RE_START_WORD, RE_END_WORD)
         catalog_paths = _get_conf_paths(server, "catalog")
         log_for_lsp_debug(f"Attempt to search `{word}` from catalog")
         log_for_lsp_debug(f"{catalog_paths=}")
@@ -331,7 +331,7 @@ def definition(
     # If no result, return current location
     # This is a VSCode specific logic called Alternative Definition Command
     # By default, it triggers Go to Reference so it supports using mouse click for both directions
-    # from pipline to config and config to pipeline
+    # from pipeline to config and config to pipeline
     uri = params.text_document.uri
     pos = params.position
     curr_pos = Position(line=pos.line, character=pos.character)

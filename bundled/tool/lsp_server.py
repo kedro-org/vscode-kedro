@@ -382,7 +382,7 @@ def references(
             # Read the line number and match keywords naively
             with open(pipeline_file) as f:
                 for i, line in enumerate(f):
-                    if word in line:
+                    if f'"{word}"' in line:
                         result.append((Path(pipeline_file), i))
 
     locations = []

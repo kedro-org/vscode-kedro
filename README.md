@@ -57,7 +57,7 @@ The extension follows Kedro [pipeline autodiscovery mechanism](https://docs.kedr
 ## Visualisation with Kedro-Viz
 To visualize your Kedro project using Kedro-Viz in Visual Studio Code, follow these steps:
 
-1. **Open the Command Palette**: 
+1. **Open the Command Palette**:
 Press `Cmd` + `Shift` + `P` (on macOS) or `Ctrl` + `Shift` + `P` (on Windows/Linux).
 
 2. **Run Kedro-Viz**:
@@ -80,7 +80,7 @@ Use `Cmd` (Mac)/ `Ctrl` (Window) + `Click` or `F12` to trigger `Go to Definition
 - Use the shortcut `Shift` + `F12`
 ![find reference](assets/lsp-find-reference.gif)
 
-**Note:** You can find pipeline reference in all the files containing "pipeline" in their names, even in nested subdirectories.
+**Note:** You can find pipeline reference in all the python files under `<package_name>/pipelines`
 ```
 - pipelines
   - sub_pipeline

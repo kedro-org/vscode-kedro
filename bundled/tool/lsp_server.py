@@ -383,12 +383,12 @@ def references(
         if not pipeline_dir.is_dir():
             continue
         # Use glob to find files matching the pattern recursively
-        pipeline_files = glob.glob(f"{pipeline_dir}/**/*pipeline*.py", recursive=True)
+        pipeline_files = glob.glob(f"{pipeline_dir}/**/*.py", recursive=True)
         for pipeline_file in pipeline_files:
             # Read the line number and match keywords naively
             with open(pipeline_file) as f:
                 for i, line in enumerate(f):
-                    if word in line:
+                    if f'"{word}"' in line:
                         result.append((Path(pipeline_file), i))
 
     locations = []

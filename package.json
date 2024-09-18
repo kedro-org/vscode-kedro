@@ -159,11 +159,6 @@
                 "category": "pygls"
             },
             {
-                "title": "Send Definition Request",
-                "category": "kedro",
-                "command": "kedro.sendDefinitionRequest"
-            },
-            {
                 "command": "kedro.runKedroViz",
                 "category": "kedro",
                 "title": "Run Kedro Viz"

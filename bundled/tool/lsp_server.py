@@ -290,7 +290,9 @@ def definition(
 
     def _query_catalog(document, word=None):
         if not word:
-            word = document.word_at_position(params.position, RE_START_WORD, RE_END_WORD)
+            word = document.word_at_position(
+                params.position, RE_START_WORD, RE_END_WORD
+            )
         catalog_paths = _get_conf_paths(server, "catalog")
         log_for_lsp_debug(f"Attempt to search `{word}` from catalog")
         log_for_lsp_debug(f"{catalog_paths=}")
@@ -377,19 +379,15 @@ def references(
 
     pipelines_package = importlib_resources.files(f"{PACKAGE_NAME}.pipelines")
 
-    # Iterate on pipelines/<pipeline_name>/**/*pipeline*.py
+    # Iterate on pipelines/**/*.py that fits both modular or flat pipeline structure.
     result = []
-    for pipeline_dir in pipelines_package.iterdir():
-        if not pipeline_dir.is_dir():
-            continue
-        # Use glob to find files matching the pattern recursively
-        pipeline_files = glob.glob(f"{pipeline_dir}/**/*.py", recursive=True)
-        for pipeline_file in pipeline_files:
-            # Read the line number and match keywords naively
-            with open(pipeline_file) as f:
-                for i, line in enumerate(f):
-                    if f'"{word}"' in line:
-                        result.append((Path(pipeline_file), i))
+    pipeline_files = glob.glob(f"{pipelines_package}/**/*.py", recursive=True)
+    for pipeline_file in pipeline_files:
+        # Read the line number and match keywords naively
+        with open(pipeline_file) as f:
+            for i, line in enumerate(f):
+                if f'"{word}"' in line:
+                    result.append((Path(pipeline_file), i))
 
     locations = []
     if result:

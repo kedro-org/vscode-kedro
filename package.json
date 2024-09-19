@@ -2,7 +2,7 @@
     "name": "Kedro",
     "displayName": "Kedro",
     "description": "A Kedro VSCode Extension.",
-    "version": "0.2.0-rc0",
+    "version": "0.2.0-rc3",
     "preview": false,
     "serverInfo": {
         "name": "Kedro",
@@ -159,20 +159,15 @@
                 "category": "pygls"
             },
             {
-                "title": "Send Definition Request",
-                "category": "kedro",
-                "command": "kedro.sendDefinitionRequest"
-            },
-            {
                 "command": "kedro.runKedroViz",
                 "category": "kedro",
                 "title": "Run Kedro Viz"
             }
-
         ]
     },
     "dependencies": {
         "@vscode/python-extension": "^1.0.5",
+        "axios": "^1.7.7",
         "fs-extra": "^11.2.0",
         "vscode-languageclient": "^8.1.0"
     },

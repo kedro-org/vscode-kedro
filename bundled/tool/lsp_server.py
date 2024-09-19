@@ -83,8 +83,6 @@ from kedro.framework.startup import (
 )
 from pygls.server import LanguageServer
 
-from kedro_viz.server import load_and_populate_data
-from kedro_viz.api.rest.responses import get_kedro_project_json_data
 
 class KedroLanguageServer(LanguageServer):
     """Store Kedro-specific information in the language server."""
@@ -200,9 +198,7 @@ def _get_conf_paths(server: KedroLanguageServer, key):
     config_loader: OmegaConfigLoader = server.config_loader
     patterns = config_loader.config_patterns.get(key, [])
     # By default is local
-    run_env = str(
-        Path(config_loader.conf_source) / server.run_env
-    )
+    run_env = str(Path(config_loader.conf_source) / server.run_env)
     base_env = str(Path(config_loader.conf_source) / config_loader.base_env)
 
     # Extract from OmegaConfigLoader source code
@@ -219,22 +215,29 @@ def _get_conf_paths(server: KedroLanguageServer, key):
             ):
                 if not config_loader._is_hidden(each):
                     tmp_paths.append(Path(each))
-        paths = paths + list(set(tmp_paths))
+
+        # Reuse OmegaConfigLoader logic as much as possible so we don't need to write our tests here
+        deduplicated_paths = set(tmp_paths)
+        valid_config_paths = [
+            path
+            for path in deduplicated_paths
+            if config_loader._is_valid_config_path(path)
+        ]
+        paths = paths + list(valid_config_paths)
     return paths
 
 
-def _get_param_location(
-    project_metadata: ProjectMetadata, word: str
-) -> Optional[Location]:
+def _get_param_location(server: KedroLanguageServer, word: str) -> Optional[Location]:
     words = word.split("params:")
     if len(words) > 1:
-        param = words[0]  # Top key
+        words = words[1].split(".")  # ["params:", "a.b.c"]
+        param = words[0]  # Top level key ["a","b","c"]
     else:
         return None
     log_to_output(f"Attempt to search `{param}` from parameters file")
 
     # TODO: cache -- we shouldn't have to re-read the file on every request
-    params_paths = _get_conf_paths(project_metadata, "parameters")
+    params_paths = _get_conf_paths(server, "parameters")
     param_line_no = None
 
     for parameters_file in params_paths:
@@ -280,14 +283,14 @@ def definition(
         log_for_lsp_debug(f"Query keyword for params: {word}")
 
         if word.startswith("params:"):
-            param_location = _get_param_location(server.project_metadata, word)
+            param_location = _get_param_location(server, word)
             if param_location:
                 log_for_lsp_debug(f"{param_location=}")
                 return [param_location]
 
     def _query_catalog(document, word=None):
         if not word:
-            word = document.word_at_position(params.position)
+            word = document.word_at_position(params.position, RE_START_WORD, RE_END_WORD)
         catalog_paths = _get_conf_paths(server, "catalog")
         log_for_lsp_debug(f"Attempt to search `{word}` from catalog")
         log_for_lsp_debug(f"{catalog_paths=}")
@@ -328,7 +331,7 @@ def definition(
     # If no result, return current location
     # This is a VSCode specific logic called Alternative Definition Command
     # By default, it triggers Go to Reference so it supports using mouse click for both directions
-    # from pipline to config and config to pipeline
+    # from pipeline to config and config to pipeline
     uri = params.text_document.uri
     pos = params.position
     curr_pos = Position(line=pos.line, character=pos.character)
@@ -380,12 +383,12 @@ def references(
         if not pipeline_dir.is_dir():
             continue
         # Use glob to find files matching the pattern recursively
-        pipeline_files = glob.glob(f"{pipeline_dir}/**/*pipeline*.py", recursive=True)
+        pipeline_files = glob.glob(f"{pipeline_dir}/**/*.py", recursive=True)
         for pipeline_file in pipeline_files:
             # Read the line number and match keywords naively
             with open(pipeline_file) as f:
                 for i, line in enumerate(f):
-                    if word in line:
+                    if f'"{word}"' in line:
                         result.append((Path(pipeline_file), i))
 
     locations = []
@@ -536,10 +539,14 @@ def log_for_lsp_debug(msg: str):
 
 
 def _is_pipeline(uri):
-    from pathlib import Path
-
-    filename = Path(uri).name
+    path = Path(uri)
+    filename = path.name
     if "pipeline" in str(filename):
+        return True
+    # Inside pipelines folder
+    if (
+        "pipelines" in path.parts
+    ):  # [file:, Users, dummy, pipelines, pipeline_name, file.py]
         return True
     return False
 
@@ -555,10 +562,13 @@ def definition_from_flowchart(ls, word):
     result = definition(LSP_SERVER, params=None, word=word)
     return result
 
+
 @LSP_SERVER.command("kedro.getProjectData")
-def get_porject_data_from_viz(lsClient):
-    """Get project data from kedro viz
-    """
+def get_project_data_from_viz(lsClient):
+    """Get project data from kedro viz"""
+    from kedro_viz.server import load_and_populate_data
+    from kedro_viz.api.rest.responses import get_kedro_project_json_data
+
     data = None
     try:
         load_and_populate_data(Path.cwd())
@@ -569,6 +579,7 @@ def get_porject_data_from_viz(lsClient):
     finally:
         print("Execution completed.")
         return data
+
 
 ### End of  kedro-lsp
 

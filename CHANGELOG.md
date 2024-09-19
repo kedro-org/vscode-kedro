@@ -8,6 +8,7 @@
 - Fixed a bug where "Find reference" return too many matches for catalog dataset, it returns only exact matches now.
 - Fixed a bug where namespace dataset navigation is not working properly
 - Fixed a bug where navigating on nested parameters should go to the top level key.
+- Modify the extension to search pipelines from all <package_name>/pipelines folder.
 
 
 # 0.1.0

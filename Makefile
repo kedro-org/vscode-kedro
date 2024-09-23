@@ -6,6 +6,7 @@ sign-off:
 
 
 build:
+	make dev-install
 	vsce package
 
 
@@ -19,3 +20,7 @@ dev-install:
 
 test:
 	pytest
+
+release:
+	make dev-install
+	vsce publish

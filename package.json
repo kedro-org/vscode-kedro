@@ -162,6 +162,11 @@
                 "command": "kedro.runKedroViz",
                 "category": "kedro",
                 "title": "Run Kedro Viz"
+            },
+            {
+                "command": "kedro.showOutputChannel",
+                "category": "kedro",
+                "title": "Show logs"
             }
         ]
     },

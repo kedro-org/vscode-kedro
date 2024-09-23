@@ -5,6 +5,7 @@ const vscodeApi = window.acquireVsCodeApi();
 
 function App() {
   const [data, setData] = React.useState({ nodes: [], edges: [] });
+  const [error, setError] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
 
   useEffect(() => {
@@ -14,8 +15,13 @@ function App() {
       const message = event.data;
       switch (message.command) {
         case "updateData":
-          setData(message.data);
-          setLoading(false);
+          if (message.data) {
+            setData(message.data);
+            setLoading(false);
+          } else {
+            setLoading(true);
+            setError(true);
+          }
           break;
         default:
           break;  
@@ -40,6 +46,33 @@ function App() {
     }
   };
 
+  const handleOutputClick = () => {
+      vscodeApi.postMessage({
+        command: "showOutput",
+        showOutput: true,
+      });
+    
+  };
+
+  const showMessages = () => {
+    if (error) {
+      return (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: `100vh` }}>
+          <h2 style={{ textAlign: "center" }}>
+            {"Error: couldn't display Kedro Viz, check "}
+            <span style={{ textDecoration: "underline", cursor: "pointer", color: "#00bcff" }} onClick={handleOutputClick}> output</span>
+            {" logs for more information."}
+          </h2>
+        </div>
+      );
+    }
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: `100vh` }}>
+        <h2 style={{ textAlign: "center" }}>{'Loading Kedro Viz...'}</h2>
+      </div>
+    );
+  };
+
   const handleActionCallback = (action) => {
     if (action) {
       switch (action.type) {
@@ -50,15 +83,11 @@ function App() {
           break;
       }
     }
-  }
+  };
 
   return (
       <div style={{ height: `90vh`, width: `100%` }}>
-        {loading ? (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: `100vh` }}>
-            <h2>Loading Kedro Viz...</h2>
-          </div>
-        ) : (<KedroViz
+        {loading ? showMessages() : (<KedroViz
           data={data}
           onActionCallback={handleActionCallback}
           options={{

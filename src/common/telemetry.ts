@@ -11,7 +11,7 @@ interface HeapData {
     identity?: string;
 }
 
-const HEAP_APPID_PROD = '4039408868'; // todo: Dev server, change it back to prod
+const HEAP_APPID_PROD = '2388822444';
 const HEAP_ENDPOINT = 'https://heapanalytics.com/api/track';
 const HEAP_HEADERS = { 'Content-Type': 'application/json' };
 

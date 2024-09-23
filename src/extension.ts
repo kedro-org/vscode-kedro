@@ -51,6 +51,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const CMD_SELECT_ENV = `${serverId}.selectEnvironment`;
     const CMD_RUN_KEDRO_VIZ = `${serverId}.runKedroViz`;
     const CMD_DEFINITION_REQUEST = `${serverId}.sendDefinitionRequest`;
+    const CMD_SHOW_OUTPUT_CHANNEL = `${serverId}.showOutputChannel`;
 
     // Status Bar
     const statusBarItem = await createStatusBar(CMD_SELECT_ENV, serverId);
@@ -148,6 +149,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }),
         registerCommand(CMD_RUN_KEDRO_VIZ, async () => {
             await handleKedroViz(context, lsClient);
+        }),
+        registerCommand(CMD_SHOW_OUTPUT_CHANNEL, () => {
+            outputChannel.show();
         }),
     );
 

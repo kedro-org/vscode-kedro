@@ -5,6 +5,7 @@ const vscodeApi = window.acquireVsCodeApi();
 
 function App() {
   const [data, setData] = React.useState({ nodes: [], edges: [] });
+  const [error, setError] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
 
   useEffect(() => {
@@ -14,6 +15,14 @@ function App() {
       const message = event.data;
       switch (message.command) {
         case "updateData":
+          if (message.data) {
+            setData(message.data);
+            setLoading(false);
+          } else {
+            setError("Error: couldn't display Kedro Viz, check logs for more information. Output > kedro");
+          }
+          break;
+        case "notification":
           setData(message.data);
           setLoading(false);
           break;
@@ -40,13 +49,17 @@ function App() {
     }
   };
 
+  const showMessages = () => {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: `100vh` }}>
+        <h2 style={{ textAlign: "center" }}>{error || 'Loading Kedro Viz...'}</h2>
+      </div>
+    );
+  }
+
   return (
       <div style={{ height: `90vh`, width: `100%` }}>
-        {loading ? (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: `100vh` }}>
-            <h2>Loading Kedro Viz...</h2>
-          </div>
-        ) : (<KedroViz
+        {loading ? showMessages() : (<KedroViz
           data={data}
           onNodeClickCallback={handleNodeClick}
           options={{

@@ -140,5 +140,5 @@ This will launch Kedro-Viz and display your pipeline visually within the extensi
 ## Troubleshooting
 In VSCode, you can check the `Output` tab next to your terminal and select `Kedro` to read the logs.
 
-Click `Output` and select `Kedro` from the dropdown list. It may gives you some hints and report back if you think this is a bug.
+You can either run the `Kedro: Show logs` command or click `Output` and select `Kedro` from the dropdown list. It may gives you some hints and report back if you think this is a bug.
 ![VSCode Output log](assets/troubleshooting.png)

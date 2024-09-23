@@ -5,7 +5,7 @@ const vscodeApi = window.acquireVsCodeApi();
 
 function App() {
   const [data, setData] = React.useState({ nodes: [], edges: [] });
-  const [error, setError] = React.useState(null);
+  const [error, setError] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
 
   useEffect(() => {
@@ -19,12 +19,9 @@ function App() {
             setData(message.data);
             setLoading(false);
           } else {
-            setError("Error: couldn't display Kedro Viz, check logs for more information. Output > kedro");
+            setLoading(true);
+            setError(true);
           }
-          break;
-        case "notification":
-          setData(message.data);
-          setLoading(false);
           break;
         default:
           break;  
@@ -49,10 +46,29 @@ function App() {
     }
   };
 
+  const handleOutputClick = () => {
+      vscodeApi.postMessage({
+        command: "showOutput",
+        showOutput: true,
+      });
+    
+  };
+
   const showMessages = () => {
+    if (error) {
+      return (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: `100vh` }}>
+          <h2 style={{ textAlign: "center" }}>
+            {"Error: couldn't display Kedro Viz, check "}
+            <span style={{ textDecoration: "underline", cursor: "pointer", color: "#00bcff" }} onClick={handleOutputClick}> output</span>
+            {" logs for more information."}
+          </h2>
+        </div>
+      );
+    }
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: `100vh` }}>
-        <h2 style={{ textAlign: "center" }}>{error || 'Loading Kedro Viz...'}</h2>
+        <h2 style={{ textAlign: "center" }}>{'Loading Kedro Viz...'}</h2>
       </div>
     );
   }

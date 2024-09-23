@@ -1,10 +1,14 @@
 # Change Log
 
-# 0.2.0
+# 0.2.1
+- Added a new command `Kedro: Show logs` for troubleshooting.
+
+# 0.2.0 (pre-release)
 ## Major changes and new features
 - Integrated Kedro-Viz flowchart into the extension with a new command `Kedro: Run Viz`.
 - Modified the extension to search pipelines from all `<package_name>/pipelines` folder.
 
+- Added new command`Kedro
 ## Bug fix
 - `Select Environment` actions now update the run environment instead of base.
 - Modified status bar to show both environments, i.e.`base + local`, and `base` is no longer selectable.

@@ -166,7 +166,7 @@
             {
                 "command": "kedro.showOutputChannel",
                 "category": "kedro",
-                "title": "Display the Kedro VSCode extension logs"
+                "title": "Show logs"
             }
         ]
     },

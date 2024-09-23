@@ -3,7 +3,7 @@
 # 0.2.0
 ## Major changes and new features
 - Integrated Kedro-Viz flowchart into the extension with a new command `Kedro: Run Viz`.
-- Modify the extension to search pipelines from all <package_name>/pipelines folder.
+- Modified the extension to search pipelines from all `<package_name>/pipelines` folder.
 
 ## Bug fix
 - `Select Environment` actions now update the run environment instead of base.

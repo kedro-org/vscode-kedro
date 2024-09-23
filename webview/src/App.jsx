@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-import "my-kviz/lib/styles/styles.min.css";
-import KedroViz from "my-kviz";
+import '@quantumblack/kedro-viz/lib/styles/styles.min.css';
+import KedroViz from "@quantumblack/kedro-viz";
 const vscodeApi = window.acquireVsCodeApi();
 
 function App() {
@@ -71,19 +71,34 @@ function App() {
         <h2 style={{ textAlign: "center" }}>{'Loading Kedro Viz...'}</h2>
       </div>
     );
-  }
+  };
+
+  const handleActionCallback = (action) => {
+    if (action) {
+      switch (action.type) {
+        case "TOGGLE_NODE_CLICKED":
+          handleNodeClick(action.payload);
+          break;
+        default:
+          break;
+      }
+    }
+  };
 
   return (
       <div style={{ height: `90vh`, width: `100%` }}>
         {loading ? showMessages() : (<KedroViz
           data={data}
-          onNodeClickCallback={handleNodeClick}
+          onActionCallback={handleActionCallback}
           options={{
             display: {
               globalNavigation: false,
               metadataPanel: false,
               miniMap: false,
               sidebar: false,
+            },
+            visible: {
+              slicing: false,
             },
             layer: {visible: false},
           }}

@@ -74,6 +74,9 @@ export default class KedroVizPanel {
                             await goToDefinition(message.node);
                         }
                         return;
+                    case 'showOutput':
+                        await vscode.commands.executeCommand('kedro.showOutputChannel');
+                        return;
                 }
             },
             null,

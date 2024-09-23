@@ -573,7 +573,8 @@ def get_project_data_from_viz(lsClient):
         data = get_kedro_project_json_data()
         return data
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"Kedro-Viz: {e}")
+        log_error(f"Kedro-Viz: {e}")
     finally:
         print("Execution completed.")
         return data

@@ -1,7 +1,7 @@
 # Change Log
 
 # 0.2.2
-- Fixed packaging issues where the arfitact size are doubled.
+- Reduce size of packaged artifacts.
 
 # 0.2.1
 - Added a new command `Kedro: Show logs` for troubleshooting.

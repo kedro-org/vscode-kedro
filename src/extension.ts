@@ -29,6 +29,26 @@ import { handleKedroViz } from './webview/createOrShowKedroVizPanel';
 
 let lsClient: LanguageClient | undefined;
 
+import * as fs from 'fs';
+import * as path from 'path';
+
+
+function isKedroProject(workspacePath: string): boolean {
+    const pyprojectPath = path.join(workspacePath, 'pyproject.toml');
+    
+    if (!fs.existsSync(pyprojectPath)) {
+        return false;
+    }
+
+    try {
+        const fileContent = fs.readFileSync(pyprojectPath, 'utf-8');
+        return fileContent.includes('[tool.kedro]'); //check for tool.kedro in toml
+    } catch (error) {
+        console.error("Failed to read pyproject.toml:", error);
+        return false;
+    }
+}
+
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     await installTelemetryDependenciesIfNeeded(context);
 

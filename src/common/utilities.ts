@@ -176,3 +176,21 @@ export async function updateKedroVizPanel(lsClient: LanguageClient | undefined):
     const projectData = await executeGetProjectDataCommand(lsClient);
     KedroVizPanel.currentPanel?.updateData(projectData);
 }
+
+export async function isKedroProject(): Promise<boolean> {
+    const folders = vscode.workspace.workspaceFolders;
+    if (!folders) {
+      return false;
+    }
+  
+    for (const folder of folders) {
+      const pyprojectPath = path.join(folder.uri.fsPath, 'pyproject.toml');
+      if (fs.existsSync(pyprojectPath)) {
+        const content = fs.readFileSync(pyprojectPath, 'utf8');
+        if (content.includes('[tool.kedro]')) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }

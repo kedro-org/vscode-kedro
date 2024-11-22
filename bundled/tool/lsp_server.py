@@ -250,7 +250,7 @@ def _get_param_location(server: KedroLanguageServer, word: str) -> Optional[Loca
             continue
 
         location = Location(
-            uri=f"file://{parameters_file.resolve().as_posix()}",
+            uri=parameters_file.resolve().as_uri(),
             range=Range(
                 start=Position(line=param_line_no - 1, character=0),
                 end=Position(
@@ -305,7 +305,7 @@ def definition(
             if word in catalog_conf:
                 line = catalog_conf[word]["__line__"]
                 location = Location(
-                    uri=f"file://{catalog_path}",
+                    uri=catalog_path.resolve().as_uri(),
                     range=Range(
                         start=Position(line=line - 1, character=0),
                         end=Position(
@@ -342,7 +342,7 @@ def definition(
 
 def reference_location(path, line):
     location = Location(
-        uri=f"file://{path.resolve().as_posix()}",
+        uri=path.resolve().as_uri(),
         range=Range(
             start=Position(line=line, character=0),
             end=Position(
@@ -375,19 +375,23 @@ def references(
     from kedro.framework.project import PACKAGE_NAME
 
     # Find pipelines module
-    importlib_resources.files(f"{PACKAGE_NAME}.pipelines")
-
     pipelines_package = importlib_resources.files(f"{PACKAGE_NAME}.pipelines")
 
     # Iterate on pipelines/**/*.py that fits both modular or flat pipeline structure.
     result = []
-    pipeline_files = glob.glob(f"{pipelines_package}/**/*.py", recursive=True)
-    for pipeline_file in pipeline_files:
-        # Read the line number and match keywords naively
-        with open(pipeline_file) as f:
-            for i, line in enumerate(f):
+    for pipeline_file in glob.glob(f"{str(pipelines_package)}/**/*.py", recursive=True):
+        # Ensure the path is absolute
+        abs_pipeline_file = Path(pipeline_file).absolute()
+        
+        try:
+            # Read the file using Path
+            content = abs_pipeline_file.read_text(encoding='utf-8').splitlines()
+            for i, line in enumerate(content):
                 if f'"{word}"' in line:
-                    result.append((Path(pipeline_file), i))
+                    result.append((abs_pipeline_file, i))
+        except (IOError, UnicodeDecodeError) as e:
+            log_for_lsp_debug(f"Error reading file {abs_pipeline_file}: {e}")
+            continue
 
     locations = []
     if result:

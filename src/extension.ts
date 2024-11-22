@@ -31,8 +31,8 @@ import { handleKedroViz } from './webview/createOrShowKedroVizPanel';
 let lsClient: LanguageClient | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    
-    if (!(await isKedroProject())) {
+    const _isKedroProject = await isKedroProject();
+    if (!_isKedroProject) {
         console.log('Kedro VSCode extension: No Kedro project detected.');
         return;
     }

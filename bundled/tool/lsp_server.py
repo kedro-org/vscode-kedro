@@ -569,7 +569,12 @@ def definition_from_flowchart(ls, word):
 def get_project_data_from_viz(lsClient):
     """Get project data from kedro viz"""
     from kedro_viz.server import load_and_populate_data
-    from kedro_viz.api.rest.responses import get_kedro_project_json_data
+    try:
+        # For kedro-viz > 10.0.0
+        from kedro_viz.api.rest.responses.pipelines import get_kedro_project_json_data
+    except ImportError as e:
+        # For kedro-viz = 10.0.0
+        from kedro_viz.api.rest.responses import get_kedro_project_json_data
 
     data = None
     try:

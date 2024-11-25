@@ -46,6 +46,8 @@ from lsprotocol.types import (
     TEXT_DOCUMENT_HOVER,
     TEXT_DOCUMENT_REFERENCES,
     WORKSPACE_DID_CHANGE_CONFIGURATION,
+    TEXT_DOCUMENT_DID_OPEN,
+    TEXT_DOCUMENT_DID_CHANGE,
     CompletionItem,
     CompletionList,
     CompletionOptions,
@@ -59,6 +61,10 @@ from lsprotocol.types import (
     Position,
     Range,
     TextDocumentPositionParams,
+    DidOpenTextDocumentParams,
+    DidChangeTextDocumentParams,
+    Diagnostic,
+    DiagnosticSeverity,
 )
 from pygls import uris, workspace
 from pygls.workspace import TextDocument
@@ -479,6 +485,82 @@ def did_change_configuration(
     """Implement event for workspace/didChangeConfiguration.
     Currently does nothing, but necessary for pygls.
     """
+
+
+@LSP_SERVER.feature(TEXT_DOCUMENT_DID_OPEN)
+async def did_open(ls: KedroLanguageServer, params: DidOpenTextDocumentParams):
+    await validate_catalog(ls, params.text_document.uri)
+
+
+@LSP_SERVER.feature(TEXT_DOCUMENT_DID_CHANGE)
+async def did_change(ls: KedroLanguageServer, params: DidChangeTextDocumentParams):
+    await validate_catalog(ls, params.text_document.uri)
+
+
+async def validate_catalog(ls: KedroLanguageServer, uri: str):
+    # Check if the file is catalog.yml
+    file_path = pathlib.Path(uris.to_fs_path(uri))
+    if not file_path.name.startswith("catalog") or not file_path.suffix in ['.yml', '.yaml']:
+        return  # Not a catalog file
+
+    # Get the document content
+    document = ls.workspace.get_document(uri)
+    text = document.source
+
+    diagnostics: List[Diagnostic] = []
+
+    try:
+        # Parse the YAML content
+        catalog = yaml.safe_load(text)
+        if not isinstance(catalog, dict):
+            return  # Invalid catalog format
+
+        for dataset_name, dataset_config in catalog.items():
+            dataset_type = dataset_config.get('type')
+            if dataset_type:
+                if not is_dataset_importable(dataset_type):
+                    # Find the position of the 'type' field
+                    line_number = find_line_number(text, dataset_name, 'type')
+                    if line_number is not None:
+                        diagnostic = Diagnostic(
+                            range=Range(
+                                start=Position(line=line_number, character=0),
+                                end=Position(line=line_number, character=len(dataset_type) + 6),  # 6 for 'type: '
+                            ),
+                            message=f"Dataset type '{dataset_type}' cannot be imported.",
+                            severity=DiagnosticSeverity.Error,
+                        )
+                        diagnostics.append(diagnostic)
+    except Exception as e:
+        # Handle YAML parsing errors
+        log_error(f"Error parsing catalog.yml: {e}")
+        return
+
+    # Publish diagnostics
+    ls.publish_diagnostics(uri, diagnostics)
+
+
+def is_dataset_importable(dataset_type: str) -> bool:
+    try:
+        module_name, class_name = dataset_type.rsplit('.', 1)
+        module = importlib.import_module(module_name)
+        getattr(module, class_name)
+        return True
+    except (ImportError, AttributeError, ValueError):
+        return False
+
+def find_line_number(text: str, dataset_name: str, field_name: str) -> Optional[int]:
+    lines = text.split('\n')
+    in_dataset = False
+    for idx, line in enumerate(lines):
+        stripped_line = line.strip()
+        if stripped_line.startswith(f"{dataset_name}:"):
+            in_dataset = True
+        elif in_dataset and stripped_line.startswith(f"{field_name}:"):
+            return idx
+        elif stripped_line and not stripped_line.startswith(' '):
+            in_dataset = False  # End of current dataset
+    return None
 
 
 def _get_global_defaults():

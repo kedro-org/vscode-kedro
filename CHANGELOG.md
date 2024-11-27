@@ -2,7 +2,7 @@
 
 # 0.2.3
 ## Major changes and new features
-- Silenced the server initialisation error when working on a non-kedro project.
+- Silenced the server initialisation error when working on a non-Kedro project.
 - Improved UX when click on the visualisation it will not refocus every time.
 
 ## Bug fix

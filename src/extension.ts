@@ -22,6 +22,7 @@ import {
     updateKedroVizPanel,
     checkKedroProjectConsent,
     installTelemetryDependenciesIfNeeded,
+    isKedroProject,
 } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import KedroVizPanel from './webview/vizWebView';
@@ -30,6 +31,12 @@ import { handleKedroViz } from './webview/createOrShowKedroVizPanel';
 let lsClient: LanguageClient | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    const _isKedroProject = await isKedroProject();
+    if (!_isKedroProject) {
+        console.log('Kedro VSCode extension: No Kedro project detected.');
+        return;
+    }
+
     await installTelemetryDependenciesIfNeeded(context);
 
     // Check for consent in the Kedro Project

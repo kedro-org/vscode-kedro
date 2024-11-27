@@ -97,6 +97,9 @@ function App() {
               miniMap: false,
               sidebar: false,
             },
+            behaviour: { 
+              reFocus: false,
+            },
             visible: {
               slicing: false,
             },

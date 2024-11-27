@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import glob
+import importlib
 import json
 import logging
 import os
@@ -12,7 +13,7 @@ import pathlib
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Tuple, Optional
 
 from common import update_sys_path
 
@@ -520,12 +521,15 @@ async def validate_catalog(ls: KedroLanguageServer, uri: str):
             if dataset_type:
                 if not is_dataset_importable(dataset_type):
                     # Find the position of the 'type' field
-                    line_number = find_line_number(text, dataset_name, 'type')
-                    if line_number is not None:
+                    line_info = find_line_number_and_character(text, dataset_name, 'type')
+                    if line_info is not None:
+                        line_number, start_char = line_info
+                        # Calculate the end character position
+                        end_char = start_char + len(f"type: {dataset_type}")
                         diagnostic = Diagnostic(
                             range=Range(
-                                start=Position(line=line_number, character=0),
-                                end=Position(line=line_number, character=len(dataset_type) + 6),  # 6 for 'type: '
+                                start=Position(line=line_number, character=start_char),
+                                end=Position(line=line_number, character=end_char),
                             ),
                             message=f"Dataset type '{dataset_type}' cannot be imported.",
                             severity=DiagnosticSeverity.Error,
@@ -549,7 +553,7 @@ def is_dataset_importable(dataset_type: str) -> bool:
     except (ImportError, AttributeError, ValueError):
         return False
 
-def find_line_number(text: str, dataset_name: str, field_name: str) -> Optional[int]:
+def find_line_number_and_character(text: str, dataset_name: str, field_name: str) -> Optional[Tuple[int, int]]:
     lines = text.split('\n')
     in_dataset = False
     for idx, line in enumerate(lines):
@@ -557,7 +561,9 @@ def find_line_number(text: str, dataset_name: str, field_name: str) -> Optional[
         if stripped_line.startswith(f"{dataset_name}:"):
             in_dataset = True
         elif in_dataset and stripped_line.startswith(f"{field_name}:"):
-            return idx
+            # Calculate the character position accounting for indentation
+            start_char = len(line) - len(line.lstrip())
+            return idx, start_char
         elif stripped_line and not stripped_line.startswith(' '):
             in_dataset = False  # End of current dataset
     return None

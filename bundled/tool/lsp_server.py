@@ -501,12 +501,17 @@ async def did_change(ls: KedroLanguageServer, params: DidChangeTextDocumentParam
 async def validate_catalog(ls: KedroLanguageServer, uri: str):
     # Check if the file is catalog.yml
     file_path = pathlib.Path(uris.to_fs_path(uri))
-    if not file_path.name.startswith("catalog") or not file_path.suffix in ['.yml', '.yaml']:
+    if not file_path.name.startswith("catalog") or file_path.suffix not in ['.yml', '.yaml']:
         return  # Not a catalog file
 
-    # Get the document content
-    document = ls.workspace.get_document(uri)
-    text = document.source
+    # Read the file content
+    try:
+        text = file_path.read_text(encoding='utf-8')
+    except Exception as e:
+        log_error(f"Error reading file {file_path}: {e}")
+        # Clear diagnostics if the file cannot be read
+        ls.publish_diagnostics(uri, [])
+        return
 
     diagnostics: List[Diagnostic] = []
 
@@ -519,7 +524,8 @@ async def validate_catalog(ls: KedroLanguageServer, uri: str):
         for dataset_name, dataset_config in catalog.items():
             dataset_type = dataset_config.get('type')
             if dataset_type:
-                if not is_dataset_importable(dataset_type):
+                is_importable, error_msg = is_dataset_importable(dataset_type)
+                if not is_importable:
                     # Find the position of the 'type' field
                     line_info = find_line_number_and_character(text, dataset_name, 'type')
                     if line_info is not None:
@@ -531,7 +537,7 @@ async def validate_catalog(ls: KedroLanguageServer, uri: str):
                                 start=Position(line=line_number, character=start_char),
                                 end=Position(line=line_number, character=end_char),
                             ),
-                            message=f"Dataset type '{dataset_type}' cannot be imported.",
+                            message=f"Dataset type '{dataset_type}' cannot be imported. {error_msg}",
                             severity=DiagnosticSeverity.Error,
                         )
                         diagnostics.append(diagnostic)
@@ -544,14 +550,18 @@ async def validate_catalog(ls: KedroLanguageServer, uri: str):
     ls.publish_diagnostics(uri, diagnostics)
 
 
-def is_dataset_importable(dataset_type: str) -> bool:
+def is_dataset_importable(dataset_type: str) -> Tuple[bool, Optional[str]]:
     try:
         module_name, class_name = dataset_type.rsplit('.', 1)
         module = importlib.import_module(module_name)
         getattr(module, class_name)
-        return True
-    except (ImportError, AttributeError, ValueError):
-        return False
+        return True, None
+    except ImportError as e:
+        return False, f"Module '{module_name}' cannot be imported. {e}"
+    except AttributeError:
+        return False, f"Class '{class_name}' not found in module '{module_name}'."
+    except ValueError:
+        return False, "Invalid dataset type format. It should be 'module.ClassName'."
 
 def find_line_number_and_character(text: str, dataset_name: str, field_name: str) -> Optional[Tuple[int, int]]:
     lines = text.split('\n')

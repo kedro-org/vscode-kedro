@@ -1,5 +1,13 @@
 # Change Log
 
+# 0.2.3
+## Major changes and new features
+- Silenced the server initialisation error when working on a non-Kedro project.
+- Improved UX: when clicking on the visualisation it will not refocus every time.
+
+## Bug fix
+- Fixed Windows path issue.
+
 # 0.2.2
 - Reduce size of packaged artifacts.
 
@@ -11,7 +19,7 @@
 - Integrated Kedro-Viz flowchart into the extension with a new command `Kedro: Run Kedro Viz`.
 - Modified the extension to search pipelines from all `<package_name>/pipelines` folder.
 - Added new command `Kedro: Show Logs`
-  
+
 ## Bug fix
 - `Select Environment` actions now update the run environment instead of base.
 - Modified status bar to show both environments, i.e.`base + local`, and `base` is no longer selectable.

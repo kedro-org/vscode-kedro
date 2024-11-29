@@ -66,6 +66,13 @@ from lsprotocol.types import (
     DidChangeTextDocumentParams,
     Diagnostic,
     DiagnosticSeverity,
+    DidChangeWatchedFilesParams,
+    FileChangeType,
+    RegistrationParams,
+    Registration,
+    DidChangeWatchedFilesRegistrationOptions,
+    FileSystemWatcher,
+    WatchKind,
 )
 from pygls import uris, workspace
 from pygls.workspace import TextDocument
@@ -189,6 +196,27 @@ async def initialize(params: lsp.InitializeParams) -> None:
     )
     _check_project()
 
+    # After initialisation, validate all catalog files
+    await validate_all_catalogs(LSP_SERVER)
+
+    # Set up file watchers for catalog files
+    catalog_pattern = FileSystemWatcher(
+        glob_pattern="**/catalog*.y?(a)ml",
+        kind=(WatchKind.Create | WatchKind.Change | WatchKind.Delete)
+    )
+    await LSP_SERVER.register_capability_async(
+        RegistrationParams(
+            registrations=[
+                Registration(
+                    id="catalogWatcher",
+                    method="workspace/didChangeWatchedFiles",
+                    register_options=DidChangeWatchedFilesRegistrationOptions(
+                        watchers=[catalog_pattern]
+                    ),
+                )
+            ]
+        )
+    )
 
 ### Kedro LSP logic
 def _get_conf_paths(server: KedroLanguageServer, key):
@@ -498,13 +526,47 @@ async def did_change(ls: KedroLanguageServer, params: DidChangeTextDocumentParam
     await validate_catalog(ls, params.text_document.uri)
 
 
-async def validate_catalog(ls: KedroLanguageServer, uri: str):
-    # Check if the file is catalog.yml
-    file_path = pathlib.Path(uris.to_fs_path(uri))
-    if not file_path.name.startswith("catalog") or file_path.suffix not in ['.yml', '.yaml']:
-        return  # Not a catalog file
+@LSP_SERVER.feature(lsp.WORKSPACE_DID_CHANGE_WATCHED_FILES)
+async def did_change_watched_files(ls: KedroLanguageServer, params: DidChangeWatchedFilesParams):
+    """Handle changes to catalog files."""
+    for change in params.changes:
+        if change.type in (FileChangeType.Created, FileChangeType.Changed):
+            await validate_catalog(ls, change.uri)
+        elif change.type == FileChangeType.Deleted:
+            # Clear diagnostics for deleted files
+            ls.publish_diagnostics(change.uri, [])
 
+
+async def validate_all_catalogs(ls: KedroLanguageServer):
+    """Validate all catalog files in the workspace."""
+    _check_project()
+    if not ls.is_kedro_project():
+        return
+
+    catalog_files = find_all_catalog_files(ls.workspace.root_path)
+    for file_uri in catalog_files:
+        await validate_catalog(ls, file_uri)
+
+
+def find_all_catalog_files(root_path):
+    """Find all catalog files in the workspace."""
+    catalog_files = []
+    for dirpath, _, filenames in os.walk(root_path):
+        for filename in filenames:
+            if filename.startswith('catalog') and filename.endswith(('.yml', '.yaml')):
+                file_path = os.path.join(dirpath, filename)
+                file_uri = uris.from_fs_path(file_path)
+                catalog_files.append(file_uri)
+    return catalog_files
+
+
+async def validate_catalog(ls: KedroLanguageServer, uri: str):
     # Read the file content
+    file_path = pathlib.Path(uris.to_fs_path(uri))
+    if not file_path.exists():
+        ls.publish_diagnostics(uri, [])
+        return
+
     try:
         text = file_path.read_text(encoding='utf-8')
     except Exception as e:
@@ -517,7 +579,7 @@ async def validate_catalog(ls: KedroLanguageServer, uri: str):
 
     try:
         # Parse the YAML content
-        catalog = yaml.safe_load(text)
+        catalog = yaml.load(text, Loader=SafeLineLoader)
         if not isinstance(catalog, dict):
             return  # Invalid catalog format
 
@@ -539,12 +601,23 @@ async def validate_catalog(ls: KedroLanguageServer, uri: str):
                             ),
                             message=f"Dataset type '{dataset_type}' cannot be imported. {error_msg}",
                             severity=DiagnosticSeverity.Error,
+                            source="Kedro LSP"
                         )
                         diagnostics.append(diagnostic)
     except Exception as e:
         # Handle YAML parsing errors
-        log_error(f"Error parsing catalog.yml: {e}")
-        return
+        log_error(f"Error parsing {file_path.name}: {e}")
+        # Provide a diagnostic for YAML syntax errors
+        diagnostic = Diagnostic(
+            range=Range(
+                start=Position(line=0, character=0),
+                end=Position(line=0, character=0),
+            ),
+            message=f"YAML parsing error: {e}",
+            severity=DiagnosticSeverity.Error,
+            source="Kedro LSP"
+        )
+        diagnostics.append(diagnostic)
 
     # Publish diagnostics
     ls.publish_diagnostics(uri, diagnostics)
@@ -562,6 +635,7 @@ def is_dataset_importable(dataset_type: str) -> Tuple[bool, Optional[str]]:
         return False, f"Class '{class_name}' not found in module '{module_name}'."
     except ValueError:
         return False, "Invalid dataset type format. It should be 'module.ClassName'."
+
 
 def find_line_number_and_character(text: str, dataset_name: str, field_name: str) -> Optional[Tuple[int, int]]:
     lines = text.split('\n')
@@ -639,7 +713,7 @@ def log_for_lsp_debug(msg: str):
 
 
 def _is_pipeline(uri):
-    path = Path(uri)
+    path = Path(uris.to_fs_path(uri))
     filename = path.name
     if "pipeline" in str(filename):
         return True

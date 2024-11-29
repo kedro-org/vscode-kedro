@@ -584,6 +584,9 @@ async def validate_catalog(ls: KedroLanguageServer, uri: str):
             return  # Invalid catalog format
 
         for dataset_name, dataset_config in catalog.items():
+            if dataset_name.startswith('_'):
+                continue  # Skip datasets starting with '_'
+
             dataset_type = dataset_config.get('type')
             if dataset_type:
                 is_importable, error_msg = is_dataset_importable(dataset_type)

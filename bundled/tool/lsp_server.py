@@ -17,6 +17,8 @@ from typing import Any, Dict, Tuple, Optional
 
 from common import update_sys_path
 
+from kedro.io import DataCatalog
+
 # **********************************************************
 # Update sys.path before importing any bundled libraries.
 # **********************************************************
@@ -560,6 +562,15 @@ def find_all_catalog_files(root_path):
     return catalog_files
 
 
+def remove_line_numbers(config):
+    if isinstance(config, dict):
+        return {k: remove_line_numbers(v) for k, v in config.items() if k != '__line__'}
+    elif isinstance(config, list):
+        return [remove_line_numbers(i) for i in config]
+    else:
+        return config
+
+
 async def validate_catalog(ls: KedroLanguageServer, uri: str):
     # Read the file content
     file_path = pathlib.Path(uris.to_fs_path(uri))
@@ -579,30 +590,41 @@ async def validate_catalog(ls: KedroLanguageServer, uri: str):
 
     try:
         # Parse the YAML content
-        catalog = yaml.load(text, Loader=SafeLineLoader)
-        if not isinstance(catalog, dict):
+        catalog_config = yaml.load(text, Loader=SafeLineLoader)
+        if not isinstance(catalog_config, dict):
             return  # Invalid catalog format
 
-        for dataset_name, dataset_config in catalog.items():
-            if dataset_name.startswith('_'):
-                continue  # Skip datasets starting with '_'
+        # Remove '__line__' keys
+        clean_catalog_config = remove_line_numbers(catalog_config)
 
-            dataset_type = dataset_config.get('type')
-            if dataset_type:
-                is_importable, error_msg = is_dataset_importable(dataset_type)
-                if not is_importable:
+        try:
+            # Attempt to create a DataCatalog with the cleaned catalog config
+            DataCatalog.from_config(clean_catalog_config)
+        except Exception as e:
+            # An error occurred while loading the entire catalog
+            # Now, check each dataset individually
+            for dataset_name, dataset_config in catalog_config.items():
+                if dataset_name.startswith('_'):
+                    continue  # Skip datasets starting with '_'
+
+                # Remove '__line__' key from dataset_config
+                clean_dataset_config = remove_line_numbers(dataset_config)
+
+                try:
+                    DataCatalog.from_config({dataset_name: clean_dataset_config})
+                except Exception as dataset_exception:
                     # Find the position of the 'type' field
                     line_info = find_line_number_and_character(text, dataset_name, 'type')
                     if line_info is not None:
                         line_number, start_char = line_info
-                        # Calculate the end character position
+                        dataset_type = dataset_config.get('type', 'Unknown')
                         end_char = start_char + len(f"type: {dataset_type}")
                         diagnostic = Diagnostic(
                             range=Range(
                                 start=Position(line=line_number, character=start_char),
                                 end=Position(line=line_number, character=end_char),
                             ),
-                            message=f"Dataset type '{dataset_type}' cannot be imported. {error_msg}",
+                            message=f"Dataset '{dataset_name}' has an invalid type '{dataset_type}'. {str(dataset_exception)}",
                             severity=DiagnosticSeverity.Error,
                             source="Kedro LSP"
                         )

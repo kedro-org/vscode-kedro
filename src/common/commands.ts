@@ -1,20 +1,29 @@
 import * as fs from 'fs';
-import { QuickPickItem, window } from 'vscode';
+import { QuickPickItem, window, Uri } from 'vscode';
 import * as vscode from 'vscode';
 
 import { getWorkspaceFolders } from './vscodeapi';
-import { LanguageClient, LanguageClientOptions, ServerOptions, State, integer } from 'vscode-languageclient/node';
+import { LanguageClient, State } from 'vscode-languageclient/node';
 export async function selectEnvironment() {
-    let workspaces = getWorkspaceFolders();
-    const root_dir = workspaces[0].uri.fsPath; // Only pick the first workspace
-    const confDir = `${root_dir}/conf`;
+    const config = vscode.workspace.getConfiguration('kedro');
+    let kedroProjectPath = config.get<string>('kedroProjectPath');
+    let kedroProjectRootDir: string | undefined = undefined;
+
+    if (kedroProjectPath) {
+        kedroProjectRootDir = kedroProjectPath;
+    } else {
+        let workspaces = getWorkspaceFolders();
+        kedroProjectRootDir = workspaces[0].uri.fsPath; // Only pick the first workspace
+    }
+
+    const confDir = `${kedroProjectRootDir}/conf`;
     // Iterate the `conf` directory to get folder names
     const directories = fs
         .readdirSync(confDir, { withFileTypes: true })
         .filter((dirent) => dirent.isDirectory())
         .map((dirent) => dirent.name);
 
-    const envs: QuickPickItem[] = directories.filter(dir => dir !== 'base').map((label) => ({ label }));
+    const envs: QuickPickItem[] = directories.filter((dir) => dir !== 'base').map((label) => ({ label }));
 
     const result = await window.showQuickPick(envs, {
         placeHolder: 'Select Kedro runtime environment',
@@ -22,6 +31,18 @@ export async function selectEnvironment() {
 
     return result;
 }
+
+export async function setKedroProjectPath() {
+    const result = await vscode.window.showInputBox({
+        placeHolder: 'Enter the Kedro Project Root Directory',
+        prompt: 'Please provide the path to the Kedro project root directory',
+    });
+    if (result) {
+        const config = vscode.workspace.getConfiguration('kedro');
+        await config.update('kedroProjectPath', result, vscode.ConfigurationTarget.Workspace);
+    }
+}
+
 let logger: vscode.LogOutputChannel;
 
 /**
@@ -113,4 +134,3 @@ export async function executeGetProjectDataCommand(lsClient: LanguageClient | un
     const result = await vscode.commands.executeCommand(commandName);
     return result;
 }
-

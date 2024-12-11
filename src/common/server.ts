@@ -28,7 +28,9 @@ async function createServer(
     environment?: string,
 ): Promise<LanguageClient> {
     const command = settings.interpreter[0];
-    const cwd = settings.cwd;
+
+    // Use kedroProjectPath if set, otherwise fallback to settings.cwd
+    const cwd = settings.kedroProjectPath || settings.cwd;
 
     // Set debugger path needed for debugging python code.
     const newEnv = { ...process.env };

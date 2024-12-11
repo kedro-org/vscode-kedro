@@ -43,6 +43,17 @@ export function getLSClientTraceLevel(channelLogLevel: LogLevel, globalLogLevel:
 }
 
 export async function getProjectRoot(): Promise<WorkspaceFolder> {
+    const config = vscode.workspace.getConfiguration('kedro');
+    let kedroProjectPath = config.get<string>('kedroProjectPath');
+
+    if (kedroProjectPath && kedroProjectPath.trim()) {
+        return {
+            uri: Uri.file(kedroProjectPath),
+            name: path.basename(kedroProjectPath),
+            index: 0,
+        };
+    }
+
     const workspaces: readonly WorkspaceFolder[] = getWorkspaceFolders();
     if (workspaces.length === 0) {
         return {
@@ -132,8 +143,11 @@ export async function checkKedroViz(context: vscode.ExtensionContext): Promise<b
 
 export async function checkKedroProjectConsent(context: vscode.ExtensionContext): Promise<Boolean> {
     const pathToScript = 'bundled/tool/check_consent.py';
+    const config = vscode.workspace.getConfiguration('kedro');
+    let rootDir = config.get<string>('kedroProjectPath') || EXTENSION_ROOT_DIR;
+
     try {
-        const stdout = await callPythonScript(pathToScript, EXTENSION_ROOT_DIR, context);
+        const stdout = await callPythonScript(pathToScript, rootDir, context);
         const telemetryResult = parseTelemetryConsent(stdout);
 
         // Check if the script output contains the success message
@@ -177,26 +191,37 @@ export async function updateKedroVizPanel(lsClient: LanguageClient | undefined):
     KedroVizPanel.currentPanel?.updateData(projectData);
 }
 
-export async function isKedroProject(): Promise<boolean> {
+export async function isKedroProject(kedroProjectPath?: string): Promise<boolean> {
+    if (kedroProjectPath && kedroProjectPath.trim()) {
+        return await checkPyprojectToml(kedroProjectPath);
+    }
+
+    // No specific path: check all workspace folders
     const folders = getWorkspaceFolders();
     if (!folders || folders.length === 0) {
         return false;
     }
 
-    // Check all workspace folders
     for (const folder of folders) {
-        const pyprojectPath = path.join(folder.uri.fsPath, 'pyproject.toml');
-        try {
-            const content = await fs.readFile(pyprojectPath, 'utf8');
-            if (content.includes('[tool.kedro]')) {
-                traceLog(`Kedro project detected in folder: ${folder.uri.fsPath}`);
-                return true;
-            }
-        } catch (error) {
-            // Continue if we can't find/read files
-            traceError(`Error reading ${pyprojectPath}: ${error}`);
-            continue;
+        if (await checkPyprojectToml(folder.uri.fsPath)) {
+            return true;
         }
+    }
+
+    return false;
+}
+
+async function checkPyprojectToml(projectPath: string): Promise<boolean> {
+    const pyprojectPath = path.join(projectPath, 'pyproject.toml');
+    try {
+        const content = await fs.readFile(pyprojectPath, 'utf8');
+        if (content.includes('[tool.kedro]')) {
+            traceLog(`Kedro project detected at ${projectPath}`);
+            return true;
+        }
+    } catch (error) {
+        // Only log the error if needed, otherwise we silently fail
+        traceError(`Error reading ${pyprojectPath}: ${error}`);
     }
     return false;
 }

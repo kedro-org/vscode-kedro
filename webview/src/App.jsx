@@ -1,22 +1,25 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import '@quantumblack/kedro-viz/lib/styles/styles.min.css';
 import KedroViz from "@quantumblack/kedro-viz";
+
 const vscodeApi = window.acquireVsCodeApi();
 
 function App() {
-  const [data, setData] = React.useState({ nodes: [], edges: [] });
-  const [error, setError] = React.useState(false);
-  const [loading, setLoading] = React.useState(true);
+  const [data, setData] = useState({ nodes: [], edges: [] });
+  const [toolbar, setToolbar] = useState({});
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Handle messages sent from the extension to the webview
-    window.addEventListener("message", (event) => {
+    const handleMessage = (event) => {
       console.log("Received message from extension", event);
       const message = event.data;
       switch (message.command) {
         case "updateData":
           if (message.data) {
             setData(message.data);
+            setToolbar(message.data.toolbar || {}); // Extract toolbar options
             setLoading(false);
           } else {
             setLoading(true);
@@ -26,12 +29,12 @@ function App() {
         default:
           break;  
       }
-    });
-
-    return () => {
-      window.removeEventListener("message", () => {console.log("removed")});
     };
 
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
   }, []);
 
   const handleNodeClick = (node) => {
@@ -39,19 +42,18 @@ function App() {
       vscodeApi.postMessage({
         command: "fromWebview",
         node: {
-          type:node.type,
-          text:node.fullName
+          type: node.type,
+          text: node.fullName
         },
       });
     }
   };
 
   const handleOutputClick = () => {
-      vscodeApi.postMessage({
-        command: "showOutput",
-        showOutput: true,
-      });
-    
+    vscodeApi.postMessage({
+      command: "showOutput",
+      showOutput: true,
+    });
   };
 
   const showMessages = () => {
@@ -85,27 +87,34 @@ function App() {
     }
   };
 
+  // Use toolbar state to configure KedroViz options
+  // For example, if toolbar.sidebar is false, hide the sidebar, else show it
+  const kedroVizOptions = {
+    display: {
+      globalNavigation: false,
+      metadataPanel: false,
+      miniMap: false,
+      // If toolbar.sidebar is explicitly false, hide it. Otherwise, default to false if not set.
+      sidebar: toolbar.sidebar === true
+    },
+    behaviour: { 
+      reFocus: false,
+    },
+    visible: {
+      slicing: false,
+    },
+    layer: { visible: false },
+  };
+
   return (
-      <div style={{ height: `90vh`, width: `100%` }}>
-        {loading ? showMessages() : (<KedroViz
+    <div style={{ height: `90vh`, width: `100%` }}>
+      {loading ? showMessages() : (
+        <KedroViz
           data={data}
           onActionCallback={handleActionCallback}
-          options={{
-            display: {
-              globalNavigation: false,
-              metadataPanel: false,
-              miniMap: false,
-              sidebar: false,
-            },
-            behaviour: { 
-              reFocus: false,
-            },
-            visible: {
-              slicing: false,
-            },
-            layer: {visible: false},
-          }}
-        />)}
+          options={kedroVizOptions}
+        />
+      )}
     </div>
   );
 }

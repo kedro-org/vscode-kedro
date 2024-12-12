@@ -1,9 +1,11 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import { QuickPickItem, window, Uri } from 'vscode';
 import * as vscode from 'vscode';
 
 import { getWorkspaceFolders } from './vscodeapi';
 import { LanguageClient, State } from 'vscode-languageclient/node';
+import { isKedroProject } from './utilities';
 export async function selectEnvironment() {
     const config = vscode.workspace.getConfiguration('kedro');
     let kedroProjectPath = config.get<string>('kedroProjectPath');
@@ -36,10 +38,50 @@ export async function setKedroProjectPath() {
     const result = await vscode.window.showInputBox({
         placeHolder: 'Enter the Kedro Project Root Directory',
         prompt: 'Please provide the path to the Kedro project root directory',
+        validateInput: async (value) => {
+            if (!value) {
+                return 'Path cannot be empty';
+            }
+            // Verify if path exists and is a Kedro project
+            if (!(await isKedroProject(value))) {
+                return 'Invalid Kedro project path. Please ensure it contains pyproject.toml';
+            }
+            return null;
+        },
     });
+
     if (result) {
+        // Create URI from the path
+        const uri = vscode.Uri.file(result);
+
+        // Get current workspace folders
+        const currentFolders = vscode.workspace.workspaceFolders || [];
+
+        // Check if the entered path is already part of any workspace folder
+        const isPartOfWorkspace = currentFolders.some((folder) => {
+            const folderPath = folder.uri.fsPath;
+            return result.startsWith(folderPath) || folderPath.startsWith(result);
+        });
+
+        // If path is not part of workspace, add it as a new workspace folder
+        if (!isPartOfWorkspace) {
+            // Add new folder to workspace
+            const success = await vscode.workspace.updateWorkspaceFolders(
+                currentFolders.length,
+                0,
+                { uri: uri, name: path.basename(result) }, // New folder to add
+            );
+
+            if (!success) {
+                vscode.window.showErrorMessage('Failed to add folder to workspace');
+                return;
+            }
+        }
+
+        // Update kedro configuration
         const config = vscode.workspace.getConfiguration('kedro');
         await config.update('kedroProjectPath', result, vscode.ConfigurationTarget.Workspace);
+        vscode.window.showInformationMessage('Kedro project path updated successfully');
     }
 }
 

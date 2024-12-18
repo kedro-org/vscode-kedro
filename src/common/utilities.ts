@@ -13,6 +13,7 @@ import { DEPENDENCIES_INSTALLED, EXTENSION_ROOT_DIR, PROJECT_METADATA, TELEMETRY
 import { traceError, traceLog } from './log/logging';
 import KedroVizPanel from '../webview/vizWebView';
 import { executeGetProjectDataCommand } from './commands';
+import { getWorkspaceSettings } from './settings';
 
 function logLevelToTrace(logLevel: LogLevel): Trace {
     switch (logLevel) {
@@ -224,4 +225,10 @@ async function checkPyprojectToml(projectPath: string): Promise<boolean> {
         traceError(`Error reading ${pyprojectPath}: ${error}`);
     }
     return false;
+}
+
+export async function getKedroProjectPath(): Promise<string> {
+    const projectRoot = await getProjectRoot();
+    const workspaceSetting = await getWorkspaceSettings('kedro', projectRoot);
+    return workspaceSetting.kedroProjectPath;
 }

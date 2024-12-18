@@ -1,14 +1,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { QuickPickItem, window, Uri } from 'vscode';
+import { QuickPickItem, window } from 'vscode';
 import * as vscode from 'vscode';
 
 import { getWorkspaceFolders } from './vscodeapi';
 import { LanguageClient, State } from 'vscode-languageclient/node';
-import { isKedroProject } from './utilities';
+import { getKedroProjectPath, isKedroProject } from './utilities';
 export async function selectEnvironment() {
-    const config = vscode.workspace.getConfiguration('kedro');
-    let kedroProjectPath = config.get<string>('kedroProjectPath');
+    let kedroProjectPath = await getKedroProjectPath();
     let kedroProjectRootDir: string | undefined = undefined;
 
     if (kedroProjectPath) {

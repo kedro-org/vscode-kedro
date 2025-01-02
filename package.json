@@ -79,12 +79,6 @@
         },
         "configuration": {
             "properties": {
-                "yaml.schemas": {
-                    "default": {
-                        "https://raw.githubusercontent.com/kedro-org/kedro/develop/static/jsonschema/kedro-catalog-0.19.json": "conf/**/*catalog*"
-                    },
-                    "description": "Default schema validate against catalog YAML files using YAML extension"
-                },
                 "kedro.importStrategy": {
                     "default": "useBundled",
                     "description": "Defines where `kedro` is imported from. This setting may be ignored if `kedro.path` is set.",

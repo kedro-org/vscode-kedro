@@ -102,7 +102,7 @@ class KedroLanguageServer(LanguageServer):
         try:
             self.workspace_settings = next(iter(WORKSPACE_SETTINGS.values()))
             root_path = pathlib.Path(
-                self.workspace.root_path
+                self.workspace_settings.get("kedroProjectPath") or self.workspace.root_path
             )  # todo: From language server, can we get it from client initialise response instead?
             project_metadata = bootstrap_project(root_path)
             env = None
@@ -489,6 +489,7 @@ def _get_global_defaults():
         "importStrategy": GLOBAL_SETTINGS.get("importStrategy", "useBundled"),
         "showNotifications": GLOBAL_SETTINGS.get("showNotifications", "off"),
         "environment": GLOBAL_SETTINGS.get("environment", ""),
+        "kedroProjectPath": GLOBAL_SETTINGS.get("kedroProjectPath", ""),
     }
 
 
@@ -578,7 +579,9 @@ def get_project_data_from_viz(lsClient):
 
     data = None
     try:
-        load_and_populate_data(Path.cwd())
+        workspace_settings = next(iter(WORKSPACE_SETTINGS.values()))
+        kedro_project_path = Path(workspace_settings.get("kedroProjectPath")) or Path.cwd()
+        load_and_populate_data(kedro_project_path)
         data = get_kedro_project_json_data()
         return data
     except Exception as e:

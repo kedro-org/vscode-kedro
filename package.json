@@ -176,7 +176,7 @@
             },
             {
                 "command": "kedro.kedroProjectPath",
-                "title": "Kedro: Set Project Path", 
+                "title": "Set Project Path", 
                 "category": "kedro"
             }
         ]

@@ -674,7 +674,6 @@ async def validate_catalog(ls: KedroLanguageServer, uri: str):
 async def periodic_revalidation(ls: KedroLanguageServer, interval: int = 5):
     """Periodically revalidate all catalog files."""
     while True:
-        log_to_output("Periodic check: Revalidating catalogs...")
         try:
             await validate_all_catalogs(ls)
         except Exception as e:

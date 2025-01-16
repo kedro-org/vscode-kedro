@@ -526,6 +526,12 @@ def did_change_configuration(
 async def did_open(ls: KedroLanguageServer, params: DidOpenTextDocumentParams):
     """Validate catalog content when a file is opened."""
     document_uri = params.text_document.uri
+    file_path = pathlib.Path(uris.to_fs_path(document_uri))
+
+    # Only validate files with 'catalog' in the name and YAML extensions
+    if not (file_path.name.startswith("catalog") and file_path.suffix in {".yml", ".yaml"}):
+        return
+
     document = ls.workspace.get_text_document(document_uri)
     await validate_catalog_content(ls, document_uri, document.source)
 
@@ -534,6 +540,12 @@ async def did_open(ls: KedroLanguageServer, params: DidOpenTextDocumentParams):
 async def did_change(ls: KedroLanguageServer, params: DidChangeTextDocumentParams):
     """Validate the catalog file live on every change."""
     document_uri = params.text_document.uri
+    file_path = pathlib.Path(uris.to_fs_path(document_uri))
+
+    # Only validate files with 'catalog' in the name and YAML extensions
+    if not (file_path.name.startswith("catalog") and file_path.suffix in {".yml", ".yaml"}):
+        return
+
     document = ls.workspace.get_text_document(document_uri)
     updated_content = document.source  # Live content of the file
     await validate_catalog_content(ls, document_uri, updated_content)

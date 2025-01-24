@@ -8,7 +8,7 @@ exceptiongroup==1.2.2
     # via pytest
 iniconfig==2.0.0
     # via pytest
-packaging==24.1
+packaging==24.2
     # via pytest
 pluggy==1.5.0
     # via pytest
@@ -18,7 +18,7 @@ pytest==8.3.3
     # via -r ./src/test/python_tests/requirements.in
 python-jsonrpc-server==0.4.0
     # via -r ./src/test/python_tests/requirements.in
-tomli==2.0.1
+tomli==2.1.0
     # via pytest
 ujson==5.10.0
     # via python-jsonrpc-server

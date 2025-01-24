@@ -8,6 +8,13 @@ function App() {
   const [error, setError] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
 
+  const toolbarOptions = {
+    labelBtn: true,
+    layerBtn: true,
+    expandPipelinesBtn: false,
+    exportBtn: false,
+  };
+
   useEffect(() => {
     // Handle messages sent from the extension to the webview
     window.addEventListener("message", (event) => {
@@ -95,7 +102,8 @@ function App() {
               globalNavigation: false,
               metadataPanel: false,
               miniMap: false,
-              sidebar: false,
+              sidebar: true,
+              ...toolbarOptions,
             },
             behaviour: { 
               reFocus: false,

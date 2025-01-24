@@ -2,7 +2,7 @@
     "name": "Kedro",
     "displayName": "Kedro",
     "description": "A Kedro VSCode Extension.",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "preview": false,
     "serverInfo": {
         "name": "Kedro",
@@ -132,6 +132,12 @@
                     ],
                     "scope": "machine",
                     "type": "string"
+                },
+                "kedro.kedroProjectPath": {
+                    "default": "",
+                    "description": "Custom path to Kedro project root directory. Please add absolute path to your Kedro project root directory.",
+                    "scope": "resource",
+                    "type": "string"
                 }
             }
         },
@@ -160,6 +166,11 @@
                 "command": "kedro.showOutputChannel",
                 "category": "kedro",
                 "title": "Show logs"
+            },
+            {
+                "command": "kedro.kedroProjectPath",
+                "title": "Set Project Path", 
+                "category": "kedro"
             }
         ]
     },

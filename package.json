@@ -37,7 +37,7 @@
         "Data Science"
     ],
     "extensionDependencies": [
-        "ms-python.python",
+        "ms-python.python"
     ],
     "capabilities": {
         "virtualWorkspaces": {

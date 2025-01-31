@@ -166,7 +166,7 @@ export async function executeGetProjectDataCommand(lsClient: LanguageClient | un
         return;
     }
     if (!lsClient.initializeResult) {
-        await vscode.window.showErrorMessage('The Language Server fail to initialise.');
+        await vscode.window.showErrorMessage('The Language Server failed to initialize.');
         return;
     }
 
@@ -174,4 +174,37 @@ export async function executeGetProjectDataCommand(lsClient: LanguageClient | un
     logger.info(`executing command: '${commandName}'`);
     const result = await vscode.commands.executeCommand(commandName);
     return result;
+}
+
+export async function filterPipelines(lsClient?: LanguageClient) {
+    try {
+        // 1) Fetch pipeline data
+        const projectData: any = await executeGetProjectDataCommand(lsClient);
+        console.log('Project Data:', projectData); // Add this line to log the project data
+        const pipelines = projectData?.pipelines || [];
+        if (!pipelines.length) {
+            vscode.window.showInformationMessage('No pipelines found in this Kedro project.');
+            return;
+        }
+
+        // 2) Show a QuickPick
+        const pipelineItems: QuickPickItem[] = pipelines.map((p: any) => ({ label: p.name }));
+        const picked = await vscode.window.showQuickPick(pipelineItems, {
+            placeHolder: 'Select a pipeline to filter...',
+        });
+        if (!picked) {
+            // User hit ESC or no selection
+            return;
+        }
+
+        // 3) Send the pipeline name to the webview
+        vscode.commands.executeCommand('kedro.viz.sendMessage', {
+            command: 'filterPipeline',
+            pipelineName: picked.label,
+        });
+    } catch (err) {
+        vscode.window.showErrorMessage(
+            `Error filtering pipelines: ${err instanceof Error ? err.message : String(err)}`
+        );
+    }
 }

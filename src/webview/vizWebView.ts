@@ -37,6 +37,12 @@ export default class KedroVizPanel {
         KedroVizPanel.currentPanel = new KedroVizPanel(panel, extensionUri);
     }
 
+    public static sendMessage(message: any) {
+        if (KedroVizPanel.currentPanel) {
+            KedroVizPanel.currentPanel._panel.webview.postMessage(message);
+        }
+    }
+
     public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
         KedroVizPanel.currentPanel = new KedroVizPanel(panel, extensionUri);
     }

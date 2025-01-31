@@ -16,6 +16,8 @@ import {
 } from './common/utilities';
 
 import { runServer, registerCommandsAndEvents } from './common/activationHelper';
+import { filterPipelines } from './common/commands';
+import KedroVizPanel from './webview/vizWebView';
 
 let lsClient: LanguageClient | undefined;
 let isCommandsAndEventsRegistered = false;
@@ -90,6 +92,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         );
         isCommandsAndEventsRegistered = true;
     }
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('kedro.viz.sendMessage', (message) => {
+            KedroVizPanel.sendMessage(message);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('kedro.viz.sendMessage', (message) => {
+            KedroVizPanel.sendMessage(message);
+        })
+    );
 
     setImmediate(async () => {
         const interpreter = getInterpreterFromSetting(serverId);

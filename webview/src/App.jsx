@@ -30,16 +30,42 @@ function App() {
             setError(true);
           }
           break;
+        case "filterPipeline":
+          if (message.pipelineName) {
+            console.log("Filtering pipeline:", message.pipelineName);
+            // Implement filtering logic here
+            const filteredData = filterDataByPipeline(data, message.pipelineName);
+            console.log("Filtered Data:", filteredData);
+            setData(filteredData);
+          }
+          break;
         default:
           break;  
       }
     });
 
     return () => {
-      window.removeEventListener("message", () => {console.log("removed")});
+      window.removeEventListener("message", () => { console.log("removed") });
     };
 
-  }, []);
+  }, [data]);
+
+  const filterDataByPipeline = (data, pipelineName) => {
+    console.log("Original Data:", data);
+    // Implement the logic to filter the data based on the pipeline name
+    const filteredNodes = data.nodes.filter(node => node.pipelines.includes(pipelineName));
+    const filteredEdges = data.edges.filter(edge => {
+        const sourceNode = data.nodes.find(node => node.id === edge.source);
+        const targetNode = data.nodes.find(node => node.id === edge.target);
+        return sourceNode && targetNode && sourceNode.pipelines.includes(pipelineName) && targetNode.pipelines.includes(pipelineName);
+    });
+    console.log("Filtered Nodes:", filteredNodes);
+    console.log("Filtered Edges:", filteredEdges);
+    return {
+        nodes: filteredNodes,
+        edges: filteredEdges,
+    };
+  };
 
   const handleNodeClick = (node) => {
     if (node) {

@@ -188,9 +188,8 @@ export async function filterPipelines(lsClient?: LanguageClient) {
 
         const pipelineItems = pipelineArray.map((p: any) => {
         return {
-            // Show p.id as the QuickPick label, e.g. "reporting", "data_science"
+            // Show p.id as the QuickPick label
             label: p.id,
-            // Optional: you could also show p.name if it differs
             description: p.name,
         };
         });
@@ -207,7 +206,7 @@ export async function filterPipelines(lsClient?: LanguageClient) {
         // Pass the pipeline ID as pipelineName to the webview
         vscode.commands.executeCommand('kedro.viz.sendMessage', {
         command: 'filterPipeline',
-        pipelineName: picked.label, // This matches the node's pipeline array
+        pipelineName: picked.label,
         });
     } catch (err) {
         vscode.window.showErrorMessage(

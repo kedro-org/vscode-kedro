@@ -182,31 +182,32 @@ export async function filterPipelines(lsClient?: LanguageClient) {
         console.log('Full projectData:', projectData);
         const pipelineArray = projectData?.pipelines;
         if (!pipelineArray || !Array.isArray(pipelineArray) || !pipelineArray.length) {
-        vscode.window.showInformationMessage('No pipelines found in this Kedro project.');
-        return;
+            vscode.window.showInformationMessage('No pipelines found in this Kedro project.');
+            return;
         }
 
         const pipelineItems = pipelineArray.map((p: any) => {
-        return {
-            // Show p.id as the QuickPick label
-            label: p.id,
-            description: p.name,
-        };
+            return {
+                label: p.id,
+                description: p.name,
+            };
         });
 
-        // Let the user pick a pipeline ID
         const picked = await vscode.window.showQuickPick(pipelineItems, {
-        placeHolder: 'Select a pipeline to filter...',
+            placeHolder: 'Select a pipeline to filter...',
         });
         if (!picked) {
-        // user canceled the pick
-        return;
+            // user canceled the pick
+            return;
         }
 
-        // Pass the pipeline ID as pipelineName to the webview
+        // Update the selected_pipeline property
+        projectData.selected_pipeline = picked.label;
+
+        // Send the updated projectData to the webview
         vscode.commands.executeCommand('kedro.viz.sendMessage', {
-        command: 'filterPipeline',
-        pipelineName: picked.label,
+            command: 'updateData',
+            data: projectData,
         });
     } catch (err) {
         vscode.window.showErrorMessage(

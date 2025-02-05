@@ -23,20 +23,12 @@ function App() {
       switch (message.command) {
         case "updateData":
           if (message.data) {
+            console.log("Updating data with:", message.data);
             setData(message.data);
             setLoading(false);
           } else {
             setLoading(true);
             setError(true);
-          }
-          break;
-        case "filterPipeline":
-          if (message.pipelineName) {
-            console.log("Filtering pipeline:", message.pipelineName);
-            // Filter the data based on the pipeline name
-            const filteredData = filterDataByPipeline(data, message.pipelineName);
-            console.log("Filtered Data:", filteredData);
-            setData(filteredData);
           }
           break;
         default:
@@ -47,25 +39,7 @@ function App() {
     return () => {
       window.removeEventListener("message", () => {console.log("removed")});
     };
-
-  }, [data]);
-
-  function filterDataByPipeline(data, pipelineName) {
-    const filteredNodes = data.nodes.filter((node) =>
-      node.pipelines.includes(pipelineName)
-    );
-  
-    // Filter edges so they only connect nodes in this pipeline
-    const nodeIDs = new Set(filteredNodes.map((n) => n.id));
-    const filteredEdges = data.edges.filter(
-      (edge) => nodeIDs.has(edge.source) && nodeIDs.has(edge.target)
-    );
-  
-    return {
-      nodes: filteredNodes,
-      edges: filteredEdges,
-    };
-  }
+  }, []);
 
   const handleNodeClick = (node) => {
     if (node) {

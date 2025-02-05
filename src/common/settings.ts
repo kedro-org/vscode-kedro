@@ -15,6 +15,7 @@ export interface ISettings {
     showNotifications: string;
     isExperimental: string;
     environment: string;
+    kedroProjectPath: string;
 }
 
 export function getExtensionSettings(namespace: string, includeInterpreter?: boolean): Promise<ISettings[]> {
@@ -73,6 +74,7 @@ export async function getWorkspaceSettings(
         showNotifications: config.get<string>(`showNotifications`) ?? 'off',
         isExperimental: config.get<string>(`isExperimental`) ?? 'yes',
         environment: config.get<string>(`environment`) ?? '',
+        kedroProjectPath: config.get<string>(`kedroProjectPath`) ?? '',
     };
     return workspaceSetting;
 }
@@ -103,6 +105,7 @@ export async function getGlobalSettings(namespace: string, includeInterpreter?: 
         showNotifications: getGlobalValue<string>(config, 'showNotifications', 'off'),
         isExperimental: getGlobalValue<string>(config, 'isExperimental', 'yes'),
         environment: getGlobalValue<string>(config, 'environment', ''),
+        kedroProjectPath: getGlobalValue<string>(config, 'kedroProjectPath', ''),
     };
     return setting;
 }
@@ -115,6 +118,7 @@ export function checkIfConfigurationChanged(e: ConfigurationChangeEvent, namespa
         `${namespace}.importStrategy`,
         `${namespace}.showNotifications`,
         `${namespace}.environment`,
+        `${namespace}.kedroProjectPath`,
     ];
     const changed = settings.map((s) => e.affectsConfiguration(s));
     return changed.includes(true);

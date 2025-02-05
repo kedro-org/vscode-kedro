@@ -37,8 +37,7 @@
         "Data Science"
     ],
     "extensionDependencies": [
-        "ms-python.python",
-        "redhat.vscode-yaml"
+        "ms-python.python"
     ],
     "capabilities": {
         "virtualWorkspaces": {
@@ -79,12 +78,6 @@
         },
         "configuration": {
             "properties": {
-                "yaml.schemas": {
-                    "default": {
-                        "https://raw.githubusercontent.com/kedro-org/kedro/develop/static/jsonschema/kedro-catalog-0.19.json": "conf/**/*catalog*"
-                    },
-                    "description": "Default schema validate against catalog YAML files using YAML extension"
-                },
                 "kedro.importStrategy": {
                     "default": "useBundled",
                     "description": "Defines where `kedro` is imported from. This setting may be ignored if `kedro.path` is set.",
@@ -139,6 +132,12 @@
                     ],
                     "scope": "machine",
                     "type": "string"
+                },
+                "kedro.kedroProjectPath": {
+                    "default": "",
+                    "description": "Custom path to Kedro project root directory. Please add absolute path to your Kedro project root directory.",
+                    "scope": "resource",
+                    "type": "string"
                 }
             }
         },
@@ -167,6 +166,11 @@
                 "command": "kedro.showOutputChannel",
                 "category": "kedro",
                 "title": "Show logs"
+            },
+            {
+                "command": "kedro.kedroProjectPath",
+                "title": "Set Project Path", 
+                "category": "kedro"
             }
         ]
     },

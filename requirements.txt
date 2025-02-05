@@ -4,7 +4,7 @@
 #
 #    pip-compile ./requirements.in
 #
-attrs==24.2.0
+attrs==25.1.0
     # via
     #   cattrs
     #   lsprotocol

@@ -101,6 +101,23 @@ from kedro.framework.startup import (
 from pygls.server import LanguageServer
 
 
+class SymbolIndex:
+    def __init__(self):
+        self.symbols = {}
+
+    def index_file(self, file_path: str, content: str):
+        # Parse the file and extract symbols
+        symbols = self._extract_symbols(content)
+        self.symbols[file_path] = symbols
+
+    def _extract_symbols(self, content: str):
+        # Implement symbol extraction logic
+        return []
+
+    def get_symbols(self, file_path: str):
+        return self.symbols.get(file_path, [])
+
+
 class KedroLanguageServer(LanguageServer):
     """Store Kedro-specific information in the language server."""
 
@@ -108,6 +125,7 @@ class KedroLanguageServer(LanguageServer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.symbol_index = SymbolIndex()
 
     def is_kedro_project(self) -> bool:
         """Returns whether the current workspace is a kedro project."""
@@ -423,7 +441,7 @@ def references(
     for pipeline_file in glob.glob(f"{str(pipelines_package)}/**/*.py", recursive=True):
         # Ensure the path is absolute
         abs_pipeline_file = Path(pipeline_file).absolute()
-        
+
         try:
             # Read the file using Path
             content = abs_pipeline_file.read_text(encoding='utf-8').splitlines()
@@ -533,6 +551,11 @@ async def did_open(ls: KedroLanguageServer, params: DidOpenTextDocumentParams):
         return
 
     document = ls.workspace.get_text_document(document_uri)
+    content = document.source
+
+    # Index the file
+    ls.symbol_index.index_file(file_path, content)
+
     await validate_catalog_content(ls, document_uri, document.source)
 
 
@@ -548,6 +571,10 @@ async def did_change(ls: KedroLanguageServer, params: DidChangeTextDocumentParam
 
     document = ls.workspace.get_text_document(document_uri)
     updated_content = document.source  # Live content of the file
+
+    # Update the index
+    ls.symbol_index.index_file(file_path, updated_content)
+
     await validate_catalog_content(ls, document_uri, updated_content)
 
 
@@ -592,7 +619,7 @@ def remove_line_numbers(config):
         return [remove_line_numbers(i) for i in config]
     else:
         return config
-    
+
 
 async def validate_catalog_content(ls: KedroLanguageServer, uri: str, content: str):
     """Validate catalog content dynamically."""
@@ -786,33 +813,6 @@ def _is_pipeline(uri):
 
 ###### Commands
 @LSP_SERVER.command("kedro.goToDefinitionFromFlowchart")
-def definition_from_flowchart(ls, word):
-    """Starts counting down and showing message synchronously.
-    It will `block` the main thread, which can be tested by trying to show
-    completion items.
-    """
-    word = word[0]
-    result = definition(LSP_SERVER, params=None, word=word)
-    return result
-
-
-@LSP_SERVER.command("kedro.getProjectData")
-def get_project_data_from_viz(lsClient):
-    """Get project data from kedro viz"""
-    from kedro_viz.server import load_and_populate_data
-    try:
-        # For kedro-viz > 10.0.0
-        from kedro_viz.api.rest.responses.pipelines import get_kedro_project_json_data
-    except ImportError as e:
-        # For kedro-viz = 10.0.0
-        from kedro_viz.api.rest.responses import get_kedro_project_json_data
-
-    data = None
-    try:
-        workspace_settings = next(iter(WORKSPACE_SETTINGS.values()))
-        kedro_project_path = Path(workspace_settings.get("kedroProjectPath")) or Path.cwd()
-        load_and_populate_data(kedro_project_path)
-        data = get_kedro_project_json_data()
         return data
     except Exception as e:
         print(f"Kedro-Viz: {e}")

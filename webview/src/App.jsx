@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-import 'kedro-vi122/lib/styles/styles.min.css';
-import KedroViz from "kedro-vi122";
+import '@quantumblack/kedro-viz/lib/styles/styles.min.css';
+import KedroViz from "@quantumblack/kedro-viz";
 const vscodeApi = window.acquireVsCodeApi();
 
 function App() {
@@ -24,7 +24,6 @@ function App() {
       switch (message.command) {
         case "updateData":
           if (message.data) {
-            console.log("Updating data with:", message.data);
             setData(message.data);
             setLoading(false);
           } else {

@@ -5,6 +5,7 @@ import {
     executeServerCommand,
     executeServerDefinitionCommand,
     setKedroProjectPath,
+    filterPipelines
 } from './commands';
 
 import * as vscode from 'vscode';
@@ -89,6 +90,7 @@ export const registerCommandsAndEvents = (
     const CMD_DEFINITION_REQUEST = `${serverId}.sendDefinitionRequest`;
     const CMD_SHOW_OUTPUT_CHANNEL = `${serverId}.showOutputChannel`;
     const CMD_SET_PROJECT_PATH = `${serverId}.kedroProjectPath`;
+    const CMD_FILTER_PIPELINES = `${serverId}.filterPipelines`;
 
     (async () => {
         // Status Bar
@@ -161,6 +163,10 @@ export const registerCommandsAndEvents = (
             }),
             registerCommand(CMD_SET_PROJECT_PATH, () => {
                 setKedroProjectPath();
+            }),
+            registerCommand(CMD_FILTER_PIPELINES, async () => {
+                const lsClient = getLSClient();
+                await filterPipelines(lsClient);
             }),
         );
     })();

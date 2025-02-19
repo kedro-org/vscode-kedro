@@ -13,6 +13,7 @@ function App() {
     layerBtn: true,
     expandPipelinesBtn: false,
     exportBtn: false,
+    filterBtn: true,
   };
 
   useEffect(() => {
@@ -38,7 +39,6 @@ function App() {
     return () => {
       window.removeEventListener("message", () => {console.log("removed")});
     };
-
   }, []);
 
   const handleNodeClick = (node) => {
@@ -51,6 +51,12 @@ function App() {
         },
       });
     }
+  };
+
+  const handlePipelineFilterClick = () => {
+    vscodeApi.postMessage({
+      command: "showPipelineFilter",
+    });
   };
 
   const handleOutputClick = () => {
@@ -85,6 +91,9 @@ function App() {
       switch (action.type) {
         case "TOGGLE_NODE_CLICKED":
           handleNodeClick(action.payload);
+          break;          
+        case "SHOW_PIPELINE_FILTER":
+          handlePipelineFilterClick();
           break;
         default:
           break;

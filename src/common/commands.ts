@@ -205,13 +205,13 @@ export async function filterPipelines(lsClient?: LanguageClient) {
         projectData.selected_pipeline = picked.label;
 
         // Send the updated projectData to the webview
-        vscode.commands.executeCommand('kedro.viz.sendMessage', {
+        vscode.commands.executeCommand('kedro.sendMessage', {
             command: 'updateData',
             data: projectData,
         });
     } catch (err) {
         vscode.window.showErrorMessage(
-            `Error filtering pipelines: ${err instanceof Error ? err.message : String(err)}`
+            `Error filtering pipelines: ${err instanceof Error ? err.message : String(err)}`,
         );
     }
 }

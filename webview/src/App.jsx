@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-import '@quantumblack/kedro-viz/lib/styles/styles.min.css';
-import KedroViz from "@quantumblack/kedro-viz";
+import 'kedro-vi122/lib/styles/styles.min.css';
+import KedroViz from "kedro-vi122";
 const vscodeApi = window.acquireVsCodeApi();
 
 function App() {
@@ -13,6 +13,7 @@ function App() {
     layerBtn: true,
     expandPipelinesBtn: false,
     exportBtn: false,
+    filterBtn: true,
   };
 
   useEffect(() => {
@@ -53,6 +54,12 @@ function App() {
     }
   };
 
+  const handlePipelineFilterClick = () => {
+    vscodeApi.postMessage({
+      command: "showPipelineFilter",
+    });
+  };
+
   const handleOutputClick = () => {
       vscodeApi.postMessage({
         command: "showOutput",
@@ -85,6 +92,9 @@ function App() {
       switch (action.type) {
         case "TOGGLE_NODE_CLICKED":
           handleNodeClick(action.payload);
+          break;          
+        case "SHOW_PIPELINE_FILTER":
+          handlePipelineFilterClick();
           break;
         default:
           break;

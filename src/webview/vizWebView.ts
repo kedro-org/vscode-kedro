@@ -83,6 +83,9 @@ export default class KedroVizPanel {
                     case 'showOutput':
                         await vscode.commands.executeCommand('kedro.showOutputChannel');
                         return;
+                    case 'showPipelineFilter':
+                        await vscode.commands.executeCommand('kedro.filterPipelines');
+                        return;
                 }
             },
             null,

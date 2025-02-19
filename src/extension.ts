@@ -94,9 +94,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('kedro.viz.sendMessage', (message) => {
+        vscode.commands.registerCommand('kedro.sendMessage', (message) => {
             KedroVizPanel.sendMessage(message);
-        })
+        }),
     );
 
     setImmediate(async () => {

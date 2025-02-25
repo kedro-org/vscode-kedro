@@ -5,7 +5,7 @@ import {
     executeServerCommand,
     executeServerDefinitionCommand,
     setKedroProjectPath,
-    filterPipelines
+    filterPipelines,
 } from './commands';
 
 import * as vscode from 'vscode';
@@ -157,16 +157,19 @@ export const registerCommandsAndEvents = (
             }),
             registerCommand(CMD_RUN_KEDRO_VIZ, async () => {
                 await handleKedroViz(context, getLSClient());
+
+                // Register filter pipelines command after KedroVizPanel is created
+                context.subscriptions.push(
+                    registerCommand(CMD_FILTER_PIPELINES, async () => {
+                        await filterPipelines(getLSClient());
+                    }),
+                );
             }),
             registerCommand(CMD_SHOW_OUTPUT_CHANNEL, () => {
                 outputChannel.show();
             }),
             registerCommand(CMD_SET_PROJECT_PATH, () => {
                 setKedroProjectPath();
-            }),
-            registerCommand(CMD_FILTER_PIPELINES, async () => {
-                const lsClient = getLSClient();
-                await filterPipelines(lsClient);
             }),
         );
     })();

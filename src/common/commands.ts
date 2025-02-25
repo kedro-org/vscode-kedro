@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 
 import { getWorkspaceFolders } from './vscodeapi';
 import { LanguageClient, State } from 'vscode-languageclient/node';
-import { getKedroProjectPath, isKedroProject } from './utilities';
+import { getKedroProjectPath, isKedroProject, updateKedroVizPanel } from './utilities';
 export async function selectEnvironment() {
     let kedroProjectPath = await getKedroProjectPath();
     let kedroProjectRootDir: string | undefined = undefined;
@@ -160,7 +160,10 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
     }
 }
 
-export async function executeGetProjectDataCommand(lsClient: LanguageClient | undefined) {
+export async function executeGetProjectDataCommand(
+    lsClient: LanguageClient | undefined,
+    pipelineName: string | undefined = undefined,
+) {
     if (!lsClient || lsClient.state !== State.Running) {
         await vscode.window.showErrorMessage('There is no language server running.');
         return;
@@ -172,7 +175,7 @@ export async function executeGetProjectDataCommand(lsClient: LanguageClient | un
 
     const commandName = 'kedro.getProjectData';
     logger.info(`executing command: '${commandName}'`);
-    const result = await vscode.commands.executeCommand(commandName);
+    const result = await vscode.commands.executeCommand(commandName, pipelineName);
     return result;
 }
 
@@ -201,14 +204,8 @@ export async function filterPipelines(lsClient?: LanguageClient) {
             return;
         }
 
-        // Update the selected_pipeline property
-        projectData.selected_pipeline = picked.label;
-
         // Send the updated projectData to the webview
-        vscode.commands.executeCommand('kedro.sendMessage', {
-            command: 'updateData',
-            data: projectData,
-        });
+        updateKedroVizPanel(lsClient, picked.label);
     } catch (err) {
         vscode.window.showErrorMessage(
             `Error filtering pipelines: ${err instanceof Error ? err.message : String(err)}`,

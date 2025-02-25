@@ -1,5 +1,12 @@
 # Change Log
 
+# 0.3.0
+## Major changes and new features
+- Support settings of custom project path in Kedro Extension.
+- Validate dataset classes in catalog using LSP.
+- Enable primary tool bar with toolbarOptions.
+- Remove the old dependencies with yaml schema.
+
 # 0.2.3
 ## Major changes and new features
 - Silenced the server initialisation error when working on a non-Kedro project.

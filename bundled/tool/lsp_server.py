@@ -797,8 +797,12 @@ def definition_from_flowchart(ls, word):
 
 
 @LSP_SERVER.command("kedro.getProjectData")
-def get_project_data_from_viz(ls, pipeline_name=None):
-    """Get project data from kedro viz"""
+def get_project_data_from_viz(ls, args=None):
+    """Get project data from kedro viz
+    
+    Args:
+        args: List of command arguments. The first element is used as the pipeline name.
+    """
     from kedro_viz.server import load_and_populate_data
     try:
         # For kedro-viz > 10.0.0
@@ -812,14 +816,11 @@ def get_project_data_from_viz(ls, pipeline_name=None):
         workspace_settings = next(iter(WORKSPACE_SETTINGS.values()))
         kedro_project_path = Path(workspace_settings.get("kedroProjectPath")) or Path.cwd()
 
-        # Extract pipeline name from list or use as-is
-        if isinstance(pipeline_name, list):
-            actual_pipeline_name = pipeline_name[0] if pipeline_name else None
-        else:
-            actual_pipeline_name = pipeline_name
+        # Extract the pipeline name from the args list
+        pipeline_name = args[0] if args and len(args) > 0 else None
 
         load_and_populate_data(kedro_project_path)
-        data = get_kedro_project_json_data(pipeline_name=actual_pipeline_name)
+        data = get_kedro_project_json_data(pipeline_name=pipeline_name)
         return data
     except Exception as e:
         print(f"Kedro-Viz: {e}")

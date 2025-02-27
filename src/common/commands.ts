@@ -182,8 +182,8 @@ export async function executeGetProjectDataCommand(
 export async function filterPipelines(lsClient?: LanguageClient) {
     try {
         const projectData: any = await executeGetProjectDataCommand(lsClient);
-        console.log('Full projectData:', projectData);
         const pipelineArray = projectData?.pipelines;
+
         if (!pipelineArray || !Array.isArray(pipelineArray) || !pipelineArray.length) {
             vscode.window.showInformationMessage('No pipelines found in this Kedro project.');
             return;

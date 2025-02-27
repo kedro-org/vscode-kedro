@@ -22,6 +22,8 @@ import KedroVizPanel from '../webview/vizWebView';
 import { handleKedroViz } from '../webview/createOrShowKedroVizPanel';
 import { LanguageClient } from 'vscode-languageclient/node';
 
+let isFilterPipelinesCommandRegistered = false;
+
 /**
  * Runs the language server based on current environment and interpreter settings.
  * Returns the updated lsClient reference.
@@ -158,12 +160,16 @@ export const registerCommandsAndEvents = (
             registerCommand(CMD_RUN_KEDRO_VIZ, async () => {
                 await handleKedroViz(context, getLSClient());
 
-                // Register filter pipelines command after KedroVizPanel is created
-                context.subscriptions.push(
-                    registerCommand(CMD_FILTER_PIPELINES, async () => {
-                        await filterPipelines(getLSClient());
-                    }),
-                );
+                // Register filter pipelines command only once
+                if (!isFilterPipelinesCommandRegistered) {
+                    // Register filter pipelines command after KedroVizPanel is created
+                    context.subscriptions.push(
+                        registerCommand(CMD_FILTER_PIPELINES, async () => {
+                            await filterPipelines(getLSClient());
+                        }),
+                    );
+                    isFilterPipelinesCommandRegistered = true;
+                }
             }),
             registerCommand(CMD_SHOW_OUTPUT_CHANNEL, () => {
                 outputChannel.show();

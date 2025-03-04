@@ -174,7 +174,7 @@
             },
             {
                 "command": "kedro.filterPipelines",
-                "title": "Select pipeline view",
+                "title": "Select Pipeline View",
                 "category": "kedro"
             }
         ]

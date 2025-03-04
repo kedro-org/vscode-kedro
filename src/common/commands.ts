@@ -97,7 +97,7 @@ export async function executeServerCommand(lsClient: LanguageClient | undefined)
         return;
     }
     if (!lsClient.initializeResult) {
-        await vscode.window.showErrorMessage('The Language Server fail to initialise.');
+        await vscode.window.showErrorMessage('The Language Server failed to initialize.');
         return;
     }
 
@@ -129,7 +129,7 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
         return;
     }
     if (!lsClient.initializeResult) {
-        await vscode.window.showErrorMessage('The Language Server fail to initialise.');
+        await vscode.window.showErrorMessage('The Language Server failed to initialize.');
         return;
     }
 
@@ -189,9 +189,9 @@ export async function filterPipelines(lsClient?: LanguageClient) {
             return;
         }
 
-        const pipelineItems = pipelineArray.map((p: any) => {
+        const pipelineItems = pipelineArray.map((pipeline: { id: string; name: string }) => {
             return {
-                label: p.id,
+                label: pipeline.id,
             };
         });
 

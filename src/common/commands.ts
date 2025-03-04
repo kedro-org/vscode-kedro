@@ -192,7 +192,6 @@ export async function filterPipelines(lsClient?: LanguageClient) {
         const pipelineItems = pipelineArray.map((p: any) => {
             return {
                 label: p.id,
-                description: p.name,
             };
         });
 

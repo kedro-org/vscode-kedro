@@ -16,8 +16,6 @@ import {
 } from './common/utilities';
 
 import { runServer, registerCommandsAndEvents } from './common/activationHelper';
-import { filterPipelines } from './common/commands';
-import KedroVizPanel from './webview/vizWebView';
 
 let lsClient: LanguageClient | undefined;
 let isCommandsAndEventsRegistered = false;

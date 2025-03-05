@@ -166,6 +166,7 @@ export const registerCommandsAndEvents = (
                     context.subscriptions.push(
                         registerCommand(CMD_FILTER_PIPELINES, async () => {
                             await filterPipelines(getLSClient());
+                            await sendHeapEventWithMetadata(CMD_FILTER_PIPELINES, context);
                         }),
                     );
                     isFilterPipelinesCommandRegistered = true;

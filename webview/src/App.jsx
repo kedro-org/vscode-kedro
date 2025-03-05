@@ -17,6 +17,9 @@ function App() {
   };
 
   useEffect(() => {
+    // Clear local storage to avoid persisting data
+    localStorage.clear();
+
     // Handle messages sent from the extension to the webview
     window.addEventListener("message", (event) => {
       console.log("Received message from extension", event);
@@ -119,6 +122,7 @@ function App() {
             },
             visible: {
               slicing: false,
+              sidebar: false,
             },
             layer: {visible: false},
           }}

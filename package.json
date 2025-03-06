@@ -171,6 +171,11 @@
                 "command": "kedro.kedroProjectPath",
                 "title": "Set Project Path", 
                 "category": "kedro"
+            },
+            {
+                "command": "kedro.filterPipelines",
+                "title": "Select Pipeline View",
+                "category": "kedro"
             }
         ]
     },

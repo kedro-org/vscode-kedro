@@ -187,8 +187,11 @@ function parseTelemetryConsent(logMessage: string): Record<string, any> | null {
     }
 }
 
-export async function updateKedroVizPanel(lsClient: LanguageClient | undefined): Promise<void> {
-    const projectData = await executeGetProjectDataCommand(lsClient);
+export async function updateKedroVizPanel(
+    lsClient: LanguageClient | undefined,
+    pipelineName: string | undefined = undefined,
+): Promise<void> {
+    const projectData = await executeGetProjectDataCommand(lsClient, pipelineName);
     KedroVizPanel.currentPanel?.updateData(projectData);
 }
 

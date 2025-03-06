@@ -5,6 +5,7 @@ import {
     executeServerCommand,
     executeServerDefinitionCommand,
     setKedroProjectPath,
+    filterPipelines,
 } from './commands';
 
 import * as vscode from 'vscode';
@@ -20,6 +21,8 @@ import { createOutputChannel, onDidChangeConfiguration, registerCommand } from '
 import KedroVizPanel from '../webview/vizWebView';
 import { handleKedroViz } from '../webview/createOrShowKedroVizPanel';
 import { LanguageClient } from 'vscode-languageclient/node';
+
+let isFilterPipelinesCommandRegistered = false;
 
 /**
  * Runs the language server based on current environment and interpreter settings.
@@ -89,6 +92,7 @@ export const registerCommandsAndEvents = (
     const CMD_DEFINITION_REQUEST = `${serverId}.sendDefinitionRequest`;
     const CMD_SHOW_OUTPUT_CHANNEL = `${serverId}.showOutputChannel`;
     const CMD_SET_PROJECT_PATH = `${serverId}.kedroProjectPath`;
+    const CMD_FILTER_PIPELINES = `${serverId}.filterPipelines`;
 
     (async () => {
         // Status Bar
@@ -155,6 +159,18 @@ export const registerCommandsAndEvents = (
             }),
             registerCommand(CMD_RUN_KEDRO_VIZ, async () => {
                 await handleKedroViz(context, getLSClient());
+
+                // Register filter pipelines command only once
+                if (!isFilterPipelinesCommandRegistered) {
+                    // Register filter pipelines command after KedroVizPanel is created
+                    context.subscriptions.push(
+                        registerCommand(CMD_FILTER_PIPELINES, async () => {
+                            await filterPipelines(getLSClient());
+                            await sendHeapEventWithMetadata(CMD_FILTER_PIPELINES, context);
+                        }),
+                    );
+                    isFilterPipelinesCommandRegistered = true;
+                }
             }),
             registerCommand(CMD_SHOW_OUTPUT_CHANNEL, () => {
                 outputChannel.show();

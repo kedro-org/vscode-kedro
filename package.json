@@ -76,6 +76,78 @@
                 }
             }
         },
+        "walkthroughs": [
+            {
+                "id": "kedro-walkthrough",
+                "title": "Get Started with Kedro",
+                "description": "Learn how to create and run a Kedro project and visualise your pipelines in this tutorial.",
+                "steps": [
+                    {
+                        "id": "setup-install",
+                        "title": "Step 0: Set up and install Kedro",
+                        "description": "",
+                        "media": {
+                            "image": "media/image.png",
+                            "altText": "Empty image"
+                        }
+                    },
+                    {
+                        "id": "create-run-project",
+                        "title": "Step 1: Create and run Kedro project",
+                        "description": "[Example Project](command:kedro.exampleProject)",
+                        "media": {
+                            "image": "media/image.png",
+                            "altText": "Empty image"
+                        }
+                    },
+                    {
+                        "id": "select-python",
+                        "title": "Step 2: Select the correct Python interpreter",
+                        "description": "",
+                        "media": {
+                            "image": "media/image.png",
+                            "altText": "Empty image"
+                        }
+                    },
+                    {
+                        "id": "configure-root",
+                        "title": "Step 3: Configure project's root (set absolute path)",
+                        "description": "",
+                        "media": {
+                            "image": "media/image.png",
+                            "altText": "Empty image"
+                        }
+                    },
+                    {
+                        "id": "run-kedro-viz",
+                        "title": "Step 4: Run Kedro-Viz and install dependencies",
+                        "description": "",
+                        "media": {
+                            "image": "media/image.png",
+                            "altText": "Empty image"
+                        }
+                    },
+                    {
+                        "id": "setup-environment",
+                        "title": "Step 5: Set up or modify environment correctly",
+                        "description": "",
+                        "media": {
+                            "image": "media/image.png",
+                            "altText": "Empty image"
+                        }
+                    },
+                    {
+                        "id": "learn-more",
+                        "title": "Learn more",
+                        "description": "",
+                        "media": {
+                            "image": "media/image.png",
+                            "altText": "Empty image"
+                        }
+                    }
+                ]
+            }
+        ],
         "configuration": {
             "properties": {
                 "kedro.importStrategy": {

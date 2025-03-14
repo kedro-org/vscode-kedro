@@ -163,7 +163,7 @@
                   "id": "select-python-interpreter",
                   "title": "Step 2: Select the correct Python interpreter",
                   "description": "Make sure you select the correct Python interpreter that has Kedro installed.\n\n[Select Interpreter](command:python.setInterpreter)",
-                  "media": { "image": "assets/select-python-interpreter.gif", "altText": "Select Python Interpreter" },
+                  "media": { "markdown": "assets/markdown/select_interpreter.md" },
                   "completionEvents": ["onCommand:python.setInterpreter"]
                 },
                 {
@@ -174,8 +174,8 @@
                 },
                 {
                   "id": "configure-project-root",
-                  "title": "Step 4: Configure project's root (set absolute path)",
-                  "description": "You need to set the project's root path for Kedro-related features.\n\n[Configure Path](command:kedro.kedroProjectPath)",
+                  "title": "Step 4: Configure project's root (Optional)",
+                  "description": "You may need to set the project's root path for Kedro-related features.\n\n[Set Kedro Project Path](command:kedro.kedroProjectPath)",
                   "media": { "markdown": "assets/markdown/set_project_path.md" },
                   "completionEvents": ["onCommand:kedro.kedroProjectPath"]
                 },
@@ -183,7 +183,7 @@
                   "id": "run-kedro-viz",
                   "title": "Step 5: Run Kedro-Viz and install dependencies",
                   "description": "Open the command palette and type\n\n ``Kedro: Run Kedro Viz`` \n\n[Open Command Palette](command:workbench.action.showCommands)",
-                  "media": { "image": "assets/s5.png", "altText": "Run Kedro Viz" },
+                  "media": { "markdown": "assets/markdown/run_kedro-Viz.md" },
                   "completionEvents": ["onCommand:kedro.runKedroViz"]
                 },
                 {

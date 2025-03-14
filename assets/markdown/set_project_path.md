@@ -18,7 +18,9 @@ The extension will:
 - Add the project folder to your workspace if it's not already included
 - Use this path as the root directory for all Kedro-related features
 
-**Note:** The project path must point to a directory containing a valid Kedro project with a `pyproject.toml` file that includes the `[tool.kedro]` section.
+**Note:** 
+- This step is applicable to those who have their kedro project not at the root directory or they have multiple kedro projects.
+- The project path must point to a directory containing a valid Kedro project with a `pyproject.toml` file that includes the `[tool.kedro]` section.
 
 Example:
 ```
@@ -26,3 +28,5 @@ Example:
     "kedro.kedroProjectPath": "/absolute/path/to/your/kedro-project"
 }
 ```
+
+![Setting Kedro project path through Command Palette](../kedro-project-path.gif)

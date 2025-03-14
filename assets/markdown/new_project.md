@@ -1,9 +1,5 @@
 # Create a new Kedro project
 
-There are several ways to create a new Kedro project. This page explains the flow to create a basic project using `kedro new` to output a project directory containing the basic files and subdirectories that make up a Kedro project. Please note that users are expected to have [`Git`](https://git-scm.com/) installed, as it is a requirement for the `kedro new` flow.
-
-You can also create a new Kedro project with a starter that adds code for a common project use case. [Starters are explained separately](../starters/starters.md) and the [spaceflights tutorial](../tutorial/tutorial_template.md) illustrates their use.
-
 ## Introducing `kedro new`
 
 To create a basic Kedro project containing the default code needed to set up your own nodes and pipelines, navigate to your preferred directory and type:
@@ -11,19 +7,6 @@ To create a basic Kedro project containing the default code needed to set up you
 ```bash
 kedro new
 ```
-
-### Project name
-
-The command line interface (CLI) first asks for a name for the project. This is the human-readable name, and it may contain alphanumeric symbols, spaces, underscores, and hyphens. It must be at least two characters long.
-
-It's best to keep the name simple because the choice is set as the value of `project_name` and is also used to generate the folder and package names for the project automatically. For example, if you enter "Get Started", the folder for the project (`repo_name`) is automatically set to be `get-started`, and the Python package name (`python_package`) for the project is set to be `get_started`.
-
-
-| Description                                                     | Setting          | Example       |
-| --------------------------------------------------------------- | ---------------- | ------------- |
-| A human-readable name for the new project                      | `project_name`   | `Get Started` |
-| Local directory to store the project                           | `repo_name`      | `get-started` |
-| The Python package name for the project (short, all-lowercase) | `python_package` | `get_started` |
 
 ### Project tools
 
@@ -43,46 +26,9 @@ Which tools would you like to include in your project? [1-7/1,3/all/none]:
  (none):
 ```
 
-The options are described in more detail in the [documentation about the new project tools](../starters/new_project_tools.md).
+### Quickstart example
 
-Select the tools by number, or `all` or follow the default to add `none`.
-
-### Project examples
-
-The CLI offers the option to include starter example code in the project:
-
-```text
-Would you like to include an example pipeline? :
- (no):
-```
-
-If you say `yes`, the example code included depends upon your previous choice of tools, as follows:
-
-* [Default spaceflights starter (`spaceflights-pandas`)](https://github.com/kedro-org/kedro-starters/tree/main/spaceflights-pandas): Added if you selected any combination of linting, testing, custom logging, documentation, and data structure, unless you also selected PySpark or Kedro Viz.
-* [PySpark spaceflights starter (`spaceflights-pyspark`)](https://github.com/kedro-org/kedro-starters/tree/main/spaceflights-pyspark): Added if you selected PySpark with any other tools, unless you also selected Kedro Viz.
-* [Kedro Viz spaceflights starter (`spaceflights-pandas-viz`)](https://github.com/kedro-org/kedro-starters/tree/main/spaceflights-pandas-viz): Added if Kedro Viz was one of your tools choices, unless you also selected PySpark.
-* [Full feature spaceflights starter (`spaceflights-pyspark-viz`)](https://github.com/kedro-org/kedro-starters/tree/main/spaceflights-pyspark-viz): Added if you selected all available tools, including PySpark and Kedro Viz.
-
-Each starter example is tailored to demonstrate the capabilities and integrations of the selected tools, offering a practical insight into how they can be utilised in your project.
-
-### Quickstart examples
-
-1. To create a default Kedro project called `My-Project` with no tools and no example code:
-
-```text
-kedro new ⮐
-My-Project ⮐
-none ⮐
-no ⮐
-```
-
-You can also enter this in a single line as follows:
-
-```bash
-kedro new --name=My-Project --tools=none --example=n
-```
-
-2. To create a spaceflights project called `spaceflights` with Kedro Viz features and example code:
+To create a spaceflights project called `spaceflights` with Kedro Viz features and example code:
 
 ```text
 kedro new ⮐
@@ -96,27 +42,6 @@ You can also enter this in a single line as follows:
 ```bash
 kedro new --name=spaceflights --tools=viz --example=y
 ```
-
-3. To create a project, called `testproject` containing linting, documentation, and PySpark, but no example code:
-
-```text
-kedro new ⮐
-testproject ⮐
-1,4,6 ⮐
-no ⮐
-```
-
-You can also enter this in a single line as follows:
-
-```bash
-kedro new --name=testproject --tools=lint,docs,pyspark --example=n
-```
-
-### Telemetry consent
-
-The `--telemetry` flag offers the option to register consent to have user analytics collected in the moment of the creation of the project. This option bypasses the prompt to collect analytics that would otherwise appear on the moment the `kedro` command is invoked for the first time inside the project. In case the `--telemetry` flag is not used, the user will be prompted to accept or reject analytics collection as usual.
-
-When creating your new Kedro project, use the values `yes` or `no` to register consent to have user analytics collected for this specific project. Selecting `yes` means you consent to your data being collected, whereas `no` means you do not consent and no data will be collected.
 
 ## Run the new project
 
@@ -153,5 +78,3 @@ kedro viz run
 ```
 
 This command automatically opens a browser tab to serve the visualisation at `http://127.0.0.1:4141/`.
-
-To exit the visualisation, close the browser tab. To regain control of the terminal, enter `^+c` on Mac or `Ctrl+c` on Windows or Linux machines.

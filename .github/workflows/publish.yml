@@ -13,8 +13,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run common build steps
-        uses: "./.github/actions/installation"
+      - name: Install dependencies & build
+        uses: ./.github/workflows/installation.yml
+        with:
+          os: ${{ matrix.os }}
   
   release-vsstudio-marketplace:
     runs-on: ubuntu-latest
@@ -23,8 +25,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run common build steps
-        uses: "./.github/actions/installation"
+      - name: Install dependencies & build
+        uses: ./.github/workflows/installation.yml
+        with:
+          os: ubuntu-latest
 
       - name: Publish Visual Studio Marketplace
         if: github.event_name == 'release'

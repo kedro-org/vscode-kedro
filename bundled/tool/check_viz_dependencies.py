@@ -14,8 +14,8 @@ def check_kedro_viz():
         from packaging.version import parse
 
         kedro_viz_version = parse(kedro_viz.__version__)
-        if kedro_viz_version < parse("10.0.0"):
-            raise ImportError("Missing dependencies: kedro_viz version must be >= 10.0.0")        
+        if kedro_viz_version < parse("11.0.0"):
+            raise ImportError("Missing dependencies: kedro_viz version must be >= 11.0.0")        
 
     except ImportError as e:
         print("Missing dependencies: ", e)

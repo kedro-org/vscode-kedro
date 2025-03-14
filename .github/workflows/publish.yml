@@ -1,0 +1,49 @@
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run common build steps
+        uses: "./.github/actions/installation"
+  
+  release-vsstudio-marketplace:
+    runs-on: ubuntu-latest
+    if: success() && startsWith( github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run common build steps
+        uses: "./.github/actions/installation"
+
+      - name: Publish Visual Studio Marketplace
+        if: github.event_name == 'release'
+        run: make release-vscode
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+  
+  # release-openvsx-marketplace:
+  #   runs-on: ubuntu-latest
+  #   if: success() && startsWith( github.ref, 'refs/tags/')
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+
+  #     - name: Run common build steps
+  #       uses: "./.github/actions/installation"
+
+  #     - name: Publish OpenVSX Marketplace
+  #       if: github.event_name == 'release'
+  #       run: make release-openvsx
+  #       env:
+  #         VSCE_PAT: ${{ secrets.OVSX_PAT }}

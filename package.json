@@ -141,6 +141,60 @@
                 }
             }
         },
+        "walkthroughs": [
+            {
+              "id": "kedro-extension-setup",
+              "title": "Get Started with Kedro Extension",
+              "description": "Learn how to set up and run a Kedro project and see your pipelines in VS Code in this tutorial.",
+              "steps": [
+                {
+                  "id": "setup-kedro",
+                  "title": "Step 0: Set up and install Kedro",
+                  "description": "Learn how to install Kedro and set up a virtual environment.",
+                  "media": { "markdown": "assets/markdown/install.md" }
+                },
+                {
+                  "id": "create-kedro-project",
+                  "title": "Step 1: Create and run a Kedro project",
+                  "description": "Run the following command to create a new Kedro project:\n\n ``kedro new``",
+                  "media": { "markdown": "assets/markdown/new_project.md" }
+                },
+                {
+                  "id": "select-python-interpreter",
+                  "title": "Step 2: Select the correct Python interpreter",
+                  "description": "Make sure you select the correct Python interpreter that has Kedro installed.\n\n[Select Interpreter](command:python.setInterpreter)",
+                  "media": { "image": "assets/select-python-interpreter.gif", "altText": "Select Python Interpreter" },
+                  "completionEvents": ["onCommand:python.setInterpreter"]
+                },
+                {
+                  "id": "setup-environment",
+                  "title": "Step 3: Set up or modify environment correctly",
+                  "description": "Ensure you are using the correct virtual environment for Kedro.",
+                  "media": { "image": "assets/s3.png", "altText": "Setup virtual environment" }
+                },
+                {
+                  "id": "configure-project-root",
+                  "title": "Step 4: Configure project's root (set absolute path)",
+                  "description": "You need to set the project's root path for Kedro-related features.\n\n[Configure Path](command:kedro.kedroProjectPath)",
+                  "media": { "markdown": "assets/markdown/set_project_path.md" },
+                  "completionEvents": ["onCommand:kedro.kedroProjectPath"]
+                },
+                {
+                  "id": "run-kedro-viz",
+                  "title": "Step 5: Run Kedro-Viz and install dependencies",
+                  "description": "Open the command palette and type\n\n ``Kedro: Run Kedro Viz`` \n\n[Open Command Palette](command:workbench.action.showCommands)",
+                  "media": { "image": "assets/s5.png", "altText": "Run Kedro Viz" },
+                  "completionEvents": ["onCommand:kedro.runKedroViz"]
+                },
+                {
+                  "id": "learn-more",
+                  "title": "Learn more",
+                  "description": "Great job! You've now completed Getting Started with Kedro. But don't stop here! Please checkout Kedro documentation for more information.",
+                  "media": { "markdown": "assets/markdown/learn_more.md" }
+                }
+              ]
+            }
+        ],
         "commands": [
             {
                 "title": "Restart Server",

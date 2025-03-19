@@ -11,7 +11,7 @@ function App() {
   const toolbarOptions = {
     labelBtn: true,
     layerBtn: true,
-    expandPipelinesBtn: false,
+    expandPipelinesBtn: true,
     exportBtn: false,
     filterBtn: true,
   };

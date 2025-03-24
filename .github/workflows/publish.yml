@@ -14,6 +14,7 @@ jobs:
         uses: ./.github/workflows/installation.yml
         with:
           os: ${{ matrix.os }}
+          branch: main
   
   release-vsstudio-marketplace:
     runs-on: ubuntu-latest
@@ -23,6 +24,7 @@ jobs:
         uses: ./.github/workflows/installation.yml
         with:
           os: ubuntu-latest
+          branch: main
 
       - name: Publish Visual Studio Marketplace
         if: github.event_name == 'release'

@@ -32,6 +32,9 @@ jobs:
           os: ubuntu-latest
           branch: "main"
 
+      - name: Install vsce tool
+        run: npm install -g @vscode/vsce          
+
       - name: Publish Visual Studio Marketplace
         if: github.event_name == 'release'
         run: make release-vscode

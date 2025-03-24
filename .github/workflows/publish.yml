@@ -10,9 +10,6 @@ jobs:
         os: [macos-latest, ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Install dependencies & build
         uses: ./.github/workflows/installation.yml
         with:
@@ -22,9 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     if: success() && startsWith( github.ref, 'refs/tags/')
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Install dependencies & build
         uses: ./.github/workflows/installation.yml
         with:

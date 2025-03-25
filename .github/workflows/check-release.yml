@@ -60,15 +60,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ needs.check-release-branch.outputs.version }}
-          release_name: Release v${{ needs.check-release-branch.outputs.version }}
+          name: Release v${{ needs.check-release-branch.outputs.version }}
           draft: false
           prerelease: false
           body: |
             Release version ${{ needs.check-release-branch.outputs.version }}
-            
             See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

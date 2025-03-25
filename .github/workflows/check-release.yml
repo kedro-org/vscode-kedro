@@ -66,8 +66,7 @@ jobs:
           name: Release v${{ needs.check-release-branch.outputs.version }}
           draft: false
           prerelease: false
+          token: ${{ secrets.GH_TAGGING_TOKEN }}
           body: |
             Release version ${{ needs.check-release-branch.outputs.version }}
             See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,3 +1,5 @@
+name: Publish Kedro VSCode Extension
+
 on:
   release:
     types: [published]

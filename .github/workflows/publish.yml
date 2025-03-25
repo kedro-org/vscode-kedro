@@ -48,8 +48,14 @@ jobs:
   #     - name: Checkout
   #       uses: actions/checkout@v4
 
-  #     - name: Run common build steps
+  #     - name: Install dependencies & build
   #       uses: "./.github/actions/installation"
+  #       with:
+  #         os: ubuntu-latest
+  #         branch: "main"
+
+  #     - name: Install ovsx tool
+  #       run: npm install -g @vscode/ovsx  
 
   #     - name: Publish OpenVSX Marketplace
   #       if: github.event_name == 'release'

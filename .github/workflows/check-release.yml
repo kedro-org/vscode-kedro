@@ -1,0 +1,74 @@
+name: Check and Create Kedro VSCode Extension Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  check-release-branch:
+    runs-on: ubuntu-latest
+    outputs:
+      is_release: ${{ steps.check.outputs.is_release }}
+      version: ${{ steps.get-version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if merge from release branch
+        id: check
+        run: |
+          MERGED_BRANCH=$(git show --pretty=%P -s HEAD | awk '{print $2}' | xargs git name-rev --name-only)
+          if [[ $MERGED_BRANCH == *"release/"* ]]; then
+            echo "is_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get version from package.json
+        id: get-version
+        if: steps.check.outputs.is_release == 'true'
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+  build:
+    needs: check-release-branch
+    if: needs.check-release-branch.outputs.is_release == 'true'
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies & build
+        uses: "./.github/actions/installation"
+        with:
+          os: ${{ matrix.os }}
+          branch: "main"
+
+  create-release:
+    needs: [check-release-branch, build]
+    if: success() && needs.check-release-branch.outputs.is_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ needs.check-release-branch.outputs.version }}
+          release_name: Release v${{ needs.check-release-branch.outputs.version }}
+          draft: false
+          prerelease: false
+          body: |
+            Release version ${{ needs.check-release-branch.outputs.version }}
+            
+            See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.

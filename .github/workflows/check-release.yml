@@ -54,7 +54,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+  
+      - name: Extract release notes
+        run: |
+          chmod +x .github/scripts/extract-release-notes.sh
+          .github/scripts/extract-release-notes.sh ${{ needs.check-release-branch.outputs.version }}
+  
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -63,6 +68,4 @@ jobs:
           draft: false
           prerelease: false
           token: ${{ secrets.GH_TAGGING_TOKEN }}
-          body: |
-            Release version ${{ needs.check-release-branch.outputs.version }}
-            See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+          body_path: release_notes.txt

@@ -1,14 +1,14 @@
 {
-    "name": "Ked",
-    "displayName": "Ked",
-    "description": "A Ked VSCode Extension.",
-    "version": "0.0.8",
+    "name": "Kedro",
+    "displayName": "Kedro",
+    "description": "A Kedro VSCode Extension.",
+    "version": "0.4.0",
     "preview": false,
     "serverInfo": {
         "name": "Kedro",
         "module": "kedro"
     },
-    "publisher": "ked-vsc-ext",
+    "publisher": "kedro",
     "license": "Apache2",
     "homepage": "https://github.com/kedro-org/vscode-kedro",
     "repository": {

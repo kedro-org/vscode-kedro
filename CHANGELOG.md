@@ -1,4 +1,11 @@
-# Change Log
+=# Change Log
+
+# 0.4.0
+## Major changes and new features
+- Add filtering of pipelines on Kedro-Viz flowchart in VSCode.
+- Add documentation for filter pipeline on Kedro-Viz flowchart.
+- Update Kedro-Viz to 11.0.0 as minimum requirement for extension.
+- Introduce a Collapse/Expand pipeline button in Kedro-Viz flowchart.
 
 # 0.4.0
 ## Major changes and new features

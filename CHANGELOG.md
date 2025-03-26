@@ -1,4 +1,4 @@
-=# Change Log
+# Change Log
 
 # 0.4.0
 ## Major changes and new features

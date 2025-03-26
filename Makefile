@@ -21,6 +21,10 @@ dev-install:
 test:
 	pytest
 
-release:
+release-vscode:
 	make dev-install
 	vsce publish
+
+release-openvsx:
+	make dev-install
+	ovsx publish

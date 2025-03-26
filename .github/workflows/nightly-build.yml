@@ -9,9 +9,16 @@ on:
 
 jobs:
   nightly-main:
-    uses: ./.github/workflows/installation.yml
-    with:
-      branch: main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install dependencies & build
+        uses: "./.github/actions/installation"
+        with:
+          os: ubuntu-latest
+          branch: main
 
 
 

@@ -1,0 +1,71 @@
+name: Check and Create Kedro VSCode Extension Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  check-release-branch:
+    # Only run if PR was merged AND source branch starts with "release/"
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Get version from package.json
+        id: get-version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+      - name: Verify version matches branch name
+        run: |
+          BRANCH_VERSION="${{ github.event.pull_request.head.ref }}"
+          BRANCH_VERSION=${BRANCH_VERSION#release/}
+          
+          if [[ "${{ steps.get-version.outputs.version }}" != "$BRANCH_VERSION" ]]; then
+            echo "::warning::Branch name ($BRANCH_VERSION) does not match package.json version (${{ steps.get-version.outputs.version }})"
+          fi
+
+  build:
+    needs: check-release-branch
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies & build
+        uses: "./.github/actions/installation"
+        with:
+          branch: "main"
+
+  create-release:
+    needs: [check-release-branch, build]
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+  
+      - name: Extract release notes
+        run: |
+          chmod +x .github/scripts/extract-release-notes.sh
+          .github/scripts/extract-release-notes.sh ${{ needs.check-release-branch.outputs.version }}
+  
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.check-release-branch.outputs.version }}
+          name: Release v${{ needs.check-release-branch.outputs.version }}
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GH_TAGGING_TOKEN }}
+          body_path: release_notes.txt

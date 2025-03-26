@@ -13,6 +13,8 @@ jobs:
 
       - name: Install dependencies & build
         uses: "./.github/actions/installation"
+        with:
+          branch: ${{ github.event.pull_request.head.ref }}
 
 
 

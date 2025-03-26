@@ -28,8 +28,8 @@ jobs:
           BRANCH_VERSION="${{ github.event.pull_request.head.ref }}"
           BRANCH_VERSION=${BRANCH_VERSION#release/}
           
-          if [[ "$VERSION" != "$BRANCH_VERSION" ]]; then
-            echo "::warning::Branch name ($BRANCH_VERSION) does not match package.json version ($VERSION)"
+          if [[ "${{ steps.get-version.outputs.version }}" != "$BRANCH_VERSION" ]]; then
+            echo "::warning::Branch name ($BRANCH_VERSION) does not match package.json version (${{ steps.get-version.outputs.version }})"
           fi
 
   build:
@@ -45,7 +45,6 @@ jobs:
       - name: Install dependencies & build
         uses: "./.github/actions/installation"
         with:
-          os: ${{ matrix.os }}
           branch: "main"
 
   create-release:

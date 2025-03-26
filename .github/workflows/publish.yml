@@ -18,7 +18,6 @@ jobs:
       - name: Install dependencies & build
         uses: "./.github/actions/installation"
         with:
-          os: ${{ matrix.os }}
           branch: "main"
   
   release-vsstudio-marketplace:
@@ -31,7 +30,6 @@ jobs:
       - name: Install dependencies & build
         uses: "./.github/actions/installation"
         with:
-          os: ubuntu-latest
           branch: "main"
 
       - name: Install vsce tool
@@ -53,7 +51,6 @@ jobs:
   #     - name: Install dependencies & build
   #       uses: "./.github/actions/installation"
   #       with:
-  #         os: ubuntu-latest
   #         branch: "main"
 
   #     - name: Install ovsx tool

@@ -1,6 +1,6 @@
 # Change Log
 
-# 0.3.0
+# 0.0.7
 ## Major changes and new features
 - Support settings of custom project path in Kedro Extension.
 - Validate dataset classes in catalog using LSP.

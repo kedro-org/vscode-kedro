@@ -1,0 +1,18 @@
+name: Install development dependencies
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  install:
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies & build
+        uses: "./.github/actions/installation"
+
+
+

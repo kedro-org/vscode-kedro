@@ -1,42 +1,39 @@
 name: Check and Create Kedro VSCode Extension Release
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - main
 
 jobs:
   check-release-branch:
+    # Only run if PR was merged AND source branch starts with "release/"
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-latest
     outputs:
-      is_release: ${{ steps.check.outputs.is_release }}
       version: ${{ steps.get-version.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check if merge from release branch
-        id: check
-        run: |
-          MERGED_BRANCH=$(git show --pretty=%P -s HEAD | awk '{print $2}' | xargs git name-rev --name-only)
-          if [[ $MERGED_BRANCH == *"release/"* ]]; then
-            echo "is_release=true" >> $GITHUB_OUTPUT
-          else
-            echo "is_release=false" >> $GITHUB_OUTPUT
-          fi
-
+        
       - name: Get version from package.json
         id: get-version
-        if: steps.check.outputs.is_release == 'true'
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+      - name: Verify version matches branch name
+        run: |
+          BRANCH_VERSION="${{ github.event.pull_request.head.ref }}"
+          BRANCH_VERSION=${BRANCH_VERSION#release/}
+          
+          if [[ "$VERSION" != "$BRANCH_VERSION" ]]; then
+            echo "::warning::Branch name ($BRANCH_VERSION) does not match package.json version ($VERSION)"
+          fi
 
   build:
     needs: check-release-branch
-    if: needs.check-release-branch.outputs.is_release == 'true'
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
@@ -53,7 +50,7 @@ jobs:
 
   create-release:
     needs: [check-release-branch, build]
-    if: success() && needs.check-release-branch.outputs.is_release == 'true'
+    if: success()
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

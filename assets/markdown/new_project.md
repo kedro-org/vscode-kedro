@@ -1,5 +1,7 @@
 # Create a new Kedro project
 
+**Note:** This step is for users who have not already created the Kedro project.
+
 ## Introducing `kedro new`
 
 To create a basic Kedro project containing the default code needed to set up your own nodes and pipelines, navigate to your preferred directory and type:

@@ -1,4 +1,6 @@
-# Set up Kedro
+# Set up and install Kedro
+
+**Note:** This step is for users who have not already installed Kedro.
 
 ## You can Create a virtual environment for your Kedro project using `venv`, `conda` or `uv`
 
@@ -74,12 +76,6 @@ Activate the virtual environment:
 source .venv/bin/activate
 ```
 
-### Optional: Integrate Kedro in VS Code with the official extension
-Working in an IDE can be a great productivity boost.
-
-For VS Code Users: Checkout [Set up Visual Studio Code](../development/set_up_vscode.md) and [Kedro VS Code Extension](../development/set_up_vscode.md#kedro-vs-code-extension)
-For PyCharm Users: Checkout [Set up PyCharm](../development/set_up_pycharm.md)
-
 ## How to install Kedro using `pip`
 
 To install Kedro from the Python Package Index (PyPI):
@@ -87,17 +83,3 @@ To install Kedro from the Python Package Index (PyPI):
 ```bash
 pip install kedro
 ```
-
-You can also install Kedro using `conda install -c conda-forge kedro`.
-
-## How to verify your Kedro installation
-
-To check that Kedro is installed:
-
-```bash
-kedro info
-```
-
-You should see an ASCII art graphic and the Kedro version number. For example:
-
-![](../meta/images/kedro_graphic.png)

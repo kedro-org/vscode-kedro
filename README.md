@@ -90,6 +90,33 @@ Navigate to DataCatalog:
 Clicking on a data node in the flowchart will open the corresponding dataset in the Data Catalog.
 ![navigation to dataset](assets/viz-vsc-nav-data-node.gif)
 
+### Filter Pipelines
+
+#### Using the Command Palette
+
+1. Open the Command Palette by pressing `Cmd + Shift + P` (macOS) or `Ctrl + Shift + P` (Windows/Linux)
+2. Type `Kedro: Select Pipeline View` and select it
+3. Once you run that command, Select the pipeline you want to filter by
+
+![Filter pipeline through Command Palette](assets/pipeline-filter-using-command-palette.gif)
+
+#### Using the filter icon
+
+1. Open VS Code settings by pressing `Cmd + ,` (macOS) or `Ctrl + ,` (Windows/Linux)
+2. Type `Kedro: Run Kedro Viz` and select the command to launch the Viz
+3. In the Kedro-Viz panel, click the filter icon
+4. Select the pipeline you want to filter by
+
+![Filter pipeline through icon](assets/pipeline-filter-using-icon.gif)
+
+### Collapse and expand pipeline
+
+1. Open VS Code settings by pressing `Cmd + ,` (macOS) or `Ctrl + ,` (Windows/Linux)
+2. Type `Kedro: Run Kedro Viz` and select the command to launch the Viz
+3. In the Kedro-Viz panel, click the collapse/expand icon
+
+![Collapse and expand pipeline](assets/viz-vsc-col-exp.gif)
+
 ### Set Custom Kedro Project Path
 
 You can specify a custom path to your Kedro project root directory in one of two ways:

@@ -1,8 +1,8 @@
 # Set up Kedro
 
-## Create a virtual environment for your Kedro project
+## You can Create a virtual environment for your Kedro project using `venv`, `conda` or `uv`
 
-### How to create a new virtual environment using `venv`
+### 1. How to create a new virtual environment using `venv`
 
 The recommended approach. If you use Python 3, you should already have the `venv` module installed with the standard library. Create a directory for working with your project and navigate to it. For example:
 
@@ -23,14 +23,8 @@ source .venv/bin/activate # macOS / Linux
 .\.venv\Scripts\activate  # Windows
 ```
 
-To exit the environment:
 
-```bash
-deactivate
-```
-
-
-### How to create a new virtual environment using `conda`
+### 2. How to create a new virtual environment using `conda`
 
 [Another popular option is to use Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/). After you install it, execute this from your terminal:
 
@@ -52,17 +46,34 @@ To confirm that a valid version of Python is installed in your virtual environme
 python3 --version
 ```
 
-On Windows:
+### 3. How to create a new virtual environment using `uv`
+
+[Another popular option is to use uv](https://pypi.org/project/uv/). After you install it, execute this from your terminal:
+
+Create a directory for working with your project and navigate to it. For example:
 
 ```bash
-python --version
+mkdir your-kedro-project && cd your-kedro-project
 ```
 
-To exit `kedro-environment`:
+Initialize the project with uv:
 
 ```bash
-conda deactivate
+uv init
 ```
+
+Create a virtual environment:
+
+```bash
+uv venv
+```
+
+Activate the virtual environment:
+
+```bash
+source .venv/bin/activate
+```
+
 ### Optional: Integrate Kedro in VS Code with the official extension
 Working in an IDE can be a great productivity boost.
 

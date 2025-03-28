@@ -170,7 +170,7 @@
                   "id": "setup-environment",
                   "title": "Step 3: Set up or modify environment correctly",
                   "description": "Ensure you are using the correct virtual environment for Kedro.",
-                  "media": { "image": "assets/s3.png", "altText": "Setup virtual environment" }
+                  "media": { "markdown": "assets/markdown/verify_virtual_environment.md" }
                 },
                 {
                   "id": "configure-project-root",

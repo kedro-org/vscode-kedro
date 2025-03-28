@@ -1,6 +1,6 @@
-## Set Custom Kedro Project Path
+# Set Custom Kedro Project Path
 
-You can specify a custom path to your Kedro project root directory in one of two ways:
+### You can specify a custom path to your Kedro project root directory in one of two ways:
 
 1. **Using the Command Palette**:
    - Press `Cmd` + `Shift` + `P` (on macOS) or `Ctrl` + `Shift` + `P` (on Windows/Linux)
@@ -13,20 +13,16 @@ You can specify a custom path to your Kedro project root directory in one of two
    - Search for "Kedro Project Path"
    - Enter the absolute path to your Kedro project root directory in the `kedro.kedroProjectPath` setting
 
-The extension will:
-- Validate that the provided path contains a valid Kedro project
-- Add the project folder to your workspace if it's not already included
-- Use this path as the root directory for all Kedro-related features
+### How to get the absolute path of your Kedro project
+
+   - Press `Cmd` + `Shift` + `E` (on macOS) or `Ctrl` + `Shift` + `E` (on Windows/Linux) to open VSCode explorer
+   - Locate your Kedro project folder
+   - Right click on it and select `Copy path`
+
+![Select Kedro project's absolute path](../project-right-click.gif)
 
 **Note:** 
 - This step is applicable to those who have their kedro project not at the root directory or they have multiple kedro projects.
-- The project path must point to a directory containing a valid Kedro project with a `pyproject.toml` file that includes the `[tool.kedro]` section.
 
-Example:
-```
-{
-    "kedro.kedroProjectPath": "/absolute/path/to/your/kedro-project"
-}
-```
 
 ![Setting Kedro project path through Command Palette](../kedro-project-path.gif)

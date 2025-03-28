@@ -1,85 +1,57 @@
 # Set up and install Kedro
+*P.S.: Steps 0 and 1 are for users who want to start a new Kedro project—if you already have an existing Kedro project, skip to Step 2: “Select the correct Python interpreter.”*
 
-**Note:** This step is for users who have not already installed Kedro.
-
-## You can Create a virtual environment for your Kedro project using `venv`, `conda` or `uv`
-
-### 1. How to create a new virtual environment using `venv`
-
-The recommended approach. If you use Python 3, you should already have the `venv` module installed with the standard library. Create a directory for working with your project and navigate to it. For example:
+## 0.1 Create a directory for working with your project and navigate to it
 
 ```bash
 mkdir your-kedro-project && cd your-kedro-project
 ```
 
-Next, create a new virtual environment in this directory with `venv`:
+## 0.2 Create a virtual environment for your Kedro project
 
-```bash
-python -m venv .venv
-```
+Choose a virtual environment tool: `venv`, `conda`, or `uv`. Or use any another environment managers you prefer.
 
-Activate this virtual environment:
+**P.S.:** `venv` is already built-in with Python 3. Install `conda` or `uv` when necessary.
 
-```bash
-source .venv/bin/activate # macOS / Linux
-.\.venv\Scripts\activate  # Windows
-```
+## 0.3 Create a new virtual environment in your-kedro-project directory
+
+Using `venv`
+
+`python -m venv .venv`
 
 
-### 2. How to create a new virtual environment using `conda`
+Using `conda`
 
-[Another popular option is to use Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/). After you install it, execute this from your terminal:
+`conda create --name <your-environment-name> python=3.10 -y`
 
-```bash
-conda create --name kedro-environment python=3.10 -y
-```
+(You can use any Python version ≥ 3.9 and ≤ 3.11 for your project)
 
-The example below uses Python 3.10, and creates a virtual environment called `kedro-environment`. You can opt for a different version of Python (any version >= 3.9 and <3.12) for your project, and you can name it anything you choose.
 
-The `conda` virtual environment is not dependent on your current working directory and can be activated from any directory:
+Using `uv`
 
-```bash
-conda activate kedro-environment
-```
+`uv init` (initialize project)
 
-To confirm that a valid version of Python is installed in your virtual environment, type the following in your terminal (macOS and Linux):
+`uv venv`
 
-```bash
-python3 --version
-```
+## 0.4 Activate the virtual environment
 
-### 3. How to create a new virtual environment using `uv`
+Using `venv`
 
-[Another popular option is to use uv](https://pypi.org/project/uv/). After you install it, execute this from your terminal:
+`source .venv/bin/activate` # macOS / Linux
+`.\.venv\Scripts\activate`  # Windows
 
-Create a directory for working with your project and navigate to it. For example:
+Using `conda`
 
-```bash
-mkdir your-kedro-project && cd your-kedro-project
-```
+`conda activate <your-environment-name>`
 
-Initialize the project with uv:
+Using `uv`
 
-```bash
-uv init
-```
+`source .venv/bin/activate`
 
-Create a virtual environment:
+## 0.5 Install Kedro
 
-```bash
-uv venv
-```
+`pip install kedro` (PyPI)
 
-Activate the virtual environment:
+`conda install -c conda-forge kedro` (conda)
 
-```bash
-source .venv/bin/activate
-```
-
-## How to install Kedro using `pip`
-
-To install Kedro from the Python Package Index (PyPI):
-
-```bash
-pip install kedro
-```
+`uv pip install kedro` (uv)

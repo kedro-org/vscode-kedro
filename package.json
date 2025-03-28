@@ -144,8 +144,8 @@
         "walkthroughs": [
             {
               "id": "kedro-extension-setup",
-              "title": "Get Started with Kedro Extension",
-              "description": "Learn how to set up and run a Kedro project and see your pipelines in VS Code in this tutorial.",
+              "title": "Get Started with Kedro",
+              "description": "Learn how to set up and run a Kedro project, and visualize your pipeline in VS Code using the Kedro extension.",
               "steps": [
                 {
                   "id": "setup-kedro",

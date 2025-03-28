@@ -1,16 +1,16 @@
-# Create a new Kedro project
+# Create and run a Kedro project
 
-**Note:** This step is for users who have not already created the Kedro project.
+*P.S.: Steps 0 and 1 are for users who want to start a new Kedro project—if you already have an existing Kedro project, skip to Step 2: “Select the correct Python interpreter.”*
 
-## Introducing `kedro new`
+## 1.1 Introducing `kedro new`
 
-To create a basic Kedro project containing the default code needed to set up your own nodes and pipelines, navigate to your preferred directory and type:
+To create a basic Kedro project with default setup, run this in your desired directory:
 
 ```bash
 kedro new
 ```
 
-### Project tools
+### 1.1.1 Project tools
 
 Next, the CLI asks which tools you'd like to include in the project:
 
@@ -28,7 +28,7 @@ Which tools would you like to include in your project? [1-7/1,3/all/none]:
  (none):
 ```
 
-### Quickstart example
+### 1.1.2 Quickstart example
 
 To create a spaceflights project called `spaceflights` with Kedro Viz features and example code:
 
@@ -45,9 +45,9 @@ You can also enter this in a single line as follows:
 kedro new --name=spaceflights --tools=viz --example=y
 ```
 
-## Run the new project
+## 1.2 Run the new project
 
-Whichever options you selected for tools and example code, once `kedro new` has completed, the next step is to navigate to the project folder (`cd <project-name>`) and install dependencies with `pip` as follows:
+After kedro new, run `cd <project-name>` and install dependencies with:
 
 ```bash
 pip install -r requirements.txt
@@ -59,24 +59,12 @@ Now run the project:
 kedro run
 ```
 
-```{warning}
-`kedro run` requires at least one pipeline with nodes. Please define a pipeline before running this command and ensure it is registred in `pipeline_registry.py`.
-```
+## 1.3 Visualise a Kedro project
 
-## Visualise a Kedro project
-
-This section swiftly introduces project visualisation using Kedro-Viz. See the {doc}`Kedro-Viz documentation<kedro-viz:kedro-viz_visualisation>` for more detail.
-
-The Kedro-Viz package needs to be installed into your virtual environment separately as it is not part of the standard Kedro installation:
-
-```bash
-pip install kedro-viz
-```
-
-To start Kedro-Viz, navigate to the project folder (`cd <project-name>`) and enter the following in your terminal:
+Go to your project folder `cd <project-name>` and run:
 
 ```bash
 kedro viz run
 ```
 
-This command automatically opens a browser tab to serve the visualisation at `http://127.0.0.1:4141/`.
+This opens the visualization at at `http://127.0.0.1:4141/` in your browser.

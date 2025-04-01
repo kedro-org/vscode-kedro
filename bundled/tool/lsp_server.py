@@ -745,9 +745,13 @@ class FullCatalogValidator(CatalogValidator):
     def validate(self, catalog_config: Dict, content: str) -> List[Diagnostic]:
         diagnostics = []
         
-        # Create a filtered catalog without factory patterns that have config references
+        # Create a filtered catalog without factory patterns and interpolation variables
         filtered_catalog = {}
         for dataset_name, dataset_config in catalog_config.items():
+            # Skip interpolation variables (keys starting with underscore)
+            if dataset_name.startswith('_'):
+                continue
+                
             # Skip factory patterns with configuration references
             if '{' in dataset_name and has_config_references(dataset_config):
                 continue

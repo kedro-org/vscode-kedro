@@ -14,7 +14,7 @@ import re
 import sys
 import asyncio
 from pathlib import Path
-from typing import Any, Dict, Tuple, Optional
+from typing import Any, Dict, Tuple, Optional, List
 
 from common import update_sys_path
 
@@ -586,71 +586,226 @@ def find_all_catalog_files(root_path):
 
 
 def remove_line_numbers(config):
+    """Remove __line__ information from config for validation purposes"""
     if isinstance(config, dict):
         return {k: remove_line_numbers(v) for k, v in config.items() if k != '__line__'}
     elif isinstance(config, list):
         return [remove_line_numbers(i) for i in config]
     else:
         return config
+
+
+def find_line_number_and_character(text: str, dataset_name: str, field_name: str = "") -> Optional[Tuple[int, int]]:
+    """Find the line number and character position of a dataset or field in YAML content"""
+    lines = text.split('\n')
+    in_dataset = False
     
+    for idx, line in enumerate(lines):
+        stripped_line = line.strip()
+        
+        # If this is the dataset name line
+        if stripped_line.startswith(f"{dataset_name}:"):
+            in_dataset = True
+            if not field_name:  # If we're looking for the dataset name itself
+                start_char = len(line) - len(line.lstrip())
+                return idx, start_char
+                
+        # If we're in a dataset and looking for a specific field
+        elif in_dataset and field_name and stripped_line.startswith(f"{field_name}:"):
+            # Calculate the character position accounting for indentation
+            start_char = len(line) - len(line.lstrip())
+            return idx, start_char
+            
+        # If we've moved out of the current dataset
+        elif in_dataset and stripped_line and not stripped_line.startswith(' '):
+            in_dataset = False  # End of current dataset
+            
+    return None
+
+
+def create_diagnostic(
+    range_start: Position, 
+    range_end: Position, 
+    message: str, 
+    severity: DiagnosticSeverity = DiagnosticSeverity.Error
+) -> Diagnostic:
+    """Helper function to create diagnostics with consistent formatting"""
+    return Diagnostic(
+        range=Range(start=range_start, end=range_end),
+        message=message,
+        severity=severity,
+        source="Kedro LSP",
+    )
+
+
+class CatalogValidator:
+    """Base class for catalog validators"""
+    
+    def validate(self, catalog_config: Dict, content: str) -> List[Diagnostic]:
+        """
+        Validate catalog and return diagnostics
+        
+        Args:
+            catalog_config: Parsed catalog configuration
+            content: Original text content for line number mapping
+            
+        Returns:
+            List of Diagnostic objects
+        """
+        raise NotImplementedError("Validators must implement this method")
+
+
+class FactoryPatternValidator(CatalogValidator):
+    """Validates factory patterns in dataset names"""
+    
+    def validate(self, catalog_config: Dict, content: str) -> List[Diagnostic]:
+        diagnostics = []
+        factory_pattern_regex = re.compile(r'{([^{}]+)}')
+        
+        for dataset_name, dataset_config in catalog_config.items():
+            if not isinstance(dataset_name, str) or '{' not in dataset_name:
+                continue  # Not a factory pattern
+            
+            # Skip entries that start with underscore (variable definitions)
+            if dataset_name.startswith('_'):
+                continue
+                
+            # Check if dataset contains configuration references
+            dataset_str = json.dumps(dataset_config)
+            if re.search(r'\${[^{}]+}', dataset_str):
+                continue  # Skip factory pattern validation when config refs are present
+                
+            # Extract variables from dataset name
+            name_variables = set(factory_pattern_regex.findall(dataset_name))
+            
+            # Find all variables in the configuration (already confirmed no config refs)
+            config_variables = set()
+            for match in factory_pattern_regex.finditer(dataset_str):
+                config_variables.add(match.group(1))
+            
+            # Check for variables in config that aren't in the name
+            extra_vars = config_variables - name_variables
+            if extra_vars:
+                line_info = find_line_number_and_character(content, dataset_name)
+                if line_info:
+                    line_number, start_char = line_info
+                    diagnostic = create_diagnostic(
+                        range_start=Position(line=line_number, character=start_char),
+                        range_end=Position(line=line_number, character=start_char + len(dataset_name)),
+                        message=f"Keys used in the configuration {{{', '.join(extra_vars)}}} should be present in the dataset factory pattern name",
+                        severity=DiagnosticSeverity.Warning
+                    )
+                    diagnostics.append(diagnostic)
+                    
+        return diagnostics
+
+
+class DatasetConfigValidator(CatalogValidator):
+    """Validates individual datasets can be created"""
+    
+    def validate(self, catalog_config: Dict, content: str) -> List[Diagnostic]:
+        diagnostics = []
+        
+        for dataset_name, dataset_config in catalog_config.items():
+            if not isinstance(dataset_name, str) or dataset_name.startswith("_"):
+                continue  # Skip private datasets or invalid names
+                
+            clean_dataset_config = remove_line_numbers(dataset_config)
+            
+            try:
+                DataCatalog.from_config({dataset_name: clean_dataset_config})
+            except Exception as exception:
+                # Find the dataset's line number in the file
+                line_info = find_line_number_and_character(content, dataset_name)
+                if line_info:
+                    line_number, start_char = line_info
+                    diagnostic = create_diagnostic(
+                        range_start=Position(line=line_number, character=start_char),
+                        range_end=Position(line=line_number, character=start_char + len(dataset_name)),
+                        message=f"Dataset '{dataset_name}' configuration error: {exception}"
+                    )
+                    diagnostics.append(diagnostic)
+                    
+        return diagnostics
+
+
+class FullCatalogValidator(CatalogValidator):
+    """Validates the entire catalog as a whole"""
+    
+    def validate(self, catalog_config: Dict, content: str) -> List[Diagnostic]:
+        diagnostics = []
+        
+        try:
+            # Try to validate the entire catalog
+            clean_catalog_config = remove_line_numbers(catalog_config)
+            DataCatalog.from_config(clean_catalog_config)
+        except Exception as exception:
+            # If the entire catalog fails but we can't pinpoint why,
+            # add a diagnostic at the top of the file
+            diagnostic = create_diagnostic(
+                range_start=Position(line=0, character=0),
+                range_end=Position(line=0, character=0),
+                message=f"Catalog validation error: {exception}"
+            )
+            diagnostics.append(diagnostic)
+            
+        return diagnostics
+
+
+class YAMLValidator(CatalogValidator):
+    """Validates YAML syntax"""
+    
+    def validate(self, catalog_config: Dict, content: str) -> List[Diagnostic]:
+        # If we got this far, YAML parsing already succeeded
+        # This validator exists mainly to complete the validation chain
+        # but could be extended for custom YAML validation rules
+        return []
+
 
 async def validate_catalog_content(ls: KedroLanguageServer, uri: str, content: str):
-    """Validate catalog content dynamically."""
+    """Validate catalog content using a chain of validators"""
     diagnostics = []
-
+    
+    # List of validators to run in order
+    validators = [
+        YAMLValidator(),
+        FactoryPatternValidator(),
+        FullCatalogValidator(),
+        DatasetConfigValidator(),
+    ]
+    
     try:
         # Parse the YAML content
         catalog_config = yaml.load(content, Loader=SafeLineLoader)
         if not isinstance(catalog_config, dict):
-            return  # Invalid catalog format
-
-        # Remove '__line__' keys
-        clean_catalog_config = remove_line_numbers(catalog_config)
-
-        try:
-            # Attempt to create a DataCatalog with the cleaned catalog config
-            DataCatalog.from_config(clean_catalog_config)
-        except Exception as e:
-            # Check each dataset individually if the entire catalog fails
-            for dataset_name, dataset_config in catalog_config.items():
-                if dataset_name.startswith("_"):
-                    continue  # Skip private datasets
-
-                clean_dataset_config = remove_line_numbers(dataset_config)
-
-                try:
-                    DataCatalog.from_config({dataset_name: clean_dataset_config})
-                except Exception as dataset_exception:
-                    # Add diagnostic for invalid dataset
-                    line_info = find_line_number_and_character(content, dataset_name, "type")
-                    if line_info:
-                        line_number, start_char = line_info
-                        dataset_type = dataset_config.get("type", "Unknown")
-                        end_char = start_char + len(f"type: {dataset_type}")
-                        diagnostic = Diagnostic(
-                            range=Range(
-                                start=Position(line=line_number, character=start_char),
-                                end=Position(line=line_number, character=end_char),
-                            ),
-                            message=f"Dataset '{dataset_name}' has an invalid type '{dataset_type}'. {dataset_exception}",
-                            severity=DiagnosticSeverity.Error,
-                            source="Kedro LSP",
-                        )
-                        diagnostics.append(diagnostic)
+            # Handle invalid catalog format
+            diagnostic = create_diagnostic(
+                range_start=Position(line=0, character=0),
+                range_end=Position(line=0, character=0),
+                message="Invalid catalog format: root must be a mapping/dictionary"
+            )
+            diagnostics.append(diagnostic)
+            ls.publish_diagnostics(uri, diagnostics)
+            return
+            
+        # Run each validator in sequence
+        for validator in validators:
+            try:
+                validator_diagnostics = validator.validate(catalog_config, content)
+                diagnostics.extend(validator_diagnostics)
+            except Exception as validator_error:
+                log_error(f"Error in validator {validator.__class__.__name__}: {validator_error}")
+                
     except Exception as e:
         # Handle YAML parsing errors
         log_error(f"Error parsing catalog content: {e}")
-        diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=0, character=0),
-                end=Position(line=0, character=0),
-            ),
-            message=f"YAML parsing error: {e}",
-            severity=DiagnosticSeverity.Error,
-            source="Kedro LSP",
+        diagnostic = create_diagnostic(
+            range_start=Position(line=0, character=0),
+            range_end=Position(line=0, character=0),
+            message=f"YAML parsing error: {e}"
         )
         diagnostics.append(diagnostic)
-
+        
     # Publish diagnostics for the file
     ls.publish_diagnostics(uri, diagnostics)
 
@@ -693,22 +848,6 @@ def is_dataset_importable(dataset_type: str) -> Tuple[bool, Optional[str]]:
         return False, f"Class '{class_name}' not found in module '{module_name}'."
     except ValueError:
         return False, "Invalid dataset type format. It should be 'module.ClassName'."
-
-
-def find_line_number_and_character(text: str, dataset_name: str, field_name: str) -> Optional[Tuple[int, int]]:
-    lines = text.split('\n')
-    in_dataset = False
-    for idx, line in enumerate(lines):
-        stripped_line = line.strip()
-        if stripped_line.startswith(f"{dataset_name}:"):
-            in_dataset = True
-        elif in_dataset and stripped_line.startswith(f"{field_name}:"):
-            # Calculate the character position accounting for indentation
-            start_char = len(line) - len(line.lstrip())
-            return idx, start_char
-        elif stripped_line and not stripped_line.startswith(' '):
-            in_dataset = False  # End of current dataset
-    return None
 
 
 def _get_global_defaults():

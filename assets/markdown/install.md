@@ -1,5 +1,5 @@
-# Set up and install Kedro
-*P.S.: Steps 0 and 1 are for users who want to start a new Kedro project—if you already have an existing Kedro project, skip to Step 2: “Select the correct Python interpreter.”*
+# Set up and run Kedro
+*P.S.: If you’re starting a new Kedro project, follow Steps 0. If you already have an existing Kedro project, you can skip to Step 1: “Select the correct Python interpreter.”*
 
 ## 0.1 Create a directory for working with your project and navigate to it
 
@@ -13,45 +13,26 @@ Choose a virtual environment tool: `venv`, `conda`, or `uv`. Or use any another 
 
 **P.S.:** `venv` is already built-in with Python 3. Install `conda` or `uv` when necessary.
 
-## 0.3 Create a new virtual environment in your-kedro-project directory
+Refer to https://code.visualstudio.com/docs/python/environments
 
-Using `venv`
-
-`python -m venv .venv`
-
-
-Using `conda`
-
-`conda create --name <your-environment-name> python=3.10 -y`
-
-(You can use any Python version ≥ 3.9 and ≤ 3.11 for your project)
-
-
-Using `uv`
-
-`uv init` (initialize project)
-
-`uv venv`
-
-## 0.4 Activate the virtual environment
-
-Using `venv`
-
-`source .venv/bin/activate` # macOS / Linux
-`.\.venv\Scripts\activate`  # Windows
-
-Using `conda`
-
-`conda activate <your-environment-name>`
-
-Using `uv`
-
-`source .venv/bin/activate`
-
-## 0.5 Install Kedro
+## 0.3 Install Kedro
 
 `pip install kedro` (PyPI)
 
 `conda install -c conda-forge kedro` (conda)
 
 `uv pip install kedro` (uv)
+
+## 0.4 Create and run Kedro project
+
+To create a basic Kedro project with default setup, run this in your desired directory:
+```bash
+uvx kedro new --name=spaceflights --example=y
+```
+
+To run your Kedro project:
+```bash
+kedro run
+```
+
+For more info, refer to our documentation: https://docs.kedro.org/en/stable/get_started/new_project.html

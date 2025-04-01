@@ -1,4 +1,4 @@
-# Run Kedro-Viz and install dependencies
+# Install dependencies and run Kedro-Viz
 
 **Note:** For Kedro VS Code extension to work, please open a `.py` or `.yaml` file.
 

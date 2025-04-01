@@ -655,6 +655,12 @@ class CatalogValidator:
         raise NotImplementedError("Validators must implement this method")
 
 
+def has_config_references(dataset_config):
+    """Check if dataset config contains any configuration references"""
+    dataset_str = json.dumps(dataset_config)
+    return bool(re.search(r'\${[^{}]+}', dataset_str))
+
+
 class FactoryPatternValidator(CatalogValidator):
     """Validates factory patterns in dataset names"""
     
@@ -670,16 +676,16 @@ class FactoryPatternValidator(CatalogValidator):
             if dataset_name.startswith('_'):
                 continue
                 
-            # Check if dataset contains configuration references
-            dataset_str = json.dumps(dataset_config)
-            if re.search(r'\${[^{}]+}', dataset_str):
-                continue  # Skip factory pattern validation when config refs are present
+            # Skip factory patterns with configuration references
+            if has_config_references(dataset_config):
+                continue
                 
             # Extract variables from dataset name
             name_variables = set(factory_pattern_regex.findall(dataset_name))
             
-            # Find all variables in the configuration (already confirmed no config refs)
+            # Find all variables in the configuration
             config_variables = set()
+            dataset_str = json.dumps(dataset_config)
             for match in factory_pattern_regex.finditer(dataset_str):
                 config_variables.add(match.group(1))
             
@@ -710,6 +716,10 @@ class DatasetConfigValidator(CatalogValidator):
             if not isinstance(dataset_name, str) or dataset_name.startswith("_"):
                 continue  # Skip private datasets or invalid names
                 
+            # Skip factory patterns with configuration references
+            if '{' in dataset_name and has_config_references(dataset_config):
+                continue
+                
             clean_dataset_config = remove_line_numbers(dataset_config)
             
             try:
@@ -735,13 +745,21 @@ class FullCatalogValidator(CatalogValidator):
     def validate(self, catalog_config: Dict, content: str) -> List[Diagnostic]:
         diagnostics = []
         
+        # Create a filtered catalog without factory patterns that have config references
+        filtered_catalog = {}
+        for dataset_name, dataset_config in catalog_config.items():
+            # Skip factory patterns with configuration references
+            if '{' in dataset_name and has_config_references(dataset_config):
+                continue
+            
+            filtered_catalog[dataset_name] = dataset_config
+        
         try:
-            # Try to validate the entire catalog
-            clean_catalog_config = remove_line_numbers(catalog_config)
+            # Try to validate the filtered catalog
+            clean_catalog_config = remove_line_numbers(filtered_catalog)
             DataCatalog.from_config(clean_catalog_config)
         except Exception as exception:
-            # If the entire catalog fails but we can't pinpoint why,
-            # add a diagnostic at the top of the file
+            # If validation fails, add diagnostic at the top of the file
             diagnostic = create_diagnostic(
                 range_start=Position(line=0, character=0),
                 range_end=Position(line=0, character=0),

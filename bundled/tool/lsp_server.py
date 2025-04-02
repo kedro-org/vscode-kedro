@@ -827,7 +827,7 @@ async def validate_catalog_content(ls: KedroLanguageServer, uri: str, content: s
             message=f"YAML parsing error: {e}"
         )
         diagnostics.append(diagnostic)
-        
+
     # Publish diagnostics for the file
     ls.publish_diagnostics(uri, diagnostics)
 

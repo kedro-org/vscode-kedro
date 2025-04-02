@@ -27,7 +27,7 @@ Refer to https://code.visualstudio.com/docs/python/environments
 
 To create a basic Kedro project with default setup, run this in your desired directory:
 ```bash
-uvx kedro new --name=spaceflights --example=y
+kedro new --name=spaceflights --example=y
 ```
 
 To run your Kedro project:

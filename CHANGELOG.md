@@ -1,9 +1,5 @@
 # Change Log
 
-# 0.0.9
-## Major changes and new features
-- Test.
-
 # 0.0.8
 ## Major changes and new features
 - Support settings of custom project path in Kedro Extension.

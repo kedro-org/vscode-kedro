@@ -2,7 +2,7 @@
     "name": "Ked",
     "displayName": "Ked",
     "description": "A Ked VSCode Extension.",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "preview": false,
     "serverInfo": {
         "name": "Kedro",

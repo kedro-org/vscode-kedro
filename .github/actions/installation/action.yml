@@ -1,0 +1,36 @@
+name: 'Install Kedro VS Code Development Dependencies'
+description: 'Sets up Python environment and installs development dependencies for Kedro VS Code extension'
+inputs:
+  python-version:
+    description: 'Python version to use'
+    required: false
+    default: '3.10'
+  branch:
+    description: 'Branch to checkout'
+    required: false
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch }}
+        
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+        
+    - name: Install uv
+      shell: bash
+      run: pip install uv
+
+    - name: Install dependencies
+      shell: bash
+      run: make dev-install
+      
+    - name: pip freeze
+      shell: bash
+      run: uv pip freeze --system

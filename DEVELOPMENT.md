@@ -27,11 +27,11 @@
  2. [Open VSX Registry](https://open-vsx.org/extension/kedro/Kedro)
 
  The release processes are as follow:
- 1. Bump version number
- 2. Check `READEME.md` and `CHANGELOG.md` to make sure it reflects the latest changes.
- 3. Run `make build` to generate the `.vsix` artifact
- 4. Manually test if the artifact works (no automated tests yet)
- 5. Manually upload to VSCode Marketplace and VSX Registry (Drag and Drop)
+ 1. Create a release branch named release/<version> from the HEAD of main. Following the release/<version> naming convention is essential when creating a tag/release in GitHub.
+ 2. Bump version number.
+ 3. Check `READEME.md` and `CHANGELOG.md` to make sure it reflects the latest changes.
+ 4. Run `make build` to generate the `.vsix` artifact
+ 5. Manually test if the artifact works (no automated tests yet)
 
 To upload a release, you will need to be added as a contributor or owner for both VSCode Marketplace and VSX Registry.
 

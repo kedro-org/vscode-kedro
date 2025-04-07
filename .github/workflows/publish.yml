@@ -54,7 +54,7 @@ jobs:
           branch: "main"
 
       - name: Install ovsx tool
-        run: npm install -g @vscode/ovsx  
+        run: npm install -g ovsx  
 
       - name: Publish OpenVSX Marketplace
         if: github.event_name == 'release'

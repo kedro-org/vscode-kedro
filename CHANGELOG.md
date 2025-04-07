@@ -1,5 +1,12 @@
 # Change Log
 
+# 0.5.0
+## Major changes and new features
+- Added a walkthrough to the Kedro VSCode extension to guide users on setup and getting started.
+
+## Other improvements
+- Added release automation for Kedro VSCode extension.
+
 # 0.4.0
 ## Major changes and new features
 - Add filtering of pipelines on Kedro-Viz flowchart in VSCode.

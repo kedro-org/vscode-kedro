@@ -599,27 +599,24 @@ def find_line_number_and_character(text: str, dataset_name: str, field_name: str
     """Find the line number and character position of a dataset or field in YAML content"""
     lines = text.split('\n')
     in_dataset = False
-    
+
     for idx, line in enumerate(lines):
-        stripped_line = line.strip()
-        
-        # If this is the dataset name line
+        stripped_line = line.lstrip()  # Changed from strip() per review
+
         if stripped_line.startswith(f"{dataset_name}:"):
             in_dataset = True
             if not field_name:  # If we're looking for the dataset name itself
                 start_char = len(line) - len(line.lstrip())
                 return idx, start_char
-                
-        # If we're in a dataset and looking for a specific field
-        elif in_dataset and field_name and stripped_line.startswith(f"{field_name}:"):
-            # Calculate the character position accounting for indentation
-            start_char = len(line) - len(line.lstrip())
-            return idx, start_char
-            
-        # If we've moved out of the current dataset
-        elif in_dataset and stripped_line and not stripped_line.startswith(' '):
-            in_dataset = False  # End of current dataset
-            
+
+        elif in_dataset:
+            # Restructured conditionals for clarity
+            if field_name and stripped_line.startswith(f"{field_name}:"):
+                start_char = len(line) - len(line.lstrip())
+                return idx, start_char
+            elif stripped_line and not line.startswith(' '):  # Check original line for indentation
+                in_dataset = False  # End of current dataset
+
     return None
 
 
@@ -656,9 +653,13 @@ class CatalogValidator:
 
 
 def has_config_references(dataset_config):
-    """Check if dataset config contains any configuration references"""
+    """Check if dataset config contains any configuration references (OmegaConf interpolations)"""
+    if not isinstance(dataset_config, dict):
+        return False
+
     dataset_str = json.dumps(dataset_config)
-    return bool(re.search(r'\${[^{}]+}', dataset_str))
+    # Match OmegaConf interpolation patterns like ${globals:columns} or ${oc.env:VAR}
+    return bool(re.search(r'\$\{[^{}]+:[^{}]+\}', dataset_str))
 
 
 class FactoryPatternValidator(CatalogValidator):
@@ -669,13 +670,12 @@ class FactoryPatternValidator(CatalogValidator):
         factory_pattern_regex = re.compile(r'{([^{}]+)}')
         
         for dataset_name, dataset_config in catalog_config.items():
-            if not isinstance(dataset_name, str) or '{' not in dataset_name:
-                continue  # Not a factory pattern
-            
-            # Skip entries that start with underscore (variable definitions)
-            if dataset_name.startswith('_'):
+            if not is_valid_dataset_entry(dataset_name):
                 continue
-                
+
+            if '{' not in dataset_name:
+                continue  # Not a factory pattern
+
             # Skip factory patterns with configuration references
             if has_config_references(dataset_config):
                 continue
@@ -708,20 +708,20 @@ class FactoryPatternValidator(CatalogValidator):
 
 class DatasetConfigValidator(CatalogValidator):
     """Validates individual datasets can be created"""
-    
+
     def validate(self, catalog_config: Dict, content: str) -> List[Diagnostic]:
         diagnostics = []
-        
+
         for dataset_name, dataset_config in catalog_config.items():
-            if not isinstance(dataset_name, str) or dataset_name.startswith("_"):
-                continue  # Skip private datasets or invalid names
-                
+            if not is_valid_dataset_entry(dataset_name):
+                continue
+
             # Skip factory patterns with configuration references
             if '{' in dataset_name and has_config_references(dataset_config):
                 continue
-                
+
             clean_dataset_config = remove_line_numbers(dataset_config)
-            
+
             try:
                 DataCatalog.from_config({dataset_name: clean_dataset_config})
             except Exception as exception:
@@ -732,32 +732,31 @@ class DatasetConfigValidator(CatalogValidator):
                     diagnostic = create_diagnostic(
                         range_start=Position(line=line_number, character=start_char),
                         range_end=Position(line=line_number, character=start_char + len(dataset_name)),
-                        message=f"Dataset '{dataset_name}' configuration error: {exception}"
+                        message=f"{exception}"  # Use raw exception message
                     )
                     diagnostics.append(diagnostic)
-                    
+
         return diagnostics
 
 
 class FullCatalogValidator(CatalogValidator):
     """Validates the entire catalog as a whole"""
-    
+
     def validate(self, catalog_config: Dict, content: str) -> List[Diagnostic]:
         diagnostics = []
-        
+
         # Create a filtered catalog without factory patterns and interpolation variables
         filtered_catalog = {}
         for dataset_name, dataset_config in catalog_config.items():
-            # Skip interpolation variables (keys starting with underscore)
-            if dataset_name.startswith('_'):
+            if not is_valid_dataset_entry(dataset_name):
                 continue
-                
+
             # Skip factory patterns with configuration references
             if '{' in dataset_name and has_config_references(dataset_config):
                 continue
-            
+
             filtered_catalog[dataset_name] = dataset_config
-        
+
         try:
             # Try to validate the filtered catalog
             clean_catalog_config = remove_line_numbers(filtered_catalog)
@@ -770,7 +769,7 @@ class FullCatalogValidator(CatalogValidator):
                 message=f"Catalog validation error: {exception}"
             )
             diagnostics.append(diagnostic)
-            
+
         return diagnostics
 
 
@@ -870,6 +869,14 @@ def is_dataset_importable(dataset_type: str) -> Tuple[bool, Optional[str]]:
         return False, f"Class '{class_name}' not found in module '{module_name}'."
     except ValueError:
         return False, "Invalid dataset type format. It should be 'module.ClassName'."
+
+
+def is_valid_dataset_entry(dataset_name: Any) -> bool:
+    """Check if an entry is a valid dataset (not a variable definition or invalid type)"""
+    return (
+        isinstance(dataset_name, str) and
+        not dataset_name.startswith("_")
+    )
 
 
 def _get_global_defaults():

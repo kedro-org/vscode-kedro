@@ -7,15 +7,31 @@ from yaml.loader import SafeLoader
 class DummyDataCatalog(DataCatalog):
     """Only host the config of the DataCatalog but not actually loading the dataset class"""
 
-    def __init__(self, conf_catalog, feed_dict):
+    def __init__(self, conf_catalog, feed_dict=None):
         datasets = {}
         self.conf_catalog = conf_catalog
-        self._params = feed_dict
+        self._params = feed_dict or {}
 
         for ds_name, ds_config in conf_catalog.items():
             datasets[ds_name] = ds_config
 
         super().__init__(datasets=datasets)
+
+        if feed_dict:
+            self._initialise_params()
+
+    def _initialise_params(self):
+        """Add parameter datasets to the catalog"""
+        feed_dict = self._get_feed_dict()
+        for key, value in feed_dict.items():
+            if key not in self._datasets:
+                self._datasets[key] = value
+
+    def add_feed_dict(self, feed_dict: dict[str, Any]) -> None:
+        """Compatibility method for Kedro 1.0+"""
+        for key, value in feed_dict.items():
+            if key not in self._datasets:
+                self._datasets[key] = value
 
     @property
     def params(self):

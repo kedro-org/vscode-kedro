@@ -151,11 +151,9 @@ class KedroLanguageServer(LanguageServer):
         # '**/catalog*' reads modular pipeline configs
         conf_catalog = self.config_loader["catalog"]
         params = self.config_loader["parameters"]
-        catalog: DummyDataCatalog = DummyDataCatalog(
-            conf_catalog=conf_catalog, feed_dict=params
-        )
-        feed_dict = catalog._get_feed_dict()
-        catalog.add_feed_dict(feed_dict)
+        
+        # The DummyDataCatalog now handles internally
+        catalog = DummyDataCatalog(conf_catalog=conf_catalog, feed_dict=params)
         return catalog
 
 

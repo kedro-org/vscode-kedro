@@ -1,38 +1,36 @@
 from typing import Any
 
-from kedro.io.data_catalog import DataCatalog
 from yaml.loader import SafeLoader
 
 
-class DummyDataCatalog(DataCatalog):
+class DummyDataCatalog:
     """Only host the config of the DataCatalog but not actually loading the dataset class"""
 
     def __init__(self, conf_catalog, feed_dict=None):
-        datasets = {}
         self.conf_catalog = conf_catalog
         self._params = feed_dict or {}
-
+        self._datasets = {}
+        
+        # Add all catalog entries
         for ds_name, ds_config in conf_catalog.items():
-            datasets[ds_name] = ds_config
-
-        super().__init__(datasets=datasets)
-
+            self._datasets[ds_name] = ds_config
+            
+        # Add all parameters as datasets
         if feed_dict:
-            self._initialise_params()
-
-    def _initialise_params(self):
-        """Add parameter datasets to the catalog"""
-        feed_dict = self._get_feed_dict()
-        for key, value in feed_dict.items():
-            if key not in self._datasets:
+            feed_dict_expanded = self._get_feed_dict()
+            for key, value in feed_dict_expanded.items():
                 self._datasets[key] = value
-
-    def add_feed_dict(self, feed_dict: dict[str, Any]) -> None:
-        """Compatibility method for Kedro 1.0+"""
-        for key, value in feed_dict.items():
-            if key not in self._datasets:
-                self._datasets[key] = value
-
+    
+    def list(self):
+        """List all dataset names"""
+        return list(self._datasets.keys())
+    
+    def load(self, name):
+        """Load a dataset (mainly for parameters)"""
+        if name in self._datasets:
+            return self._datasets[name]
+        raise KeyError(f"Dataset '{name}' not found")
+    
     @property
     def params(self):
         return self._params

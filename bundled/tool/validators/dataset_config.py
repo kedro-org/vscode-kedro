@@ -29,7 +29,13 @@ class DatasetConfigValidator(CatalogValidator):
             clean_dataset_config = remove_line_numbers(dataset_config)
 
             try:
-                DataCatalog.from_config({dataset_name: clean_dataset_config})
+                # Create a DataCatalog with this single dataset
+                catalog = DataCatalog.from_config({dataset_name: clean_dataset_config})
+                
+                # Access the dataset through the public API to force validation
+                # This works in both pre-1.0 and 1.0+
+                _ = catalog[dataset_name]
+                
             except Exception as exception:
                 # Find the dataset's line number in the file
                 line_info = find_line_number_and_character(content, dataset_name)
@@ -38,7 +44,7 @@ class DatasetConfigValidator(CatalogValidator):
                     diagnostic = create_diagnostic(
                         range_start=Position(line=line_number, character=start_char),
                         range_end=Position(line=line_number, character=start_char + len(dataset_name)),
-                        message=f"{exception}"  # Use raw exception message
+                        message=f"{exception}"
                     )
                     diagnostics.append(diagnostic)
 

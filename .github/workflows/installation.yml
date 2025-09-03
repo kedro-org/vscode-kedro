@@ -3,37 +3,18 @@ name: Install development dependencies
 on:
   pull_request:
   workflow_dispatch:
-  workflow_call:
-    inputs:
-      os:
-        type: string
-      python-version:
-        type: string
-      branch:
-        type: string
-        default: ''
+
 jobs:
   install:
     runs-on: [ubuntu-latest]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.branch }}
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-      - name: Install uv
-        run: pip install uv
 
-      # - name: Add MSBuild to PATH
-      #   if: inputs.os == 'windows-latest'
-      #   uses: microsoft/setup-msbuild@v2
-      - name: Install dependencies
-        run: |
-            make dev-install
-      - name: pip freeze
-        run: uv pip freeze --system
-      # - name: Run unit tests
-      #   run: make test
+      - name: Install dependencies & build
+        uses: "./.github/actions/installation"
+        with:
+          branch: ${{ github.event.pull_request.head.ref }}
+
+
+

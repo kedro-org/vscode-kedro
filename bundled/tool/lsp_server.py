@@ -102,7 +102,6 @@ from pygls.server import LanguageServer
 
 # Import validators
 from validators import (
-    YAMLValidator,
     FactoryPatternValidator,
     DatasetConfigValidator,
     FullCatalogValidator,
@@ -598,7 +597,6 @@ async def validate_catalog_content(ls: KedroLanguageServer, uri: str, content: s
     
     # List of validators to run in order
     validators = [
-        YAMLValidator(),
         FactoryPatternValidator(),
         FullCatalogValidator(),
         DatasetConfigValidator(),

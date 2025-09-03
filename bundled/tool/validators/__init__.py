@@ -1,6 +1,5 @@
 """Validator exports"""
 from .base import CatalogValidator
-from .yaml_validator import YAMLValidator
 from .factory_pattern import FactoryPatternValidator
 from .dataset_config import DatasetConfigValidator
 from .full_catalog import FullCatalogValidator
@@ -14,7 +13,6 @@ from .utils import (
 
 __all__ = [
     "CatalogValidator",
-    "YAMLValidator",
     "FactoryPatternValidator",
     "DatasetConfigValidator",
     "FullCatalogValidator",

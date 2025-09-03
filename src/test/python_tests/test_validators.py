@@ -6,8 +6,7 @@ import pytest
 from lsprotocol.types import DiagnosticSeverity, Position
 
 # Add bundled/tool to path to import validators
-    Path(__file__).parents[3] / "bundled" / "tool"
-)
+BUNDLED_PATH = Path(__file__).parents[3] / "bundled" / "tool"
 sys.path.insert(0, str(BUNDLED_PATH))
 
 from validators.dataset_config import DatasetConfigValidator

@@ -32,9 +32,15 @@ class DatasetConfigValidator(CatalogValidator):
                 # Create a DataCatalog with this single dataset
                 catalog = DataCatalog.from_config({dataset_name: clean_dataset_config})
                 
-                # Access the dataset through the public API to force validation
-                # This works in both pre-1.0 and 1.0+
-                _ = catalog[dataset_name]
+                try:
+                    # Kedro 1.0+ uses __getitem__
+                    _ = catalog[dataset_name]
+                except TypeError:
+                    # Kedro 0.19.x doesn't support subscript, use _get_dataset
+                    if hasattr(catalog, '_get_dataset'):
+                        _ = catalog._get_dataset(dataset_name)
+                    else:
+                        pass
                 
             except Exception as exception:
                 # Find the dataset's line number in the file

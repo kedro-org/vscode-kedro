@@ -24,7 +24,7 @@ def find_line_number_and_character(text: str, dataset_name: str, field_name: str
             if field_name and stripped_line.startswith(f"{field_name}:"):
                 start_char = len(line) - len(line.lstrip())
                 return idx, start_char
-            elif stripped_line and not line.startswith(' '):  # Check original line for indentation
+            elif stripped_line and not line.startswith((' ', '\t')):  # Check original line for indentation (spaces or tabs)
                 in_dataset = False  # End of current dataset
 
     return None

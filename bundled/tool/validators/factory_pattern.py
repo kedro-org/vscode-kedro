@@ -48,7 +48,7 @@ class FactoryPatternValidator(CatalogValidator):
                     diagnostic = create_diagnostic(
                         range_start=Position(line=line_number, character=start_char),
                         range_end=Position(line=line_number, character=start_char + len(dataset_name)),
-                        message=f"Keys used in the configuration {{{', '.join(extra_vars)}}} should be present in the dataset factory pattern name",
+                        message=f"Keys used in the configuration [{', '.join(extra_vars)}] should be present in the dataset factory pattern name",
                         severity=DiagnosticSeverity.Warning
                     )
                     diagnostics.append(diagnostic)

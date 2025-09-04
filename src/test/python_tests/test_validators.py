@@ -19,7 +19,6 @@ from validators.utils import (
     is_valid_dataset_entry,
     remove_line_numbers,
 )
-from validators.yaml_validator import YAMLValidator
 
 
 class TestUtilsFunctions:
@@ -220,20 +219,6 @@ class TestDatasetConfigValidator:
             }
         }
         diagnostics = self.validator.validate(catalog, content="")
-        assert len(diagnostics) == 0
-
-
-class TestYAMLValidator:
-    """Test YAML validation."""
-
-    def setup_method(self):
-        self.validator = YAMLValidator()
-
-    def test_valid_yaml(self):
-        # YAMLValidator is currently a placeholder
-        catalog = {"dataset": {"type": "pandas.CSVDataset"}}
-        content = dedent("dataset:\n  type: pandas.CSVDataset\n")
-        diagnostics = self.validator.validate(catalog, content)
         assert len(diagnostics) == 0
 
 

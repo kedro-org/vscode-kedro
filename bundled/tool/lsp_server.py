@@ -639,19 +639,26 @@ async def validate_catalog_content(ls: KedroLanguageServer, uri: str, content: s
 
 
 async def validate_catalog(ls: KedroLanguageServer, uri: str):
-    """Validate a catalog file by reading its content from disk."""
+    """Validate a catalog file, preferring in-memory content over disk content."""
     file_path = pathlib.Path(uris.to_fs_path(uri))
-    if not file_path.exists():
-        # Clear diagnostics if the file does not exist
-        ls.publish_diagnostics(uri, [])
-        return
-
+    
+    # Try to get the content from the open document
     try:
-        content = file_path.read_text(encoding='utf-8')
-        await validate_catalog_content(ls, uri, content)
-    except Exception as e:
-        log_error(f"Error reading file {file_path}: {e}")
-        ls.publish_diagnostics(uri, [])  # Clear diagnostics if reading fails
+        document = ls.workspace.get_text_document(uri)
+        content = document.source
+    except Exception:
+        # Document not open in editor, read from disk
+        if not file_path.exists():
+            ls.publish_diagnostics(uri, [])
+            return
+        try:
+            content = file_path.read_text(encoding='utf-8')
+        except Exception as e:
+            log_error(f"Error reading file {file_path}: {e}")
+            ls.publish_diagnostics(uri, [])
+            return
+
+    await validate_catalog_content(ls, uri, content)
 
 
 async def periodic_revalidation(ls: KedroLanguageServer, interval: int = 5):

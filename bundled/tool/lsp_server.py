@@ -14,7 +14,7 @@ import re
 import sys
 import asyncio
 from pathlib import Path
-from typing import Any, Dict, Tuple, Optional
+from typing import Any, Dict, Tuple, Optional, List
 
 from common import update_sys_path
 
@@ -99,6 +99,14 @@ from kedro.framework.startup import (
     bootstrap_project,
 )
 from pygls.server import LanguageServer
+
+# Import validators
+from validators import (
+    FactoryPatternValidator,
+    DatasetConfigValidator,
+    FullCatalogValidator,
+    create_diagnostic,
+)
 
 
 class KedroLanguageServer(LanguageServer):
@@ -583,69 +591,46 @@ def find_all_catalog_files(root_path):
     return catalog_files
 
 
-def remove_line_numbers(config):
-    if isinstance(config, dict):
-        return {k: remove_line_numbers(v) for k, v in config.items() if k != '__line__'}
-    elif isinstance(config, list):
-        return [remove_line_numbers(i) for i in config]
-    else:
-        return config
-    
-
 async def validate_catalog_content(ls: KedroLanguageServer, uri: str, content: str):
-    """Validate catalog content dynamically."""
+    """Validate catalog content using a chain of validators"""
     diagnostics = []
-
+    
+    # List of validators to run in order
+    validators = [
+        FactoryPatternValidator(),
+        FullCatalogValidator(),
+        DatasetConfigValidator(),
+    ]
+    
     try:
         # Parse the YAML content
         catalog_config = yaml.load(content, Loader=SafeLineLoader)
         if not isinstance(catalog_config, dict):
-            return  # Invalid catalog format
-
-        # Remove '__line__' keys
-        clean_catalog_config = remove_line_numbers(catalog_config)
-
-        try:
-            # Attempt to create a DataCatalog with the cleaned catalog config
-            DataCatalog.from_config(clean_catalog_config)
-        except Exception as e:
-            # Check each dataset individually if the entire catalog fails
-            for dataset_name, dataset_config in catalog_config.items():
-                if dataset_name.startswith("_"):
-                    continue  # Skip private datasets
-
-                clean_dataset_config = remove_line_numbers(dataset_config)
-
-                try:
-                    DataCatalog.from_config({dataset_name: clean_dataset_config})
-                except Exception as dataset_exception:
-                    # Add diagnostic for invalid dataset
-                    line_info = find_line_number_and_character(content, dataset_name, "type")
-                    if line_info:
-                        line_number, start_char = line_info
-                        dataset_type = dataset_config.get("type", "Unknown")
-                        end_char = start_char + len(f"type: {dataset_type}")
-                        diagnostic = Diagnostic(
-                            range=Range(
-                                start=Position(line=line_number, character=start_char),
-                                end=Position(line=line_number, character=end_char),
-                            ),
-                            message=f"Dataset '{dataset_name}' has an invalid type '{dataset_type}'. {dataset_exception}",
-                            severity=DiagnosticSeverity.Error,
-                            source="Kedro LSP",
-                        )
-                        diagnostics.append(diagnostic)
+            # Handle invalid catalog format
+            diagnostic = create_diagnostic(
+                range_start=Position(line=0, character=0),
+                range_end=Position(line=0, character=0),
+                message="Invalid catalog format: root must be a mapping/dictionary"
+            )
+            diagnostics.append(diagnostic)
+            ls.publish_diagnostics(uri, diagnostics)
+            return
+            
+        # Run each validator in sequence
+        for validator in validators:
+            try:
+                validator_diagnostics = validator.validate(catalog_config, content)
+                diagnostics.extend(validator_diagnostics)
+            except Exception as validator_error:
+                log_error(f"Error in validator {validator.__class__.__name__}: {validator_error}")
+                
     except Exception as e:
         # Handle YAML parsing errors
         log_error(f"Error parsing catalog content: {e}")
-        diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=0, character=0),
-                end=Position(line=0, character=0),
-            ),
-            message=f"YAML parsing error: {e}",
-            severity=DiagnosticSeverity.Error,
-            source="Kedro LSP",
+        diagnostic = create_diagnostic(
+            range_start=Position(line=0, character=0),
+            range_end=Position(line=0, character=0),
+            message=f"YAML parsing error: {e}"
         )
         diagnostics.append(diagnostic)
 
@@ -654,19 +639,26 @@ async def validate_catalog_content(ls: KedroLanguageServer, uri: str, content: s
 
 
 async def validate_catalog(ls: KedroLanguageServer, uri: str):
-    """Validate a catalog file by reading its content from disk."""
+    """Validate a catalog file, preferring in-memory content over disk content."""
     file_path = pathlib.Path(uris.to_fs_path(uri))
-    if not file_path.exists():
-        # Clear diagnostics if the file does not exist
-        ls.publish_diagnostics(uri, [])
-        return
-
+    
+    # Try to get the content from the open document
     try:
-        content = file_path.read_text(encoding='utf-8')
-        await validate_catalog_content(ls, uri, content)
-    except Exception as e:
-        log_error(f"Error reading file {file_path}: {e}")
-        ls.publish_diagnostics(uri, [])  # Clear diagnostics if reading fails
+        document = ls.workspace.get_text_document(uri)
+        content = document.source
+    except Exception:
+        # Document not open in editor, read from disk
+        if not file_path.exists():
+            ls.publish_diagnostics(uri, [])
+            return
+        try:
+            content = file_path.read_text(encoding='utf-8')
+        except Exception as e:
+            log_error(f"Error reading file {file_path}: {e}")
+            ls.publish_diagnostics(uri, [])
+            return
+
+    await validate_catalog_content(ls, uri, content)
 
 
 async def periodic_revalidation(ls: KedroLanguageServer, interval: int = 5):
@@ -691,22 +683,6 @@ def is_dataset_importable(dataset_type: str) -> Tuple[bool, Optional[str]]:
         return False, f"Class '{class_name}' not found in module '{module_name}'."
     except ValueError:
         return False, "Invalid dataset type format. It should be 'module.ClassName'."
-
-
-def find_line_number_and_character(text: str, dataset_name: str, field_name: str) -> Optional[Tuple[int, int]]:
-    lines = text.split('\n')
-    in_dataset = False
-    for idx, line in enumerate(lines):
-        stripped_line = line.strip()
-        if stripped_line.startswith(f"{dataset_name}:"):
-            in_dataset = True
-        elif in_dataset and stripped_line.startswith(f"{field_name}:"):
-            # Calculate the character position accounting for indentation
-            start_char = len(line) - len(line.lstrip())
-            return idx, start_char
-        elif stripped_line and not stripped_line.startswith(' '):
-            in_dataset = False  # End of current dataset
-    return None
 
 
 def _get_global_defaults():

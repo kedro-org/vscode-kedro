@@ -3,7 +3,6 @@ import * as path from 'path';
 import { traceLog } from './log/logging';
 import KedroVizPanel from '../webview/vizWebView';
 
-// Simple restart prevention
 let isRestartInProgress = false;
 
 /**
@@ -18,7 +17,7 @@ export function setupKedroProjectFileWatchers(context: vscode.ExtensionContext):
 
     const handleFileChange = (uri: vscode.Uri, changeType: string) => {
         traceLog(`${changeType}: ${uri.fsPath}`);
-        handleKedroProjectChange(uri, changeType);
+        handleKedroProjectChange(changeType);
     };
 
     // Set up change listeners
@@ -35,9 +34,7 @@ export function setupKedroProjectFileWatchers(context: vscode.ExtensionContext):
 /**
  * Handler for Kedro project file changes, Also prevents overlapping server restarts
  */
-async function handleKedroProjectChange(uri: vscode.Uri, changeType: string): Promise<void> {
-    console.log(`${changeType}: ${uri.fsPath}`);
-
+async function handleKedroProjectChange(changeType: string): Promise<void> {
     // Only update if KedroViz panel is currently open
     if (!KedroVizPanel.currentPanel) {
         traceLog('KedroViz panel not open, skipping update');
@@ -46,13 +43,13 @@ async function handleKedroProjectChange(uri: vscode.Uri, changeType: string): Pr
 
     // If restart is already in progress, ignore this change
     if (isRestartInProgress) {
-        traceLog(`Server restart already in progress, ignoring ${changeType.toLowerCase()}`);
+        traceLog(`Server restart already in progress, ignoring ${changeType}`);
         return;
     }
 
     try {
         isRestartInProgress = true;
-        traceLog(`Updating KedroViz panel due to ${changeType.toLowerCase()}...`);
+        traceLog(`Updating KedroViz panel due to ${changeType}`);
 
         // Restart the language server to pick up changes
         await vscode.commands.executeCommand('kedro.restart');

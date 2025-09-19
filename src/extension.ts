@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { traceError, traceLog, traceVerbose } from './common/log/logging';
 import { initializePython } from './common/python';
+import { setupKedroProjectFileWatchers } from './common/kedroProjectFileWatchers';
 
 import { getInterpreterFromSetting } from './common/settings';
 import { loadServerDefaults } from './common/setup';
@@ -68,6 +69,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             return;
         }
     }
+
+    setupKedroProjectFileWatchers(context);
 
     await installTelemetryDependenciesIfNeeded(context);
 

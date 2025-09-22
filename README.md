@@ -90,7 +90,63 @@ Navigate to DataCatalog:
 Clicking on a data node in the flowchart will open the corresponding dataset in the Data Catalog.
 ![navigation to dataset](assets/viz-vsc-nav-data-node.gif)
 
+### Filter Pipelines
 
+#### Using the Command Palette
+
+1. Open the Command Palette by pressing `Cmd + Shift + P` (macOS) or `Ctrl + Shift + P` (Windows/Linux)
+2. Type `Kedro: Select Pipeline View` and select it
+3. Once you run that command, Select the pipeline you want to filter by
+
+![Filter pipeline through Command Palette](assets/pipeline-filter-using-command-palette.gif)
+
+#### Using the filter icon
+
+1. Open VS Code settings by pressing `Cmd + ,` (macOS) or `Ctrl + ,` (Windows/Linux)
+2. Type `Kedro: Run Kedro Viz` and select the command to launch the Viz
+3. In the Kedro-Viz panel, click the filter icon
+4. Select the pipeline you want to filter by
+
+![Filter pipeline through icon](assets/pipeline-filter-using-icon.gif)
+
+### Collapse and expand pipeline
+
+1. Open VS Code settings by pressing `Cmd + ,` (macOS) or `Ctrl + ,` (Windows/Linux)
+2. Type `Kedro: Run Kedro Viz` and select the command to launch the Viz
+3. In the Kedro-Viz panel, click the collapse/expand icon
+
+![Collapse and expand pipeline](assets/viz-vsc-col-exp.gif)
+
+### Set Custom Kedro Project Path
+
+You can specify a custom path to your Kedro project root directory in one of two ways:
+
+1. **Using the Command Palette**:
+   - Press `Cmd` + `Shift` + `P` (on macOS) or `Ctrl` + `Shift` + `P` (on Windows/Linux)
+   - Type and select `Kedro: Set Project Path`
+   - Enter the absolute path to your Kedro project root directory
+   - The extension will validate if it's a valid Kedro project by checking for `pyproject.toml`
+
+2. **Using Settings**:
+   - Open VS Code Settings (File > Preferences > Settings)
+   - Search for "Kedro Project Path"
+   - Enter the absolute path to your Kedro project root directory in the `kedro.kedroProjectPath` setting
+
+The extension will:
+- Validate that the provided path contains a valid Kedro project
+- Add the project folder to your workspace if it's not already included
+- Use this path as the root directory for all Kedro-related features
+
+**Note:** The project path must point to a directory containing a valid Kedro project with a `pyproject.toml` file that includes the `[tool.kedro]` section.
+
+Example:
+```
+{
+    "kedro.kedroProjectPath": "/absolute/path/to/your/kedro-project"
+}
+```
+
+![Set Kedro project path](assets/kedro-project-path.gif)
 
 ## Settings
 ### Change Configuration Environment
@@ -108,8 +164,6 @@ Click `Output` and select `Kedro` from the dropdown list. It may gives you some 
 Hit `Cmd` + `Shift` + `P` to open the VSCode command, look for `kedro: restart server` in case it's panic.
 
 ## Assumptions
-### Single Kedro Project
-The extension need to identify where is the Kedro project. It assumes the root of the workspace is a Kedro project, i.e. open the project where the `pyproject.toml` is.
 
 ### Configure Kedro Environment
 Currently, the extension assume the source of configuration is in the `base_env` defined by the config loader (if you didn't speficy, [usually it is `conf/base`](https://docs.kedro.org/en/stable/configuration/configuration_basics.html#configuration-loading)).

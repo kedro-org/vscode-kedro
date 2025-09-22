@@ -1,20 +1,30 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import { QuickPickItem, window } from 'vscode';
 import * as vscode from 'vscode';
 
 import { getWorkspaceFolders } from './vscodeapi';
-import { LanguageClient, LanguageClientOptions, ServerOptions, State, integer } from 'vscode-languageclient/node';
+import { LanguageClient, State } from 'vscode-languageclient/node';
+import { getKedroProjectPath, isKedroProject, updateKedroVizPanel } from './utilities';
 export async function selectEnvironment() {
-    let workspaces = getWorkspaceFolders();
-    const root_dir = workspaces[0].uri.fsPath; // Only pick the first workspace
-    const confDir = `${root_dir}/conf`;
+    let kedroProjectPath = await getKedroProjectPath();
+    let kedroProjectRootDir: string | undefined = undefined;
+
+    if (kedroProjectPath) {
+        kedroProjectRootDir = kedroProjectPath;
+    } else {
+        let workspaces = getWorkspaceFolders();
+        kedroProjectRootDir = workspaces[0].uri.fsPath; // Only pick the first workspace
+    }
+
+    const confDir = `${kedroProjectRootDir}/conf`;
     // Iterate the `conf` directory to get folder names
     const directories = fs
         .readdirSync(confDir, { withFileTypes: true })
         .filter((dirent) => dirent.isDirectory())
         .map((dirent) => dirent.name);
 
-    const envs: QuickPickItem[] = directories.filter(dir => dir !== 'base').map((label) => ({ label }));
+    const envs: QuickPickItem[] = directories.filter((dir) => dir !== 'base').map((label) => ({ label }));
 
     const result = await window.showQuickPick(envs, {
         placeHolder: 'Select Kedro runtime environment',
@@ -22,6 +32,58 @@ export async function selectEnvironment() {
 
     return result;
 }
+
+export async function setKedroProjectPath() {
+    const result = await vscode.window.showInputBox({
+        placeHolder: 'Enter the Kedro Project Root Directory',
+        prompt: 'Please provide the path to the Kedro project root directory',
+        validateInput: async (value) => {
+            if (!value) {
+                return 'Path cannot be empty';
+            }
+            // Verify if path exists and is a Kedro project
+            if (!(await isKedroProject(value))) {
+                return 'Invalid Kedro project path. Please ensure it contains pyproject.toml';
+            }
+            return null;
+        },
+    });
+
+    if (result) {
+        // Create URI from the path
+        const uri = vscode.Uri.file(result);
+
+        // Get current workspace folders
+        const currentFolders = vscode.workspace.workspaceFolders || [];
+
+        // Check if the entered path is already part of any workspace folder
+        const isPartOfWorkspace = currentFolders.some((folder) => {
+            const folderPath = folder.uri.fsPath;
+            return result.startsWith(folderPath) || folderPath.startsWith(result);
+        });
+
+        // If path is not part of workspace, add it as a new workspace folder
+        if (!isPartOfWorkspace) {
+            // Add new folder to workspace
+            const success = await vscode.workspace.updateWorkspaceFolders(
+                currentFolders.length,
+                0,
+                { uri: uri, name: path.basename(result) }, // New folder to add
+            );
+
+            if (!success) {
+                vscode.window.showErrorMessage('Failed to add folder to workspace');
+                return;
+            }
+        }
+
+        // Update kedro configuration
+        const config = vscode.workspace.getConfiguration('kedro');
+        await config.update('kedroProjectPath', result, vscode.ConfigurationTarget.Workspace);
+        vscode.window.showInformationMessage('Kedro project path updated successfully');
+    }
+}
+
 let logger: vscode.LogOutputChannel;
 
 /**
@@ -35,7 +97,7 @@ export async function executeServerCommand(lsClient: LanguageClient | undefined)
         return;
     }
     if (!lsClient.initializeResult) {
-        await vscode.window.showErrorMessage('The Language Server fail to initialise.');
+        await vscode.window.showErrorMessage('The Language Server failed to initialize.');
         return;
     }
 
@@ -67,7 +129,7 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
         return;
     }
     if (!lsClient.initializeResult) {
-        await vscode.window.showErrorMessage('The Language Server fail to initialise.');
+        await vscode.window.showErrorMessage('The Language Server failed to initialize.');
         return;
     }
 
@@ -98,19 +160,54 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
     }
 }
 
-export async function executeGetProjectDataCommand(lsClient: LanguageClient | undefined) {
+export async function executeGetProjectDataCommand(
+    lsClient: LanguageClient | undefined,
+    pipelineName: string | undefined = undefined,
+) {
     if (!lsClient || lsClient.state !== State.Running) {
         await vscode.window.showErrorMessage('There is no language server running.');
         return;
     }
     if (!lsClient.initializeResult) {
-        await vscode.window.showErrorMessage('The Language Server fail to initialise.');
+        await vscode.window.showErrorMessage('The Language Server failed to initialize.');
         return;
     }
 
     const commandName = 'kedro.getProjectData';
     logger.info(`executing command: '${commandName}'`);
-    const result = await vscode.commands.executeCommand(commandName);
+    const result = await vscode.commands.executeCommand(commandName, pipelineName);
     return result;
 }
 
+export async function filterPipelines(lsClient?: LanguageClient) {
+    try {
+        const projectData: any = await executeGetProjectDataCommand(lsClient);
+        const pipelineArray = projectData?.pipelines;
+
+        if (!pipelineArray || !Array.isArray(pipelineArray) || !pipelineArray.length) {
+            vscode.window.showInformationMessage('No pipelines found in this Kedro project.');
+            return;
+        }
+
+        const pipelineItems = pipelineArray.map((pipeline: { id: string; name: string }) => {
+            return {
+                label: pipeline.id,
+            };
+        });
+
+        const picked = await vscode.window.showQuickPick(pipelineItems, {
+            placeHolder: 'Select a pipeline to filter...',
+        });
+        if (!picked) {
+            // user canceled the pick
+            return;
+        }
+
+        // Send the updated projectData to the webview
+        updateKedroVizPanel(lsClient, picked.label);
+    } catch (err) {
+        vscode.window.showErrorMessage(
+            `Error filtering pipelines: ${err instanceof Error ? err.message : String(err)}`,
+        );
+    }
+}

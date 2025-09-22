@@ -1,0 +1,63 @@
+name: Publish Kedro VSCode Extension
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies & build
+        uses: "./.github/actions/installation"
+        with:
+          branch: "main"
+  
+  release-vsstudio-marketplace:
+    runs-on: ubuntu-latest
+    if: success() && startsWith( github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies & build
+        uses: "./.github/actions/installation"
+        with:
+          branch: "main"
+
+      - name: Install vsce tool
+        run: npm install -g @vscode/vsce          
+
+      - name: Publish Visual Studio Marketplace
+        if: github.event_name == 'release'
+        run: make release-vscode
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+  
+  release-openvsx-marketplace:
+    runs-on: ubuntu-latest
+    if: success() && startsWith( github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies & build
+        uses: "./.github/actions/installation"
+        with:
+          branch: "main"
+
+      - name: Install ovsx tool
+        run: npm install -g ovsx  
+
+      - name: Publish OpenVSX Marketplace
+        if: github.event_name == 'release'
+        run: make release-openvsx
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}

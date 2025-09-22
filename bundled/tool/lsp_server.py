@@ -5,16 +5,20 @@
 from __future__ import annotations
 
 import glob
+import importlib
 import json
 import logging
 import os
 import pathlib
 import re
 import sys
+import asyncio
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Tuple, Optional, List
 
 from common import update_sys_path
+
+from kedro.io import DataCatalog
 
 # **********************************************************
 # Update sys.path before importing any bundled libraries.
@@ -46,6 +50,8 @@ from lsprotocol.types import (
     TEXT_DOCUMENT_HOVER,
     TEXT_DOCUMENT_REFERENCES,
     WORKSPACE_DID_CHANGE_CONFIGURATION,
+    TEXT_DOCUMENT_DID_OPEN,
+    TEXT_DOCUMENT_DID_CHANGE,
     CompletionItem,
     CompletionList,
     CompletionOptions,
@@ -59,6 +65,17 @@ from lsprotocol.types import (
     Position,
     Range,
     TextDocumentPositionParams,
+    DidOpenTextDocumentParams,
+    DidChangeTextDocumentParams,
+    Diagnostic,
+    DiagnosticSeverity,
+    DidChangeWatchedFilesParams,
+    FileChangeType,
+    RegistrationParams,
+    Registration,
+    DidChangeWatchedFilesRegistrationOptions,
+    FileSystemWatcher,
+    WatchKind,
 )
 from pygls import uris, workspace
 from pygls.workspace import TextDocument
@@ -83,6 +100,14 @@ from kedro.framework.startup import (
 )
 from pygls.server import LanguageServer
 
+# Import validators
+from validators import (
+    FactoryPatternValidator,
+    DatasetConfigValidator,
+    FullCatalogValidator,
+    create_diagnostic,
+)
+
 
 class KedroLanguageServer(LanguageServer):
     """Store Kedro-specific information in the language server."""
@@ -102,7 +127,7 @@ class KedroLanguageServer(LanguageServer):
         try:
             self.workspace_settings = next(iter(WORKSPACE_SETTINGS.values()))
             root_path = pathlib.Path(
-                self.workspace.root_path
+                self.workspace_settings.get("kedroProjectPath") or self.workspace.root_path
             )  # todo: From language server, can we get it from client initialise response instead?
             project_metadata = bootstrap_project(root_path)
             env = None
@@ -115,31 +140,28 @@ class KedroLanguageServer(LanguageServer):
             context = session.load_context()
             config_loader: OmegaConfigLoader = context.config_loader
             # context.env is set when KEDRO_ENV or kedro run --env is set
-            conf_env = context.env if context.env else config_loader.base_env
-            base_path = str(Path(config_loader.conf_source) / conf_env)
+            run_env = context.env if context.env else config_loader.default_run_env
 
         except RuntimeError as e:
             log_for_lsp_debug(str(e))
             project_metadata = None
             context = None
             config_loader = None
-            base_path = None
+            run_env = None
         finally:
             self.project_metadata = project_metadata
             self.context = context
             self.config_loader = config_loader
             self.dummy_catalog = self._get_dummy_catalog()
-            self.base_path = base_path
+            self.run_env = run_env
 
     def _get_dummy_catalog(self):
         # '**/catalog*' reads modular pipeline configs
         conf_catalog = self.config_loader["catalog"]
         params = self.config_loader["parameters"]
-        catalog: DummyDataCatalog = DummyDataCatalog(
-            conf_catalog=conf_catalog, feed_dict=params
-        )
-        feed_dict = catalog._get_feed_dict()
-        catalog.add_feed_dict(feed_dict)
+        
+        # The DummyDataCatalog now handles internally
+        catalog = DummyDataCatalog(conf_catalog=conf_catalog, feed_dict=params)
         return catalog
 
 
@@ -183,6 +205,30 @@ async def initialize(params: lsp.InitializeParams) -> None:
     )
     _check_project()
 
+    # After initialisation, validate all catalog files
+    await validate_all_catalogs(LSP_SERVER)
+
+     # Start periodic revalidation
+    asyncio.create_task(periodic_revalidation(LSP_SERVER))
+
+    # Set up file watchers for catalog files
+    catalog_pattern = FileSystemWatcher(
+        glob_pattern="**/catalog*.y?(a)ml",
+        kind=(WatchKind.Create | WatchKind.Change | WatchKind.Delete)
+    )
+    await LSP_SERVER.register_capability_async(
+        RegistrationParams(
+            registrations=[
+                Registration(
+                    id="catalogWatcher",
+                    method="workspace/didChangeWatchedFiles",
+                    register_options=DidChangeWatchedFilesRegistrationOptions(
+                        watchers=[catalog_pattern]
+                    ),
+                )
+            ]
+        )
+    )
 
 ### Kedro LSP logic
 def _get_conf_paths(server: KedroLanguageServer, key):
@@ -196,11 +242,10 @@ def _get_conf_paths(server: KedroLanguageServer, key):
         A set of configuration paths.
 
     """
-    config_loader: OmegaConfigLoader = LSP_SERVER.config_loader
+    config_loader: OmegaConfigLoader = server.config_loader
     patterns = config_loader.config_patterns.get(key, [])
-    default_run_env = str(
-        Path(config_loader.conf_source) / config_loader.default_run_env
-    )
+    # By default is local
+    run_env = str(Path(config_loader.conf_source) / server.run_env)
     base_env = str(Path(config_loader.conf_source) / config_loader.base_env)
 
     # Extract from OmegaConfigLoader source code
@@ -209,7 +254,7 @@ def _get_conf_paths(server: KedroLanguageServer, key):
     # That is, if a config is found in both environment, the LSP should return the default_run_env one.
     # The LSP start searching in default_run_env first, if there is match it will end eagerly.
 
-    for base_path in [default_run_env, base_env]:
+    for base_path in [run_env, base_env]:
         tmp_paths = []
         for pattern in patterns:
             for each in config_loader._fs.glob(
@@ -217,22 +262,29 @@ def _get_conf_paths(server: KedroLanguageServer, key):
             ):
                 if not config_loader._is_hidden(each):
                     tmp_paths.append(Path(each))
-        paths = paths + list(set(tmp_paths))
+
+        # Reuse OmegaConfigLoader logic as much as possible so we don't need to write our tests here
+        deduplicated_paths = set(tmp_paths)
+        valid_config_paths = [
+            path
+            for path in deduplicated_paths
+            if config_loader._is_valid_config_path(path)
+        ]
+        paths = paths + list(valid_config_paths)
     return paths
 
 
-def _get_param_location(
-    project_metadata: ProjectMetadata, word: str
-) -> Optional[Location]:
+def _get_param_location(server: KedroLanguageServer, word: str) -> Optional[Location]:
     words = word.split("params:")
     if len(words) > 1:
-        param = words[0]  # Top key
+        words = words[1].split(".")  # ["params:", "a.b.c"]
+        param = words[0]  # Top level key ["a","b","c"]
     else:
         return None
     log_to_output(f"Attempt to search `{param}` from parameters file")
 
     # TODO: cache -- we shouldn't have to re-read the file on every request
-    params_paths = _get_conf_paths(project_metadata, "parameters")
+    params_paths = _get_conf_paths(server, "parameters")
     param_line_no = None
 
     for parameters_file in params_paths:
@@ -245,7 +297,7 @@ def _get_param_location(
             continue
 
         location = Location(
-            uri=f"file://{parameters_file.resolve().as_posix()}",
+            uri=parameters_file.resolve().as_uri(),
             range=Range(
                 start=Position(line=param_line_no - 1, character=0),
                 end=Position(
@@ -278,14 +330,16 @@ def definition(
         log_for_lsp_debug(f"Query keyword for params: {word}")
 
         if word.startswith("params:"):
-            param_location = _get_param_location(server.project_metadata, word)
+            param_location = _get_param_location(server, word)
             if param_location:
                 log_for_lsp_debug(f"{param_location=}")
                 return [param_location]
 
     def _query_catalog(document, word=None):
         if not word:
-            word = document.word_at_position(params.position)
+            word = document.word_at_position(
+                params.position, RE_START_WORD, RE_END_WORD
+            )
         catalog_paths = _get_conf_paths(server, "catalog")
         log_for_lsp_debug(f"Attempt to search `{word}` from catalog")
         log_for_lsp_debug(f"{catalog_paths=}")
@@ -298,7 +352,7 @@ def definition(
             if word in catalog_conf:
                 line = catalog_conf[word]["__line__"]
                 location = Location(
-                    uri=f"file://{catalog_path}",
+                    uri=catalog_path.resolve().as_uri(),
                     range=Range(
                         start=Position(line=line - 1, character=0),
                         end=Position(
@@ -326,7 +380,7 @@ def definition(
     # If no result, return current location
     # This is a VSCode specific logic called Alternative Definition Command
     # By default, it triggers Go to Reference so it supports using mouse click for both directions
-    # from pipline to config and config to pipeline
+    # from pipeline to config and config to pipeline
     uri = params.text_document.uri
     pos = params.position
     curr_pos = Position(line=pos.line, character=pos.character)
@@ -335,7 +389,7 @@ def definition(
 
 def reference_location(path, line):
     location = Location(
-        uri=f"file://{path.resolve().as_posix()}",
+        uri=path.resolve().as_uri(),
         range=Range(
             start=Position(line=line, character=0),
             end=Position(
@@ -368,23 +422,23 @@ def references(
     from kedro.framework.project import PACKAGE_NAME
 
     # Find pipelines module
-    importlib_resources.files(f"{PACKAGE_NAME}.pipelines")
-
     pipelines_package = importlib_resources.files(f"{PACKAGE_NAME}.pipelines")
 
-    # Iterate on pipelines/<pipeline_name>/**/*pipeline*.py
+    # Iterate on pipelines/**/*.py that fits both modular or flat pipeline structure.
     result = []
-    for pipeline_dir in pipelines_package.iterdir():
-        if not pipeline_dir.is_dir():
+    for pipeline_file in glob.glob(f"{str(pipelines_package)}/**/*.py", recursive=True):
+        # Ensure the path is absolute
+        abs_pipeline_file = Path(pipeline_file).absolute()
+        
+        try:
+            # Read the file using Path
+            content = abs_pipeline_file.read_text(encoding='utf-8').splitlines()
+            for i, line in enumerate(content):
+                if f'"{word}"' in line:
+                    result.append((abs_pipeline_file, i))
+        except (IOError, UnicodeDecodeError) as e:
+            log_for_lsp_debug(f"Error reading file {abs_pipeline_file}: {e}")
             continue
-        # Use glob to find files matching the pattern recursively
-        pipeline_files = glob.glob(f"{pipeline_dir}/**/*pipeline*.py", recursive=True)
-        for pipeline_file in pipeline_files:
-            # Read the line number and match keywords naively
-            with open(pipeline_file) as f:
-                for i, line in enumerate(f):
-                    if word in line:
-                        result.append((Path(pipeline_file), i))
 
     locations = []
     if result:
@@ -474,6 +528,163 @@ def did_change_configuration(
     """
 
 
+@LSP_SERVER.feature(TEXT_DOCUMENT_DID_OPEN)
+async def did_open(ls: KedroLanguageServer, params: DidOpenTextDocumentParams):
+    """Validate catalog content when a file is opened."""
+    document_uri = params.text_document.uri
+    file_path = pathlib.Path(uris.to_fs_path(document_uri))
+
+    # Only validate files with 'catalog' in the name and YAML extensions
+    if not (file_path.name.startswith("catalog") and file_path.suffix in {".yml", ".yaml"}):
+        return
+
+    document = ls.workspace.get_text_document(document_uri)
+    await validate_catalog_content(ls, document_uri, document.source)
+
+
+@LSP_SERVER.feature(TEXT_DOCUMENT_DID_CHANGE)
+async def did_change(ls: KedroLanguageServer, params: DidChangeTextDocumentParams):
+    """Validate the catalog file live on every change."""
+    document_uri = params.text_document.uri
+    file_path = pathlib.Path(uris.to_fs_path(document_uri))
+
+    # Only validate files with 'catalog' in the name and YAML extensions
+    if not (file_path.name.startswith("catalog") and file_path.suffix in {".yml", ".yaml"}):
+        return
+
+    document = ls.workspace.get_text_document(document_uri)
+    updated_content = document.source  # Live content of the file
+    await validate_catalog_content(ls, document_uri, updated_content)
+
+
+@LSP_SERVER.feature(lsp.WORKSPACE_DID_CHANGE_WATCHED_FILES)
+async def did_change_watched_files(ls: KedroLanguageServer, params: DidChangeWatchedFilesParams):
+    """Handle changes to catalog files."""
+    for change in params.changes:
+        if change.type in (FileChangeType.Created, FileChangeType.Changed):
+            await validate_catalog(ls, change.uri)
+        elif change.type == FileChangeType.Deleted:
+            # Clear diagnostics for deleted files
+            ls.publish_diagnostics(change.uri, [])
+
+
+async def validate_all_catalogs(ls: KedroLanguageServer):
+    """Validate all catalog files in the workspace."""
+    _check_project()
+    if not ls.is_kedro_project():
+        return
+
+    catalog_files = find_all_catalog_files(ls.workspace.root_path)
+    for file_uri in catalog_files:
+        await validate_catalog(ls, file_uri)
+
+
+def find_all_catalog_files(root_path):
+    """Find all catalog files in the workspace."""
+    catalog_files = []
+    for dirpath, _, filenames in os.walk(root_path):
+        for filename in filenames:
+            if filename.startswith('catalog') and filename.endswith(('.yml', '.yaml')):
+                file_path = os.path.join(dirpath, filename)
+                file_uri = uris.from_fs_path(file_path)
+                catalog_files.append(file_uri)
+    return catalog_files
+
+
+async def validate_catalog_content(ls: KedroLanguageServer, uri: str, content: str):
+    """Validate catalog content using a chain of validators"""
+    diagnostics = []
+    
+    # List of validators to run in order
+    validators = [
+        FactoryPatternValidator(),
+        FullCatalogValidator(),
+        DatasetConfigValidator(),
+    ]
+    
+    try:
+        # Parse the YAML content
+        catalog_config = yaml.load(content, Loader=SafeLineLoader)
+        if not isinstance(catalog_config, dict):
+            # Handle invalid catalog format
+            diagnostic = create_diagnostic(
+                range_start=Position(line=0, character=0),
+                range_end=Position(line=0, character=0),
+                message="Invalid catalog format: root must be a mapping/dictionary"
+            )
+            diagnostics.append(diagnostic)
+            ls.publish_diagnostics(uri, diagnostics)
+            return
+            
+        # Run each validator in sequence
+        for validator in validators:
+            try:
+                validator_diagnostics = validator.validate(catalog_config, content)
+                diagnostics.extend(validator_diagnostics)
+            except Exception as validator_error:
+                log_error(f"Error in validator {validator.__class__.__name__}: {validator_error}")
+                
+    except Exception as e:
+        # Handle YAML parsing errors
+        log_error(f"Error parsing catalog content: {e}")
+        diagnostic = create_diagnostic(
+            range_start=Position(line=0, character=0),
+            range_end=Position(line=0, character=0),
+            message=f"YAML parsing error: {e}"
+        )
+        diagnostics.append(diagnostic)
+
+    # Publish diagnostics for the file
+    ls.publish_diagnostics(uri, diagnostics)
+
+
+async def validate_catalog(ls: KedroLanguageServer, uri: str):
+    """Validate a catalog file, preferring in-memory content over disk content."""
+    file_path = pathlib.Path(uris.to_fs_path(uri))
+    
+    # Try to get the content from the open document
+    try:
+        document = ls.workspace.get_text_document(uri)
+        content = document.source
+    except Exception:
+        # Document not open in editor, read from disk
+        if not file_path.exists():
+            ls.publish_diagnostics(uri, [])
+            return
+        try:
+            content = file_path.read_text(encoding='utf-8')
+        except Exception as e:
+            log_error(f"Error reading file {file_path}: {e}")
+            ls.publish_diagnostics(uri, [])
+            return
+
+    await validate_catalog_content(ls, uri, content)
+
+
+async def periodic_revalidation(ls: KedroLanguageServer, interval: int = 5):
+    """Periodically revalidate all catalog files."""
+    while True:
+        try:
+            await validate_all_catalogs(ls)
+        except Exception as e:
+            log_error(f"Error during periodic revalidation: {e}")
+        await asyncio.sleep(interval)
+
+
+def is_dataset_importable(dataset_type: str) -> Tuple[bool, Optional[str]]:
+    try:
+        module_name, class_name = dataset_type.rsplit('.', 1)
+        module = importlib.import_module(module_name)
+        getattr(module, class_name)
+        return True, None
+    except ImportError as e:
+        return False, f"Module '{module_name}' cannot be imported. {e}"
+    except AttributeError:
+        return False, f"Class '{class_name}' not found in module '{module_name}'."
+    except ValueError:
+        return False, "Invalid dataset type format. It should be 'module.ClassName'."
+
+
 def _get_global_defaults():
     return {
         "path": GLOBAL_SETTINGS.get("path", []),
@@ -482,6 +693,7 @@ def _get_global_defaults():
         "importStrategy": GLOBAL_SETTINGS.get("importStrategy", "useBundled"),
         "showNotifications": GLOBAL_SETTINGS.get("showNotifications", "off"),
         "environment": GLOBAL_SETTINGS.get("environment", ""),
+        "kedroProjectPath": GLOBAL_SETTINGS.get("kedroProjectPath", ""),
     }
 
 
@@ -534,10 +746,14 @@ def log_for_lsp_debug(msg: str):
 
 
 def _is_pipeline(uri):
-    from pathlib import Path
-
-    filename = Path(uri).name
+    path = Path(uris.to_fs_path(uri))
+    filename = path.name
     if "pipeline" in str(filename):
+        return True
+    # Inside pipelines folder
+    if (
+        "pipelines" in path.parts
+    ):  # [file:, Users, dummy, pipelines, pipeline_name, file.py]
         return True
     return False
 
@@ -552,6 +768,41 @@ def definition_from_flowchart(ls, word):
     word = word[0]
     result = definition(LSP_SERVER, params=None, word=word)
     return result
+
+
+@LSP_SERVER.command("kedro.getProjectData")
+def get_project_data_from_viz(ls, args=None):
+    """Get project data from kedro viz
+    
+    Args:
+        args: List of command arguments. The first element is used as the pipeline name.
+    """
+    from kedro_viz.server import load_and_populate_data
+    try:
+        # For kedro-viz > 10.0.0
+        from kedro_viz.api.rest.responses.pipelines import get_kedro_project_json_data
+    except ImportError as e:
+        # For kedro-viz = 10.0.0
+        from kedro_viz.api.rest.responses import get_kedro_project_json_data
+
+    data = None
+    try:
+        workspace_settings = next(iter(WORKSPACE_SETTINGS.values()))
+        kedro_project_path = Path(workspace_settings.get("kedroProjectPath")) or Path.cwd()
+
+        # Extract the pipeline name from the args list
+        pipeline_name = args[0] if args and len(args) > 0 else None
+
+        load_and_populate_data(kedro_project_path)
+        data = get_kedro_project_json_data(pipeline_name=pipeline_name)
+        return data
+    except Exception as e:
+        print(f"Kedro-Viz: {e}")
+        log_error(f"Kedro-Viz: {e}")
+    finally:
+        print("Execution completed.")
+        return data
+
 
 ### End of  kedro-lsp
 

@@ -9,3 +9,9 @@ export const EXTENSION_ROOT_DIR =
 export const BUNDLED_PYTHON_SCRIPTS_DIR = path.join(EXTENSION_ROOT_DIR, 'bundled');
 export const SERVER_SCRIPT_PATH = path.join(BUNDLED_PYTHON_SCRIPTS_DIR, 'tool', `lsp_server.py`);
 export const DEBUG_SERVER_SCRIPT_PATH = path.join(BUNDLED_PYTHON_SCRIPTS_DIR, 'tool', `_debug_server.py`);
+
+
+// Global state
+export const DEPENDENCIES_INSTALLED = 'kedro.dependenciesInstalled'
+export const TELEMETRY_CONSENT = 'kedro.telemetryConsent';
+export const PROJECT_METADATA = 'kedro.projectMetadata';

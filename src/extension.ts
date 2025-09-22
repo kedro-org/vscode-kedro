@@ -1,141 +1,95 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 import * as vscode from 'vscode';
-import { selectEnvironment, executeServerCommand, executeServerDefinitionCommand } from './common/commands';
 import { LanguageClient } from 'vscode-languageclient/node';
-import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
-import {
-    checkVersion,
-    getInterpreterDetails,
-    initializePython,
-    onDidChangePythonInterpreter,
-    resolveInterpreter,
-} from './common/python';
-import { restartServer } from './common/server';
-import { checkIfConfigurationChanged, getInterpreterFromSetting } from './common/settings';
+import { traceError, traceLog, traceVerbose } from './common/log/logging';
+import { initializePython } from './common/python';
+
+import { getInterpreterFromSetting } from './common/settings';
 import { loadServerDefaults } from './common/setup';
-import { createStatusBar } from './common/status_bar';
-import { getLSClientTraceLevel } from './common/utilities';
-import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
-import KedroVizPanel from './webview/vizWebView';
-import { runKedroVizServer } from './webview/vizServer';
+
+import {
+    checkKedroProjectConsent,
+    installTelemetryDependenciesIfNeeded,
+    isKedroProject,
+    getKedroProjectPath,
+} from './common/utilities';
+
+import { runServer, registerCommandsAndEvents } from './common/activationHelper';
 
 let lsClient: LanguageClient | undefined;
-let kedroVizProcess: any;
+let isCommandsAndEventsRegistered = false;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     // This is required to get server name and module. This should be
     // the first thing that we do in this extension.
     const serverInfo = loadServerDefaults();
-    const serverName = serverInfo.name;
     const serverId = serverInfo.module;
 
-    // Log Server information
-    traceLog(`Name: ${serverInfo.name}`);
-    traceLog(`Module: ${serverInfo.module}`);
-    traceVerbose(`Full Server Info: ${JSON.stringify(serverInfo)}`);
+    let kedroProjectPath = await getKedroProjectPath();
 
-    // List of commands
-    const CMD_RESTART_SERVER = `${serverId}.restart`;
-    const CMD_SELECT_ENV = `${serverId}.selectEnvironment`;
-
-    // Status Bar
-    const statusBarItem = await createStatusBar(CMD_SELECT_ENV, serverId);
-    context.subscriptions.push(statusBarItem);
-
-    // Setup logging
-    const outputChannel = createOutputChannel(serverName);
-    context.subscriptions.push(outputChannel, registerLogger(outputChannel));
-
-    const changeLogLevel = async (c: vscode.LogLevel, g: vscode.LogLevel) => {
-        const level = getLSClientTraceLevel(c, g);
-        await lsClient?.setTrace(level);
-    };
-
-    context.subscriptions.push(
-        outputChannel.onDidChangeLogLevel(async (e) => {
-            await changeLogLevel(e, vscode.env.logLevel);
-        }),
-        vscode.env.onDidChangeLogLevel(async (e) => {
-            await changeLogLevel(outputChannel.logLevel, e);
-        }),
-    );
-
-
-    // Log Server information
-    traceLog(`Name: ${serverInfo.name}`);
-    traceLog(`Module: ${serverInfo.module}`);
-    traceVerbose(`Full Server Info: ${JSON.stringify(serverInfo)}`);
-
-    const runServer = async (selectedEnvironment?: vscode.QuickPickItem) => {
-        const interpreter = getInterpreterFromSetting(serverId);
-        let env = undefined;
-        if (selectedEnvironment) {
-            env = selectedEnvironment.label;
+    if (kedroProjectPath && kedroProjectPath.trim() !== '') {
+        // User provided a Kedro project path in settings
+        if (await isKedroProject(kedroProjectPath)) {
+            traceLog(`Using Kedro project path from settings: ${kedroProjectPath}`);
+        } else {
+            // The user set a path, but it's not a valid Kedro project
+            traceError(`The provided Kedro project path (${kedroProjectPath}) is not a Kedro project.`);
+            return;
         }
+    } else {
+        // No project path set, fallback to checking workspace
+        if (await isKedroProject()) {
+            // If a Kedro project is detected in the workspace root,
+            // we can determine that path from the first workspace folder
+            if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                kedroProjectPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+                traceLog(`Detected Kedro project at workspace root: ${kedroProjectPath}`);
+            } else {
+                traceError('No workspace folder found, cannot determine Kedro project path.');
+                return;
+            }
+        } else {
+            // Not a Kedro project and no path provided
+            console.log('Kedro VSCode extension: No Kedro project detected and no project path set.');
+            traceLog('No Kedro project detected and no kedro.projectPath set. Extension deactivated.');
 
-        if (interpreter && interpreter.length > 0) {
-            if (checkVersion(await resolveInterpreter(interpreter))) {
-                traceVerbose(`Using interpreter from ${serverInfo.module}.interpreter: ${interpreter.join(' ')}`);
-                lsClient = await restartServer(serverId, serverName, outputChannel, lsClient, env);
+            if (!isCommandsAndEventsRegistered) {
+                // Register all commands and events
+                registerCommandsAndEvents(
+                    context,
+                    () => lsClient,
+                    (newClient) => {
+                        lsClient = newClient;
+                    },
+                );
+                isCommandsAndEventsRegistered = true;
             }
             return;
         }
+    }
 
-        const interpreterDetails = await getInterpreterDetails();
-        console.log('===============DEBUG============');
-        console.log(interpreterDetails);
-        console.log('===============DEBUG============');
+    await installTelemetryDependenciesIfNeeded(context);
 
-        // Start kedro viz server
-        if (kedroVizProcess) {
-            process.kill(-kedroVizProcess.pid);
-        }
-        kedroVizProcess = await runKedroVizServer();
+    // Check for consent in the Kedro Project
+    const consent = await checkKedroProjectConsent(context);
 
-        if (interpreterDetails.path) {
-            traceVerbose(`Using interpreter from Python extension: ${interpreterDetails.path.join(' ')}`);
-            lsClient = await restartServer(serverId, serverName, outputChannel, lsClient, env);
-            return;
-        }
+    // Log Server information
+    traceLog(`Name: ${serverInfo.name}`);
+    traceLog(`Module: ${serverInfo.module}`);
+    traceVerbose(`Full Server Info: ${JSON.stringify(serverInfo)}`);
 
-        traceError(
-            'Python interpreter missing:\r\n' +
-            '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
-            `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
-            'Please use Python 3.8 or greater.',
+    if (!isCommandsAndEventsRegistered) {
+        // Register all commands and events
+        registerCommandsAndEvents(
+            context,
+            () => lsClient,
+            (newClient) => {
+                lsClient = newClient;
+            },
         );
-    };
-
-    context.subscriptions.push(
-        onDidChangePythonInterpreter(async () => {
-            await runServer();
-        }),
-        onDidChangeConfiguration(async (e: vscode.ConfigurationChangeEvent) => {
-            if (checkIfConfigurationChanged(e, serverId)) {
-                await runServer();
-            }
-        }),
-        registerCommand(CMD_RESTART_SERVER, async () => {
-            await runServer();
-        }),
-        registerCommand(CMD_SELECT_ENV, async () => {
-            const result = await selectEnvironment();
-            runServer(result);
-            if (result) {
-                statusBarItem.text = `$(kedro-logo)` + ' ' + result.label;
-            }
-        }),
-        registerCommand('pygls.server.executeCommand', async () => {
-            await executeServerCommand(lsClient);
-        }),
-        registerCommand('kedro.sendDefinitionRequest', async () => {
-            await executeServerDefinitionCommand(lsClient);
-        }),
-        vscode.commands.registerCommand('kedro.runKedroViz', () => {
-            KedroVizPanel.createOrShow(context.extensionUri, lsClient);
-        }),
-    );
+        isCommandsAndEventsRegistered = true;
+    }
 
     setImmediate(async () => {
         const interpreter = getInterpreterFromSetting(serverId);
@@ -145,7 +99,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             await initializePython(context.subscriptions);
             traceLog(`Python extension loaded`);
         } else {
-            await runServer();
+            lsClient = await runServer(lsClient);
         }
     });
 }
@@ -153,9 +107,5 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 export async function deactivate(): Promise<void> {
     if (lsClient) {
         await lsClient.stop();
-    }
-    if (kedroVizProcess) {
-        process.kill(-kedroVizProcess.pid);
-        kedroVizProcess = null; // Reset the reference after killing the process
     }
 }

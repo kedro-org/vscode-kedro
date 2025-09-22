@@ -6,6 +6,7 @@ sign-off:
 
 
 build:
+	make dev-install
 	vsce package
 
 
@@ -19,3 +20,9 @@ dev-install:
 
 test:
 	pytest
+
+release-vscode: dev-install
+	vsce publish
+
+release-openvsx: dev-install
+	ovsx publish

@@ -8,7 +8,18 @@ function App() {
   const [error, setError] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
 
+  const toolbarOptions = {
+    labelBtn: true,
+    layerBtn: true,
+    expandPipelinesBtn: true,
+    exportBtn: false,
+    filterBtn: true,
+  };
+
   useEffect(() => {
+    // Clear local storage to avoid persisting data
+    localStorage.clear();
+
     // Handle messages sent from the extension to the webview
     window.addEventListener("message", (event) => {
       console.log("Received message from extension", event);
@@ -31,7 +42,6 @@ function App() {
     return () => {
       window.removeEventListener("message", () => {console.log("removed")});
     };
-
   }, []);
 
   const handleNodeClick = (node) => {
@@ -44,6 +54,12 @@ function App() {
         },
       });
     }
+  };
+
+  const handlePipelineFilterClick = () => {
+    vscodeApi.postMessage({
+      command: "showPipelineFilter",
+    });
   };
 
   const handleOutputClick = () => {
@@ -78,6 +94,9 @@ function App() {
       switch (action.type) {
         case "TOGGLE_NODE_CLICKED":
           handleNodeClick(action.payload);
+          break;          
+        case "SHOW_PIPELINE_FILTER":
+          handlePipelineFilterClick();
           break;
         default:
           break;
@@ -95,10 +114,15 @@ function App() {
               globalNavigation: false,
               metadataPanel: false,
               miniMap: false,
-              sidebar: false,
+              sidebar: true,
+              ...toolbarOptions,
+            },
+            behaviour: { 
+              reFocus: false,
             },
             visible: {
               slicing: false,
+              sidebar: false,
             },
             layer: {visible: false},
           }}

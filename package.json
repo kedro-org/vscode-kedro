@@ -2,7 +2,7 @@
     "name": "Kedro",
     "displayName": "Kedro",
     "description": "A Kedro VSCode Extension.",
-    "version": "0.2.2",
+    "version": "0.6.0",
     "preview": false,
     "serverInfo": {
         "name": "Kedro",
@@ -37,8 +37,7 @@
         "Data Science"
     ],
     "extensionDependencies": [
-        "ms-python.python",
-        "redhat.vscode-yaml"
+        "ms-python.python"
     ],
     "capabilities": {
         "virtualWorkspaces": {
@@ -79,12 +78,6 @@
         },
         "configuration": {
             "properties": {
-                "yaml.schemas": {
-                    "default": {
-                        "https://raw.githubusercontent.com/kedro-org/kedro/develop/static/jsonschema/kedro-catalog-0.19.json": "conf/**/*catalog*"
-                    },
-                    "description": "Default schema validate against catalog YAML files using YAML extension"
-                },
                 "kedro.importStrategy": {
                     "default": "useBundled",
                     "description": "Defines where `kedro` is imported from. This setting may be ignored if `kedro.path` is set.",
@@ -139,9 +132,57 @@
                     ],
                     "scope": "machine",
                     "type": "string"
+                },
+                "kedro.kedroProjectPath": {
+                    "default": "",
+                    "description": "Custom path to Kedro project root directory. Please add absolute path to your Kedro project root directory.",
+                    "scope": "resource",
+                    "type": "string"
                 }
             }
         },
+        "walkthroughs": [
+            {
+              "id": "kedro-extension-setup",
+              "title": "Get Started with Kedro",
+              "description": "Learn how to set up and run a Kedro project, and visualize your pipeline in VS Code using the Kedro extension.",
+              "steps": [
+                {
+                  "id": "setup-kedro",
+                  "title": "Step 0: Set up and run Kedro",
+                  "description": "Learn how to install & run Kedro and set up a virtual environment.",
+                  "media": { "markdown": "assets/markdown/install.md" }
+                },
+                {
+                  "id": "select-python-interpreter",
+                  "title": "Step 1: Select the correct Python interpreter",
+                  "description": "Make sure you select the correct Python interpreter that has Kedro installed.\n\n[Select Interpreter](command:python.setInterpreter)",
+                  "media": { "markdown": "assets/markdown/select_interpreter.md" },
+                  "completionEvents": ["onCommand:python.setInterpreter"]
+                },
+                {
+                  "id": "configure-project-root",
+                  "title": "Step 2: Configure project's root (Optional)",
+                  "description": "You may need to set the project's root path for Kedro-related features.\n\n[Set Kedro Project Path](command:kedro.kedroProjectPath)",
+                  "media": { "markdown": "assets/markdown/set_project_path.md" },
+                  "completionEvents": ["onCommand:kedro.kedroProjectPath"]
+                },
+                {
+                  "id": "run-kedro-viz",
+                  "title": "Step 3:  Install dependencies and run Kedro Viz",
+                  "description": "Open the command palette and type\n\n ``Kedro: Run Kedro Viz`` \n\n[Open Command Palette](command:workbench.action.showCommands)",
+                  "media": { "markdown": "assets/markdown/run_kedro-Viz.md" },
+                  "completionEvents": ["onCommand:kedro.runKedroViz"]
+                },
+                {
+                  "id": "learn-more",
+                  "title": "Learn more",
+                  "description": "Great job! You've now completed Getting Started with Kedro. But don't stop here! Please checkout Kedro documentation for more information.",
+                  "media": { "markdown": "assets/markdown/learn_more.md" }
+                }
+              ]
+            }
+        ],
         "commands": [
             {
                 "title": "Restart Server",
@@ -167,6 +208,16 @@
                 "command": "kedro.showOutputChannel",
                 "category": "kedro",
                 "title": "Show logs"
+            },
+            {
+                "command": "kedro.kedroProjectPath",
+                "title": "Set Project Path", 
+                "category": "kedro"
+            },
+            {
+                "command": "kedro.filterPipelines",
+                "title": "Select Pipeline View",
+                "category": "kedro"
             }
         ]
     },
@@ -187,10 +238,10 @@
         "@vscode/vsce": "^2.22.0",
         "concurrently": "^8.2.2",
         "eslint": "^8.56.0",
-        "glob": "^10.3.10",
+        "glob": "^11.0.0",
         "prettier": "^3.1.1",
         "ts-loader": "^9.5.1",
-        "typescript": "^5.3.3",
+        "typescript": "^5.6.3",
         "webpack": "^5.96.0",
         "webpack-cli": "^5.1.4"
     }

@@ -139,7 +139,7 @@
                     "scope": "resource",
                     "type": "string"
                 },
-                "kedro.autoReloadViz": {
+                "kedro.autoReloadKedroViz": {
                     "default": false,
                     "description": "Automatically reload Kedro Viz when Kedro project files change.",
                     "scope": "resource",

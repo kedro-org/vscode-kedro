@@ -127,8 +127,8 @@ export const registerCommandsAndEvents = (
                 setLSClient(newClient);
             }),
             onDidChangeConfiguration(async (e: vscode.ConfigurationChangeEvent) => {
-                // Handle autoReloadViz setting change specifically
-                if (e.affectsConfiguration(`${serverId}.autoReloadViz`)) {
+                // Handle autoReloadKedroViz setting change specifically
+                if (e.affectsConfiguration(`${serverId}.autoReloadKedroViz`)) {
                     setupKedroProjectFileWatchers(context);
                 }
 

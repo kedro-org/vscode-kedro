@@ -10,7 +10,7 @@ let watchers: vscode.FileSystemWatcher[] = [];
  * Disposes of all existing file watchers
  */
 export function disposeKedroProjectFileWatchers(): void {
-    watchers.forEach(watcher => watcher.dispose());
+    watchers.forEach((watcher) => watcher.dispose());
     watchers = [];
     traceLog('Kedro file watchers disposed');
 }
@@ -25,7 +25,7 @@ export function setupKedroProjectFileWatchers(context: vscode.ExtensionContext):
 
     // Check if auto reload is enabled
     const config = vscode.workspace.getConfiguration('kedro');
-    const autoReloadEnabled = config.get<boolean>('autoReloadViz', false);
+    const autoReloadEnabled = config.get<boolean>('autoReloadKedroViz', false);
 
     if (!autoReloadEnabled) {
         traceLog('Auto reload is disabled, skipping file watchers setup');

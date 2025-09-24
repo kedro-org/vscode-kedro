@@ -138,6 +138,12 @@
                     "description": "Custom path to Kedro project root directory. Please add absolute path to your Kedro project root directory.",
                     "scope": "resource",
                     "type": "string"
+                },
+                "kedro.autoReloadKedroViz": {
+                    "default": false,
+                    "description": "Automatically reload Kedro Viz when Kedro project files change.",
+                    "scope": "resource",
+                    "type": "boolean"
                 }
             }
         },

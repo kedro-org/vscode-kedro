@@ -14,6 +14,7 @@ import { checkVersion, getInterpreterDetails, onDidChangePythonInterpreter, reso
 import { sendHeapEventWithMetadata } from './telemetry';
 import { restartServer } from './server';
 import { checkIfConfigurationChanged, getInterpreterFromSetting } from './settings';
+import { setupKedroProjectFileWatchers } from './kedroProjectFileWatchers';
 import { loadServerDefaults } from './setup';
 import { createStatusBar } from './status_bar';
 import { getLSClientTraceLevel, updateKedroVizPanel } from './utilities';
@@ -126,6 +127,11 @@ export const registerCommandsAndEvents = (
                 setLSClient(newClient);
             }),
             onDidChangeConfiguration(async (e: vscode.ConfigurationChangeEvent) => {
+                // Handle autoReloadViz setting change specifically
+                if (e.affectsConfiguration(`${serverId}.autoReloadViz`)) {
+                    setupKedroProjectFileWatchers(context);
+                }
+
                 if (checkIfConfigurationChanged(e, serverId)) {
                     const newClient = await runServer(getLSClient());
                     setLSClient(newClient);

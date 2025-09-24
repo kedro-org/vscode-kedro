@@ -4,12 +4,34 @@ import { traceLog } from './log/logging';
 import KedroVizPanel from '../webview/vizWebView';
 
 let isRestartInProgress = false;
+let watchers: vscode.FileSystemWatcher[] = [];
+
+/**
+ * Disposes of all existing file watchers
+ */
+export function disposeKedroProjectFileWatchers(): void {
+    watchers.forEach(watcher => watcher.dispose());
+    watchers = [];
+    traceLog('Kedro file watchers disposed');
+}
 
 /**
  * Sets up file watchers in the Kedro project
  * @param context Extension context for managing subscriptions
  */
 export function setupKedroProjectFileWatchers(context: vscode.ExtensionContext): void {
+    // Dispose of existing watchers first
+    disposeKedroProjectFileWatchers();
+
+    // Check if auto reload is enabled
+    const config = vscode.workspace.getConfiguration('kedro');
+    const autoReloadEnabled = config.get<boolean>('autoReloadViz', false);
+
+    if (!autoReloadEnabled) {
+        traceLog('Auto reload is disabled, skipping file watchers setup');
+        return;
+    }
+
     // Watch for Kedro-specific files that affect the pipeline structure
     const kedroConfigWatcher = vscode.workspace.createFileSystemWatcher('**/conf/**/*.{yml,yaml}');
     const pipelinesFolderWatcher = vscode.workspace.createFileSystemWatcher('**/pipelines/**/*.py');
@@ -25,8 +47,9 @@ export function setupKedroProjectFileWatchers(context: vscode.ExtensionContext):
     pipelinesFolderWatcher.onDidChange((uri) => handleFileChange(uri, 'Pipeline code changed'));
     pythonCatalogWatcher.onDidChange((uri) => handleFileChange(uri, 'Python catalog changed'));
 
-    // Register for cleanup
-    context.subscriptions.push(kedroConfigWatcher, pipelinesFolderWatcher, pythonCatalogWatcher);
+    // Store watchers for later disposal and register for cleanup
+    watchers = [kedroConfigWatcher, pipelinesFolderWatcher, pythonCatalogWatcher];
+    context.subscriptions.push(...watchers);
 
     traceLog('Kedro file watchers initialized');
 }

@@ -61,7 +61,7 @@ jobs:
           .github/scripts/extract-release-notes.sh ${{ needs.check-release-branch.outputs.version }}
   
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.check-release-branch.outputs.version }}
           name: Release v${{ needs.check-release-branch.outputs.version }}

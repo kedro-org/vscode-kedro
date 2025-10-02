@@ -1,7 +1,7 @@
 name: Check and Create Kedro VSCode Extension Release
 
 permissions:
-  contents: write
+  contents: read
 
 on:
   pull_request:
@@ -51,6 +51,9 @@ jobs:
           branch: "main"
 
   create-release:
+    # Elevated only for this job to allow release (tag/assets) operations
+    permissions:
+      contents: write
     needs: [check-release-branch, build]
     if: success()
     runs-on: ubuntu-latest

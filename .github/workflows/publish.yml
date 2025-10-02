@@ -1,5 +1,8 @@
 name: Publish Kedro VSCode Extension
 
+permissions:
+  contents: read
+
 on:
   release:
     types: [published]

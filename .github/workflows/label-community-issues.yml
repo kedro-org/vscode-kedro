@@ -1,5 +1,8 @@
 name: Label Community Issues
 
+permissions:
+  issues: write
+
 on:
   issues:
     types:

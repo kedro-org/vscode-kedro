@@ -1,5 +1,8 @@
 name: Run nightly job on vscode-kedro
 
+permissions:
+  contents: read
+
 on:
   
   workflow_dispatch:

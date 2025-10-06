@@ -146,6 +146,20 @@
                     "description": "Automatically reload Kedro Viz when Kedro project files change.",
                     "scope": "resource",
                     "type": "boolean"
+                },
+                "kedro.vizTheme": {
+                    "default": "dark",
+                    "description": "Theme for Kedro Viz visualization (light or dark).",
+                    "enum": [
+                        "light",
+                        "dark"
+                    ],
+                    "enumDescriptions": [
+                        "Light theme for Kedro Viz",
+                        "Dark theme for Kedro Viz"
+                    ],
+                    "scope": "resource",
+                    "type": "string"
                 }
             }
         },
@@ -225,6 +239,11 @@
             {
                 "command": "kedro.filterPipelines",
                 "title": "Select Pipeline View",
+                "category": "kedro"
+            },
+            {
+                "command": "kedro.toggleVizTheme",
+                "title": "Toggle Kedro Viz Theme",
                 "category": "kedro"
             }
         ]

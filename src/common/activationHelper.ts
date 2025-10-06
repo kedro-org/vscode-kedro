@@ -6,6 +6,7 @@ import {
     executeServerDefinitionCommand,
     setKedroProjectPath,
     filterPipelines,
+    toggleVizTheme,
 } from './commands';
 
 import * as vscode from 'vscode';
@@ -94,6 +95,7 @@ export const registerCommandsAndEvents = (
     const CMD_SHOW_OUTPUT_CHANNEL = `${serverId}.showOutputChannel`;
     const CMD_SET_PROJECT_PATH = `${serverId}.kedroProjectPath`;
     const CMD_FILTER_PIPELINES = `${serverId}.filterPipelines`;
+    const CMD_TOGGLE_VIZ_THEME = `${serverId}.toggleVizTheme`;
 
     (async () => {
         // Status Bar
@@ -183,6 +185,15 @@ export const registerCommandsAndEvents = (
             }),
             registerCommand(CMD_SET_PROJECT_PATH, () => {
                 setKedroProjectPath();
+            }),
+            registerCommand(CMD_TOGGLE_VIZ_THEME, async () => {
+                await toggleVizTheme();
+                // If KedroVizPanel is open, update the theme
+                if (KedroVizPanel.currentPanel) {
+                    const config = vscode.workspace.getConfiguration('kedro');
+                    const theme = config.get<string>('vizTheme', 'dark');
+                    KedroVizPanel.currentPanel.updateTheme(theme);
+                }
             }),
         );
     })();

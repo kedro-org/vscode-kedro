@@ -13,6 +13,7 @@ If you encounter issue, report it in [Github](https://github.com/kedro-org/vscod
   - [Schema Validation](#schema-validation)
   - [Hover](#hover)
   - [To navigate between the flowchart and the code editor in Kedro-Viz:](#to-navigate-between-the-flowchart-and-the-code-editor-in-kedro-viz)
+  - [Auto Reload Kedro-Viz](#auto-reload-kedro-viz)
   - [Settings](#settings)
     - [Change Configuration Environment](#change-configuration-environment)
   - [How to restart a server if there are error](#how-to-restart-a-server-if-there-are-error)
@@ -147,6 +148,37 @@ Example:
 ```
 
 ![Set Kedro project path](assets/kedro-project-path.gif)
+
+## Auto Reload Kedro-Viz
+
+The extension provides an auto reload feature that automatically refreshes Kedro-Viz when you make changes to your Kedro project files.
+
+### What is Auto Reload?
+
+When enabled, the auto reload feature monitors your Kedro project files for changes. If the Kedro-Viz panel is open and you modify any monitored files, the extension automatically restarts the Kedro server and refreshes the visualization.
+
+### Monitored Files
+
+The extension watches for changes in:
+- **Configuration files**: `**/conf/**/*.yml` and `**/conf/**/*.yaml`
+- **Pipeline files**: `**/pipelines/**/*.py`
+- **Catalog files**: `**/catalog*.py`
+
+### How to Enable
+
+**Using VS Code Settings:**
+1. Open Settings: `Cmd` + `,` (macOS) or `Ctrl` + `,` (Windows/Linux)
+2. Search for "Kedro Auto Reload"
+3. Check the box for `Kedro: Auto Reload Kedro Viz`
+
+**Using settings.json:**
+```json
+{
+    "kedro.autoReloadKedroViz": true
+}
+```
+
+**Note:** Auto reload only works when the Kedro-Viz panel is open.
 
 ## Settings
 ### Change Configuration Environment

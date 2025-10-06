@@ -92,6 +92,11 @@ export default class KedroVizPanel {
         this._panel.webview.postMessage({ command: 'updateData', data });
     }
 
+    public updateTheme(theme: string) {
+        // Send a message to the webview to update theme.
+        this._panel.webview.postMessage({ command: 'updateTheme', theme });
+    }
+
     public dispose() {
         KedroVizPanel.currentPanel = undefined;
 

@@ -193,6 +193,12 @@ export async function updateKedroVizPanel(
 ): Promise<void> {
     const projectData = await executeGetProjectDataCommand(lsClient, pipelineName);
     KedroVizPanel.currentPanel?.updateData(projectData);
+
+    // Also send the current theme to the webview
+    const vscode = await import('vscode');
+    const config = vscode.workspace.getConfiguration('kedro');
+    const theme = config.get<string>('vizTheme', 'dark');
+    KedroVizPanel.currentPanel?.updateTheme(theme);
 }
 
 export async function isKedroProject(kedroProjectPath?: string): Promise<boolean> {

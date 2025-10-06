@@ -7,6 +7,7 @@ function App() {
   const [data, setData] = React.useState({ nodes: [], edges: [] });
   const [error, setError] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
+  const [theme, setTheme] = React.useState('dark');
 
   const toolbarOptions = {
     labelBtn: true,
@@ -34,8 +35,13 @@ function App() {
             setError(true);
           }
           break;
+        case "updateTheme":
+          if (message.theme) {
+            setTheme(message.theme);
+          }
+          break;
         default:
-          break;  
+          break;
       }
     });
 
@@ -117,7 +123,7 @@ function App() {
               sidebar: true,
               ...toolbarOptions,
             },
-            behaviour: { 
+            behaviour: {
               reFocus: false,
             },
             visible: {
@@ -125,6 +131,7 @@ function App() {
               sidebar: false,
             },
             layer: {visible: false},
+            theme: theme,
           }}
         />)}
     </div>

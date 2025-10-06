@@ -211,3 +211,12 @@ export async function filterPipelines(lsClient?: LanguageClient) {
         );
     }
 }
+
+export async function toggleVizTheme() {
+    const config = vscode.workspace.getConfiguration('kedro');
+    const currentTheme = config.get<string>('vizTheme', 'dark');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    await config.update('vizTheme', newTheme, vscode.ConfigurationTarget.Workspace);
+    vscode.window.showInformationMessage(`Kedro Viz theme changed to ${newTheme}`);
+}

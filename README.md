@@ -14,6 +14,7 @@ If you encounter issue, report it in [Github](https://github.com/kedro-org/vscod
   - [Hover](#hover)
   - [To navigate between the flowchart and the code editor in Kedro-Viz:](#to-navigate-between-the-flowchart-and-the-code-editor-in-kedro-viz)
   - [Auto Reload Kedro-Viz](#auto-reload-kedro-viz)
+  - [Toggle Kedro-Viz Theme](#toggle-kedro-viz-theme)
   - [Settings](#settings)
     - [Change Configuration Environment](#change-configuration-environment)
   - [How to restart a server if there are error](#how-to-restart-a-server-if-there-are-error)
@@ -179,6 +180,31 @@ The extension watches for changes in:
 ```
 
 **Note:** Auto reload only works when the Kedro-Viz panel is open.
+
+## Toggle Kedro-Viz Theme
+
+The extension allows you to switch between light and dark themes for Kedro-Viz visualization.
+
+### Quick toggle
+
+The fastest way to switch themes:
+1. Open Command Palette: `Cmd` + `Shift` + `P` (macOS) or `Ctrl` + `Shift` + `P` (Windows/Linux)
+2. Type `Kedro: Toggle Kedro Viz Theme` and select it
+3. Theme switches between light and dark instantly
+
+### Set theme in settings
+
+**Using VS Code Settings:**
+1. Open Settings: `Cmd` + `,` (macOS) or `Ctrl` + `,` (Windows/Linux)
+2. Search for "Kedro Viz Theme"
+3. Select either `dark` or `light` from the dropdown
+
+**Using settings.json:**
+```json
+{
+    "kedro.vizTheme": "dark"
+}
+```
 
 ## Settings
 ### Change Configuration Environment

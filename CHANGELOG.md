@@ -1,5 +1,10 @@
 # Change Log
 
+# 0.6.0
+## Major changes and new features
+- Improved catalog validation with new layers including factory patterns, dataset configuration, and full catalog validation.
+- Added support for backwards compatibility with both Kedro 1.0+ and 0.19.x versions.
+
 # 0.5.0
 ## Major changes and new features
 - Added a walkthrough to the Kedro VSCode extension to guide users on setup and getting started.

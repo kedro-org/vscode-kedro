@@ -163,12 +163,12 @@ The extension watches for changes in:
 
 #### How to enable
 
-**Using VS Code Settings:**
+Using VS Code Settings:
 1. Open Settings: `Cmd` + `,` (macOS) or `Ctrl` + `,` (Windows/Linux)
 2. Search for "Kedro Auto Reload"
 3. Check the box for `Kedro: Auto Reload Kedro Viz`
 
-**Using settings.json:**
+Using settings.json:
 ```json
 {
     "kedro.autoReloadKedroViz": true
@@ -192,12 +192,12 @@ The fastest way to switch themes:
 
 #### Set theme in settings
 
-**Using VS Code Settings:**
+Using VS Code Settings:
 1. Open Settings: `Cmd` + `,` (macOS) or `Ctrl` + `,` (Windows/Linux)
 2. Search for "Kedro Viz Theme"
 3. Select either `dark` or `light` from the dropdown
 
-**Using settings.json:**
+Using settings.json:
 ```json
 {
     "kedro.vizTheme": "dark"

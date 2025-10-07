@@ -150,22 +150,18 @@ Example:
 
 ![Set Kedro project path](assets/kedro-project-path.gif)
 
-## Auto reload Kedro-Viz
+### Auto reload Kedro-Viz
 
-The extension provides an auto reload feature that automatically refreshes Kedro-Viz when you make changes to your Kedro project files.
+The extension provides an auto reload feature that automatically refreshes Kedro-Viz when you make changes to your Kedro project files. When enabled, the auto reload feature monitors your Kedro project files for changes. If the Kedro-Viz panel is open and you change any monitored files, the extension automatically restarts the Kedro server and refreshes the visualisation.
 
-### What is auto reload?
-
-When enabled, the auto reload feature monitors your Kedro project files for changes. If the Kedro-Viz panel is open and you change any monitored files, the extension automatically restarts the Kedro server and refreshes the visualisation.
-
-### Monitored files
+#### Monitored files
 
 The extension watches for changes in:
 - **Configuration files**: `**/conf/**/*.yml` and `**/conf/**/*.yaml`
 - **Pipeline files**: `**/pipelines/**/*.py`
 - **Catalog files**: `**/catalog*.py`
 
-### How to enable
+#### How to enable
 
 **Using VS Code Settings:**
 1. Open Settings: `Cmd` + `,` (macOS) or `Ctrl` + `,` (Windows/Linux)
@@ -179,20 +175,22 @@ The extension watches for changes in:
 }
 ```
 
-**Note:** Auto reload works when the Kedro-Viz panel is open.
+![Auto reload Kedro-Viz](assets/viz-autoreload.gif)
 
-## Toggle Kedro-Viz theme
+**Note:** Auto reload works when the Kedro-Viz panel is open. When the server restarts, the current state in Kedro-Viz (such as expanded pipelines or zoom level) will be reset.
+
+### Toggle Kedro-Viz theme
 
 The extension allows you to switch between light and dark themes for Kedro-Viz visualisation.
 
-### Quick toggle
+#### Quick toggle
 
 The fastest way to switch themes:
 1. Open Command Palette: `Cmd` + `Shift` + `P` (macOS) or `Ctrl` + `Shift` + `P` (Windows/Linux)
 2. Type `Kedro: Toggle Kedro Viz Theme` and select it
 3. Theme switches between light and dark instantly
 
-### Set theme in settings
+#### Set theme in settings
 
 **Using VS Code Settings:**
 1. Open Settings: `Cmd` + `,` (macOS) or `Ctrl` + `,` (Windows/Linux)
@@ -205,6 +203,8 @@ The fastest way to switch themes:
     "kedro.vizTheme": "dark"
 }
 ```
+
+![Toggle Kedro-Viz theme](assets/viz-toggle-theme.gif)
 
 ## Settings
 ### Change Configuration Environment

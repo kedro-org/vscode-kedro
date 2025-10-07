@@ -1,5 +1,8 @@
 name: Install development dependencies
 
+permissions:
+  contents: read
+
 on:
   pull_request:
   workflow_dispatch:

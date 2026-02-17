@@ -5,6 +5,7 @@ import {
     executeServerCommand,
     executeServerDefinitionCommand,
     setKedroProjectPath,
+    executeDebugNodeWithNewNotebookCommand,
 } from './commands';
 
 import * as vscode from 'vscode';
@@ -89,6 +90,7 @@ export const registerCommandsAndEvents = (
     const CMD_DEFINITION_REQUEST = `${serverId}.sendDefinitionRequest`;
     const CMD_SHOW_OUTPUT_CHANNEL = `${serverId}.showOutputChannel`;
     const CMD_SET_PROJECT_PATH = `${serverId}.kedroProjectPath`;
+    const CMD_DEBUG_NODE_WITH_NEW_NOTEBOOK = `${serverId}.debugNodeWithNewNotebook`;
 
     (async () => {
         // Status Bar
@@ -161,6 +163,13 @@ export const registerCommandsAndEvents = (
             }),
             registerCommand(CMD_SET_PROJECT_PATH, () => {
                 setKedroProjectPath();
+            }),
+            registerCommand(CMD_DEBUG_NODE_WITH_NEW_NOTEBOOK, async (payload) => {
+                const fallbackPayload = payload ?? {
+                    canonicalName: KedroVizPanel.getLastClickedTaskNodeName(),
+                    type: 'task',
+                };
+                await executeDebugNodeWithNewNotebookCommand(fallbackPayload);
             }),
         );
     })();

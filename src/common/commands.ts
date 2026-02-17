@@ -175,3 +175,50 @@ export async function executeGetProjectDataCommand(lsClient: LanguageClient | un
     const result = await vscode.commands.executeCommand(commandName);
     return result;
 }
+
+type DebugNodeRequest = {
+    canonicalName?: string;
+    type?: string;
+};
+
+function resolveCanonicalNodeName(payload?: string | DebugNodeRequest): string | undefined {
+    if (typeof payload === 'string') {
+        return payload;
+    }
+
+    return payload?.canonicalName;
+}
+
+export async function executeDebugNodeWithNewNotebookCommand(payload?: string | DebugNodeRequest) {
+    if (payload && typeof payload !== 'string' && payload.type && payload.type !== 'task') {
+        await vscode.window.showInformationMessage('Debug node notebook currently supports task nodes only.');
+        return;
+    }
+
+    let canonicalName = resolveCanonicalNodeName(payload);
+
+    if (!canonicalName) {
+        canonicalName = await window.showInputBox({
+            placeHolder: 'Type a canonical Kedro node name, for example data_processing.split_data_node',
+            prompt: 'No task node is selected in Kedro Viz. Click a task node first, or enter a canonical node name.',
+        });
+    }
+
+    if (!canonicalName) {
+        return;
+    }
+
+    const cellSource = [
+        '# Canonical Kedro node name from Kedro Viz (it may differ from the pretty node label).',
+        `%load_node ${canonicalName}`,
+    ].join('\n');
+
+    const notebook = new vscode.NotebookData([
+        new vscode.NotebookCellData(vscode.NotebookCellKind.Code, cellSource, 'python'),
+    ]);
+    const notebookDocument = await vscode.workspace.openNotebookDocument('jupyter-notebook', notebook);
+    await vscode.window.showNotebookDocument(notebookDocument, {
+        preview: false,
+        viewColumn: vscode.ViewColumn.Active,
+    });
+}

@@ -306,6 +306,32 @@ def _get_param_location(server: KedroLanguageServer, word: str) -> Optional[Loca
         return
 
 
+def _is_catalog_file_uri(uri: Optional[str]) -> bool:
+    if not uri:
+        return False
+    path = Path(uris.to_fs_path(uri))
+    return path.name.startswith("catalog") and path.suffix in {".yml", ".yaml"}
+
+
+def _is_parameters_file_uri(uri: Optional[str]) -> bool:
+    if not uri:
+        return False
+    path = Path(uris.to_fs_path(uri))
+    return path.name.startswith("parameters") and path.suffix in {".yml", ".yaml"}
+
+
+def _is_kedro_definition_context(uri: Optional[str], word: str) -> bool:
+    if not word:
+        return False
+    if word.startswith("params:"):
+        return True
+    if uri and _is_pipeline(uri):
+        return True
+    if _is_catalog_file_uri(uri) or _is_parameters_file_uri(uri):
+        return True
+    return False
+
+
 @LSP_SERVER.feature(TEXT_DOCUMENT_DEFINITION)
 def definition(
     server: KedroLanguageServer, params: TextDocumentPositionParams, word=None
@@ -315,27 +341,23 @@ def definition(
     if not server.is_kedro_project():
         return None
 
-    def _query_parameter(document, word=None):
-        if not word:
-            word = document.word_at_position(
-                params.position, RE_START_WORD, RE_END_WORD
-            )
+    def _query_parameter(document, query_word):
+        if not query_word:
+            return None
 
-        log_for_lsp_debug(f"Query keyword for params: {word}")
+        log_for_lsp_debug(f"Query keyword for params: {query_word}")
 
-        if word.startswith("params:"):
-            param_location = _get_param_location(server, word)
+        if query_word.startswith("params:"):
+            param_location = _get_param_location(server, query_word)
             if param_location:
                 log_for_lsp_debug(f"{param_location=}")
                 return [param_location]
 
-    def _query_catalog(document, word=None):
-        if not word:
-            word = document.word_at_position(
-                params.position, RE_START_WORD, RE_END_WORD
-            )
+    def _query_catalog(query_word):
+        if not query_word:
+            return None
         catalog_paths = _get_conf_paths(server, "catalog")
-        log_for_lsp_debug(f"Attempt to search `{word}` from catalog")
+        log_for_lsp_debug(f"Attempt to search `{query_word}` from catalog")
         log_for_lsp_debug(f"{catalog_paths=}")
 
         for catalog_path in catalog_paths:
@@ -343,8 +365,8 @@ def definition(
             catalog_conf = yaml.load(catalog_path.read_text(), Loader=SafeLineLoader)
             if not catalog_conf:
                 continue
-            if word in catalog_conf:
-                line = catalog_conf[word]["__line__"]
+            if query_word in catalog_conf:
+                line = catalog_conf[query_word]["__line__"]
                 location = Location(
                     uri=catalog_path.resolve().as_uri(),
                     range=Range(
@@ -358,27 +380,39 @@ def definition(
                 log_for_lsp_debug(f"{location=}")
                 return [location]
 
+    candidate_word = word
     if params:
         document: TextDocument = server.workspace.get_text_document(
             params.text_document.uri
         )
+        if not candidate_word:
+            candidate_word = document.word_at_position(
+                params.position, RE_START_WORD, RE_END_WORD
+            )
+        # Defer non-Kedro symbols to Python language providers (e.g. Pylance).
+        if not _is_kedro_definition_context(params.text_document.uri, candidate_word):
+            return None
     else:
         document = None
-    result = _query_parameter(document, word)
+    result = _query_parameter(document, candidate_word)
     if result:
         return result
-    result = _query_catalog(document, word)
+    result = _query_catalog(candidate_word)
     if result:
         return result
 
-    # If no result, return current location
-    # This is a VSCode specific logic called Alternative Definition Command
-    # By default, it triggers Go to Reference so it supports using mouse click for both directions
-    # from pipeline to config and config to pipeline
+    if not params:
+        return None
+
     uri = params.text_document.uri
-    pos = params.position
-    curr_pos = Position(line=pos.line, character=pos.character)
-    return Location(uri=uri, range=Range(start=curr_pos, end=curr_pos))
+    # For Kedro config files, returning the current location lets VSCode trigger
+    # the alternative definition command, which opens references in pipelines.
+    if _is_catalog_file_uri(uri) or _is_parameters_file_uri(uri):
+        pos = params.position
+        curr_pos = Position(line=pos.line, character=pos.character)
+        return [Location(uri=uri, range=Range(start=curr_pos, end=curr_pos))]
+
+    return None
 
 
 def reference_location(path, line):

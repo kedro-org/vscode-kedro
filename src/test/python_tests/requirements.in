@@ -12,3 +12,5 @@
 pytest
 PyHamcrest
 python-jsonrpc-server
+pygls==1.3.1
+lsprotocol==2023.0.1

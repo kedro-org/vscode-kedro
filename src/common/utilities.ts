@@ -187,9 +187,18 @@ function parseTelemetryConsent(logMessage: string): Record<string, any> | null {
     }
 }
 
-export async function updateKedroVizPanel(lsClient: LanguageClient | undefined): Promise<void> {
-    const projectData = await executeGetProjectDataCommand(lsClient);
+export async function updateKedroVizPanel(
+    lsClient: LanguageClient | undefined,
+    pipelineName: string | undefined = undefined,
+): Promise<void> {
+    const projectData = await executeGetProjectDataCommand(lsClient, pipelineName);
     KedroVizPanel.currentPanel?.updateData(projectData);
+
+    // Also send the current theme to the webview
+    const vscode = await import('vscode');
+    const config = vscode.workspace.getConfiguration('kedro');
+    const theme = config.get<string>('vizTheme', 'dark');
+    KedroVizPanel.currentPanel?.updateTheme(theme);
 }
 
 export async function isKedroProject(kedroProjectPath?: string): Promise<boolean> {

@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 
 import { getWorkspaceFolders } from './vscodeapi';
 import { LanguageClient, State } from 'vscode-languageclient/node';
-import { getKedroProjectPath, isKedroProject } from './utilities';
+import { getKedroProjectPath, isKedroProject, updateKedroVizPanel } from './utilities';
 export async function selectEnvironment() {
     let kedroProjectPath = await getKedroProjectPath();
     let kedroProjectRootDir: string | undefined = undefined;
@@ -97,7 +97,7 @@ export async function executeServerCommand(lsClient: LanguageClient | undefined)
         return;
     }
     if (!lsClient.initializeResult) {
-        await vscode.window.showErrorMessage('The Language Server fail to initialise.');
+        await vscode.window.showErrorMessage('The Language Server failed to initialize.');
         return;
     }
 
@@ -129,7 +129,7 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
         return;
     }
     if (!lsClient.initializeResult) {
-        await vscode.window.showErrorMessage('The Language Server fail to initialise.');
+        await vscode.window.showErrorMessage('The Language Server failed to initialize.');
         return;
     }
 
@@ -160,19 +160,22 @@ export async function executeServerDefinitionCommand(lsClient: LanguageClient | 
     }
 }
 
-export async function executeGetProjectDataCommand(lsClient: LanguageClient | undefined) {
+export async function executeGetProjectDataCommand(
+    lsClient: LanguageClient | undefined,
+    pipelineName: string | undefined = undefined,
+) {
     if (!lsClient || lsClient.state !== State.Running) {
         await vscode.window.showErrorMessage('There is no language server running.');
         return;
     }
     if (!lsClient.initializeResult) {
-        await vscode.window.showErrorMessage('The Language Server fail to initialise.');
+        await vscode.window.showErrorMessage('The Language Server failed to initialize.');
         return;
     }
 
     const commandName = 'kedro.getProjectData';
     logger.info(`executing command: '${commandName}'`);
-    const result = await vscode.commands.executeCommand(commandName);
+    const result = await vscode.commands.executeCommand(commandName, pipelineName);
     return result;
 }
 
@@ -221,4 +224,44 @@ export async function executeDebugNodeWithNewNotebookCommand(payload?: string | 
         preview: false,
         viewColumn: vscode.ViewColumn.Active,
     });
+export async function filterPipelines(lsClient?: LanguageClient) {
+    try {
+        const projectData: any = await executeGetProjectDataCommand(lsClient);
+        const pipelineArray = projectData?.pipelines;
+
+        if (!pipelineArray || !Array.isArray(pipelineArray) || !pipelineArray.length) {
+            vscode.window.showInformationMessage('No pipelines found in this Kedro project.');
+            return;
+        }
+
+        const pipelineItems = pipelineArray.map((pipeline: { id: string; name: string }) => {
+            return {
+                label: pipeline.id,
+            };
+        });
+
+        const picked = await vscode.window.showQuickPick(pipelineItems, {
+            placeHolder: 'Select a pipeline to filter...',
+        });
+        if (!picked) {
+            // user canceled the pick
+            return;
+        }
+
+        // Send the updated projectData to the webview
+        updateKedroVizPanel(lsClient, picked.label);
+    } catch (err) {
+        vscode.window.showErrorMessage(
+            `Error filtering pipelines: ${err instanceof Error ? err.message : String(err)}`,
+        );
+    }
+}
+
+export async function toggleVizTheme() {
+    const config = vscode.workspace.getConfiguration('kedro');
+    const currentTheme = config.get<string>('vizTheme', 'dark');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    await config.update('vizTheme', newTheme, vscode.ConfigurationTarget.Workspace);
+    vscode.window.showInformationMessage(`Kedro Viz theme changed to ${newTheme}`);
 }

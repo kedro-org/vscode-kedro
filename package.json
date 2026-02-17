@@ -2,7 +2,7 @@
     "name": "Kedro",
     "displayName": "Kedro",
     "description": "A Kedro VSCode Extension.",
-    "version": "0.2.3",
+    "version": "0.6.0",
     "preview": false,
     "serverInfo": {
         "name": "Kedro",
@@ -62,6 +62,8 @@
         "lint": "eslint src --ext ts",
         "format-check": "prettier --check 'src/**/*.ts' 'build/**/*.yml' '.github/**/*.yml'",
         "test": "node ./out/test/runTest.js",
+        "test:unit": "jest",
+        "test:unit:watch": "jest --watch",
         "vsce-package": "vsce package -o kedro.vsix",
         "build:webview": "npm run build --prefix ./webview",
         "install:webview": "npm install --prefix ./webview"
@@ -138,9 +140,71 @@
                     "description": "Custom path to Kedro project root directory. Please add absolute path to your Kedro project root directory.",
                     "scope": "resource",
                     "type": "string"
+                },
+                "kedro.autoReloadKedroViz": {
+                    "default": false,
+                    "description": "Automatically reload Kedro Viz when Kedro project files change.",
+                    "scope": "resource",
+                    "type": "boolean"
+                },
+                "kedro.vizTheme": {
+                    "default": "dark",
+                    "description": "Theme for Kedro Viz visualization (light or dark).",
+                    "enum": [
+                        "light",
+                        "dark"
+                    ],
+                    "enumDescriptions": [
+                        "Light theme for Kedro Viz",
+                        "Dark theme for Kedro Viz"
+                    ],
+                    "scope": "resource",
+                    "type": "string"
                 }
             }
         },
+        "walkthroughs": [
+            {
+              "id": "kedro-extension-setup",
+              "title": "Get Started with Kedro",
+              "description": "Learn how to set up and run a Kedro project, and visualize your pipeline in VS Code using the Kedro extension.",
+              "steps": [
+                {
+                  "id": "setup-kedro",
+                  "title": "Step 0: Set up and run Kedro",
+                  "description": "Learn how to install & run Kedro and set up a virtual environment.",
+                  "media": { "markdown": "assets/markdown/install.md" }
+                },
+                {
+                  "id": "select-python-interpreter",
+                  "title": "Step 1: Select the correct Python interpreter",
+                  "description": "Make sure you select the correct Python interpreter that has Kedro installed.\n\n[Select Interpreter](command:python.setInterpreter)",
+                  "media": { "markdown": "assets/markdown/select_interpreter.md" },
+                  "completionEvents": ["onCommand:python.setInterpreter"]
+                },
+                {
+                  "id": "configure-project-root",
+                  "title": "Step 2: Configure project's root (Optional)",
+                  "description": "You may need to set the project's root path for Kedro-related features.\n\n[Set Kedro Project Path](command:kedro.kedroProjectPath)",
+                  "media": { "markdown": "assets/markdown/set_project_path.md" },
+                  "completionEvents": ["onCommand:kedro.kedroProjectPath"]
+                },
+                {
+                  "id": "run-kedro-viz",
+                  "title": "Step 3:  Install dependencies and run Kedro Viz",
+                  "description": "Open the command palette and type\n\n ``Kedro: Run Kedro Viz`` \n\n[Open Command Palette](command:workbench.action.showCommands)",
+                  "media": { "markdown": "assets/markdown/run_kedro-Viz.md" },
+                  "completionEvents": ["onCommand:kedro.runKedroViz"]
+                },
+                {
+                  "id": "learn-more",
+                  "title": "Learn more",
+                  "description": "Great job! You've now completed Getting Started with Kedro. But don't stop here! Please checkout Kedro documentation for more information.",
+                  "media": { "markdown": "assets/markdown/learn_more.md" }
+                }
+              ]
+            }
+        ],
         "commands": [
             {
                 "title": "Restart Server",
@@ -176,6 +240,16 @@
                 "command": "kedro.debugNodeWithNewNotebook",
                 "title": "Debug node with new notebook",
                 "category": "kedro"
+            },
+            {
+                "command": "kedro.filterPipelines",
+                "title": "Select Pipeline View",
+                "category": "kedro"
+            },
+            {
+                "command": "kedro.toggleVizTheme",
+                "title": "Toggle Kedro Viz Theme",
+                "category": "kedro"
             }
         ]
     },
@@ -188,19 +262,22 @@
     "devDependencies": {
         "@types/fs-extra": "^11.0.4",
         "@types/glob": "^8.1.0",
+        "@types/jest": "^29.5.12",
         "@types/node": "16.x",
         "@types/vscode": "1.78.0",
         "@typescript-eslint/eslint-plugin": "^7.14.1",
         "@typescript-eslint/parser": "^7.11.0",
         "@vscode/test-electron": "^2.3.8",
-        "@vscode/vsce": "^2.22.0",
+        "@vscode/vsce": "^3.2.1",
         "concurrently": "^8.2.2",
         "eslint": "^8.56.0",
-        "glob": "^10.3.10",
+        "jest": "^29.7.0",
+        "glob": "^11.0.0",
         "prettier": "^3.1.1",
+        "ts-jest": "^29.1.2",
         "ts-loader": "^9.5.1",
-        "typescript": "^5.3.3",
-        "webpack": "^5.89.0",
+        "typescript": "^5.6.3",
+        "webpack": "^5.96.0",
         "webpack-cli": "^5.1.4"
     }
 }

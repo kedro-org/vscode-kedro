@@ -1,5 +1,31 @@
 # Change Log
 
+# 0.6.0
+## Major changes and new features
+- Improved catalog validation with new layers including factory patterns, dataset configuration, and full catalog validation.
+- Added support for backwards compatibility with both Kedro 1.0+ and 0.19.x versions.
+
+# 0.5.0
+## Major changes and new features
+- Added a walkthrough to the Kedro VSCode extension to guide users on setup and getting started.
+
+## Other improvements
+- Added release automation for Kedro VSCode extension.
+
+# 0.4.0
+## Major changes and new features
+- Add filtering of pipelines on Kedro-Viz flowchart in VSCode.
+- Add documentation for filter pipeline on Kedro-Viz flowchart.
+- Update Kedro-Viz to 11.0.0 as minimum requirement for extension.
+- Introduce a Collapse/Expand pipeline button in Kedro-Viz flowchart.
+
+# 0.3.0
+## Major changes and new features
+- Support settings of custom project path in Kedro Extension.
+- Validate dataset classes in catalog using LSP.
+- Enable primary tool bar with toolbarOptions.
+- Remove the old dependencies with yaml schema.
+
 # 0.2.3
 ## Major changes and new features
 - Silenced the server initialisation error when working on a non-Kedro project.

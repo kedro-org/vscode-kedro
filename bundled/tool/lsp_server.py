@@ -116,6 +116,10 @@ class KedroLanguageServer(LanguageServer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.context = None
+        self.config_loader = None
+        self.dummy_catalog = None
+        self.run_env = None
 
     def is_kedro_project(self) -> bool:
         """Returns whether the current workspace is a kedro project."""
@@ -142,7 +146,7 @@ class KedroLanguageServer(LanguageServer):
             # context.env is set when KEDRO_ENV or kedro run --env is set
             run_env = context.env if context.env else config_loader.default_run_env
 
-        except RuntimeError as e:
+        except Exception as e:
             log_for_lsp_debug(str(e))
             project_metadata = None
             context = None
@@ -156,6 +160,8 @@ class KedroLanguageServer(LanguageServer):
             self.run_env = run_env
 
     def _get_dummy_catalog(self):
+        if not self.config_loader:
+            return None
         # '**/catalog*' reads modular pipeline configs
         conf_catalog = self.config_loader["catalog"]
         params = self.config_loader["parameters"]

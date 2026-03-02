@@ -250,7 +250,7 @@
     },
     "dependencies": {
         "@vscode/python-extension": "^1.0.5",
-        "axios": "^1.7.7",
+        "axios": "^1.13.5",
         "fs-extra": "^11.2.0",
         "vscode-languageclient": "^8.1.0"
     },

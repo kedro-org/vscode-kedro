@@ -9,5 +9,10 @@
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
         "noUnusedParameters": true
-    }
+    },
+    "exclude": [
+        "node_modules",
+        "**/__tests__/**",
+        "**/__mocks__/**"
+    ]
 }

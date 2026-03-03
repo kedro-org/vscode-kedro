@@ -184,30 +184,27 @@ type DebugNodeRequest = {
     type?: string;
 };
 
-function resolveCanonicalNodeName(payload?: string | DebugNodeRequest): string | undefined {
-    if (typeof payload === 'string') {
-        return payload;
-    }
-
-    return payload?.canonicalName;
+function resolveCanonicalNodeName(payload?: DebugNodeRequest): string | undefined {
+    const canonicalName = payload?.canonicalName?.trim();
+    return canonicalName || undefined;
 }
 
-export async function executeDebugNodeWithNewNotebookCommand(payload?: string | DebugNodeRequest) {
-    if (payload && typeof payload !== 'string' && payload.type && payload.type !== 'task') {
+export async function executeDebugNodeWithNewNotebookCommand(payload?: DebugNodeRequest) {
+    if (!payload) {
+        await vscode.window.showInformationMessage(
+            'Debug node notebook command requires selecting a task node in Kedro Viz.',
+        );
+        return;
+    }
+
+    if (payload.type && payload.type !== 'task') {
         await vscode.window.showInformationMessage('Debug node notebook currently supports task nodes only.');
         return;
     }
 
-    let canonicalName = resolveCanonicalNodeName(payload);
-
+    const canonicalName = resolveCanonicalNodeName(payload);
     if (!canonicalName) {
-        canonicalName = await window.showInputBox({
-            placeHolder: 'Type a canonical Kedro node name, for example data_processing.split_data_node',
-            prompt: 'No task node is selected in Kedro Viz. Click a task node first, or enter a canonical node name.',
-        });
-    }
-
-    if (!canonicalName) {
+        await vscode.window.showInformationMessage('Missing canonical Kedro task node name.');
         return;
     }
 

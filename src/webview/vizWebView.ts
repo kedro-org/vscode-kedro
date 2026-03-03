@@ -11,7 +11,6 @@ export default class KedroVizPanel {
      * Track the currently panel. Only allow a single panel to exist at a time.
      */
     public static currentPanel: KedroVizPanel | undefined;
-    private static _lastClickedTaskNodeName: string | undefined;
 
     public static readonly viewType = 'vizvscode';
     private _contentSet: boolean = false;
@@ -40,10 +39,6 @@ export default class KedroVizPanel {
 
     public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
         KedroVizPanel.currentPanel = new KedroVizPanel(panel, extensionUri);
-    }
-
-    public static getLastClickedTaskNodeName() {
-        return KedroVizPanel._lastClickedTaskNodeName;
     }
 
     private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
@@ -76,7 +71,6 @@ export default class KedroVizPanel {
                         if (message.node.type === 'data') {
                             await vscode.commands.executeCommand('kedro.sendDefinitionRequest', message.node.text);
                         } else {
-                            KedroVizPanel._lastClickedTaskNodeName = message.node.text;
                             await goToDefinition(message.node);
                         }
                         return;

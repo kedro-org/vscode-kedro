@@ -209,6 +209,9 @@ export async function executeDebugNodeWithNewNotebookCommand(payload?: string | 
     }
 
     const cellSource = [
+        '%load_ext kedro.ipython',
+        '%reload_kedro',
+        '',
         '# Canonical Kedro node name from Kedro Viz (it may differ from the pretty node label).',
         `%load_node ${canonicalName}`,
     ].join('\n');

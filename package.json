@@ -255,7 +255,9 @@
         "vscode-languageclient": "^8.1.0"
     },
     "overrides": {
-        "serialize-javascript@<7.0.3": "7.0.3"
+        "serialize-javascript@<7.0.3": "7.0.3",
+        "jws@>=3.0.0 <3.2.3": "3.2.3",
+        "jws@>=4.0.0 <4.0.1": "4.0.1"
     },
     "devDependencies": {
         "@types/fs-extra": "^11.0.4",

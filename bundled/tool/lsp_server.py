@@ -594,13 +594,12 @@ async def validate_catalog_content(ls: KedroLanguageServer, uri: str, content: s
 
     Strategy:
       1. FactoryPatternValidator — always runs (fast, no I/O).
-      2. FullCatalogValidator — validates the catalog as a whole (one DataCatalog call).
-         If it passes, the catalog is valid; skip the expensive per-dataset step.
-         If it fails, run DatasetConfigValidator to pin the error to a specific line.
-      3. DatasetConfigValidator — only runs when FullCatalogValidator finds errors.
-         Its per-dataset errors are more precise, so they replace the vague line-0 error.
-         If it finds nothing (cross-dataset issue like duplicate names), fall back to
-         the FullCatalogValidator error.
+      2. DatasetConfigValidator — always runs. It does catalog[dataset_name] which
+         triggers the actual class import, catching typos in dataset types. Produces
+         precise per-line diagnostics.
+      3. FullCatalogValidator — only runs when DatasetConfigValidator found nothing,
+         as a fallback for cross-dataset issues (e.g. conflicts between entries) that
+         per-dataset validation cannot detect. Its errors land on line 0.
     """
     diagnostics = []
 
@@ -620,27 +619,21 @@ async def validate_catalog_content(ls: KedroLanguageServer, uri: str, content: s
         except Exception as e:
             log_error(f"Error in FactoryPatternValidator: {e}")
 
-        # Step 2: whole-catalog validation (one DataCatalog.from_config call)
-        full_errors = []
+        # Step 2: per-dataset validation (catches bad types, missing fields, etc.)
+        dataset_errors = []
         try:
-            full_errors = FullCatalogValidator().validate(catalog_config, content)
+            dataset_errors = DatasetConfigValidator().validate(catalog_config, content)
         except Exception as e:
-            log_error(f"Error in FullCatalogValidator: {e}")
+            log_error(f"Error in DatasetConfigValidator: {e}")
 
-        if full_errors:
-            # Step 3: per-dataset validation to get precise line numbers
-            dataset_errors = []
+        if dataset_errors:
+            diagnostics.extend(dataset_errors)
+        else:
+            # Step 3: whole-catalog validation as fallback for cross-dataset issues
             try:
-                dataset_errors = DatasetConfigValidator().validate(catalog_config, content)
+                diagnostics.extend(FullCatalogValidator().validate(catalog_config, content))
             except Exception as e:
-                log_error(f"Error in DatasetConfigValidator: {e}")
-
-            if dataset_errors:
-                # Per-dataset errors pinpoint the bad line — prefer them
-                diagnostics.extend(dataset_errors)
-            else:
-                # Likely a cross-dataset issue (e.g. duplicate names); show full error
-                diagnostics.extend(full_errors)
+                log_error(f"Error in FullCatalogValidator: {e}")
 
     except Exception as e:
         log_error(f"Error parsing catalog content: {e}")

@@ -189,11 +189,7 @@ export const registerCommandsAndEvents = (
                 setKedroProjectPath();
             }),
             registerCommand(CMD_DEBUG_NODE_WITH_NEW_NOTEBOOK, async (payload) => {
-                const fallbackPayload = payload ?? {
-                    canonicalName: KedroVizPanel.getLastClickedTaskNodeName(),
-                    type: 'task',
-                };
-                await executeDebugNodeWithNewNotebookCommand(fallbackPayload);
+                await executeDebugNodeWithNewNotebookCommand(payload);
             }),
             registerCommand(CMD_TOGGLE_VIZ_THEME, async () => {
                 await toggleVizTheme();

@@ -227,6 +227,7 @@ export async function executeDebugNodeWithNewNotebookCommand(payload?: string | 
         preview: false,
         viewColumn: vscode.ViewColumn.Active,
     });
+}
 export async function filterPipelines(lsClient?: LanguageClient) {
     try {
         const projectData: any = await executeGetProjectDataCommand(lsClient);

@@ -194,6 +194,7 @@ export const registerCommandsAndEvents = (
                     type: 'task',
                 };
                 await executeDebugNodeWithNewNotebookCommand(fallbackPayload);
+            }),
             registerCommand(CMD_TOGGLE_VIZ_THEME, async () => {
                 await toggleVizTheme();
                 // If KedroVizPanel is open, update the theme

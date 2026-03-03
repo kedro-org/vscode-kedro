@@ -237,6 +237,11 @@
                 "category": "kedro"
             },
             {
+                "command": "kedro.debugNodeWithNewNotebook",
+                "title": "Debug node with new notebook",
+                "category": "kedro"
+            },
+            {
                 "command": "kedro.filterPipelines",
                 "title": "Select Pipeline View",
                 "category": "kedro"

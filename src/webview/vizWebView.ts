@@ -83,6 +83,9 @@ export default class KedroVizPanel {
                     case 'showOutput':
                         await vscode.commands.executeCommand('kedro.showOutputChannel');
                         return;
+                    case 'showPipelineFilter':
+                        await vscode.commands.executeCommand('kedro.filterPipelines');
+                        return;
                 }
             },
             null,
@@ -93,6 +96,11 @@ export default class KedroVizPanel {
     public updateData(data: any) {
         // Send a message to the webview.
         this._panel.webview.postMessage({ command: 'updateData', data });
+    }
+
+    public updateTheme(theme: string) {
+        // Send a message to the webview to update theme.
+        this._panel.webview.postMessage({ command: 'updateTheme', theme });
     }
 
     public dispose() {

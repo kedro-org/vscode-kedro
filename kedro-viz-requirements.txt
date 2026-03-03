@@ -1,1 +1,1 @@
-kedro-viz>=10.1.0
+kedro-viz>=11.0.0

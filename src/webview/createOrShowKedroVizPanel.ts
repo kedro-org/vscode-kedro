@@ -23,7 +23,7 @@ export async function handleKedroViz(
     } else {
         const header = 'Kedro-Viz Dependency Required';
         const options: vscode.MessageOptions = {
-            detail: 'Kedro-Viz version 10.1.0 or later is required to visualize your project\'s data pipeline. It’s not installed in your virtual environment. Click "Install" to set it up with pip.',
+            detail: 'Kedro-Viz version 11.0.0 or later is required to visualize your project\'s data pipeline. It’s not installed in your virtual environment. Click "Install" to set it up with pip.',
             modal: true,
         };
 

@@ -51,9 +51,6 @@ export const runServer = async (
     }
 
     const interpreterDetails = await getInterpreterDetails();
-    console.log('===============DEBUG============');
-    console.log(interpreterDetails);
-    console.log('===============DEBUG============');
 
     if (interpreterDetails.path) {
         traceVerbose(`Using interpreter from Python extension: ${interpreterDetails.path.join(' ')}`);

@@ -12,13 +12,14 @@ import os
 import pathlib
 import re
 import sys
-import asyncio
 from pathlib import Path
 from typing import Any, Dict, Tuple, Optional, List
 
-from common import update_sys_path
+# Must be set before any Kedro import to prevent kedro.framework.project from
+# overriding the logging config with rich_logging.yml (which breaks pygls).
+os.environ["KEDRO_LOGGING_CONFIG"] = str(Path(__file__).parent / "dummy_logging.yml")
 
-from kedro.io import DataCatalog
+from common import update_sys_path
 
 # **********************************************************
 # Update sys.path before importing any bundled libraries.
@@ -81,14 +82,6 @@ from pygls import uris, workspace
 from pygls.workspace import TextDocument
 
 """Kedro Language Server."""
-# todo: we should either investigate why logging interact with lsp or find a better way.
-# Need to stop kedro.framework.project.LOGGING from changing logging settings, otherwise pygls fails with unknown reason.
-import os
-
-os.environ["KEDRO_LOGGING_CONFIG"] = str(Path(__file__).parent / "dummy_logging.yml")
-
-from typing import List
-
 import yaml
 from _lsp_server import DummyDataCatalog, SafeLineLoader
 from kedro.config import OmegaConfigLoader
@@ -98,6 +91,7 @@ from kedro.framework.startup import (
     ProjectMetadata,
     bootstrap_project,
 )
+from kedro.io import DataCatalog
 from pygls.server import LanguageServer
 
 # Import validators
@@ -197,6 +191,7 @@ async def initialize(params: lsp.InitializeParams) -> None:
 
     # Read the first workspace only in case there are multiples of them.
     workspace_settings = next(iter(WORKSPACE_SETTINGS.values()))
+    global IS_EXPERIMENTAL
     if not workspace_settings.get("isExperimental") == "yes":
         IS_EXPERIMENTAL = workspace_settings.get("isExperimental")
 
@@ -213,9 +208,6 @@ async def initialize(params: lsp.InitializeParams) -> None:
 
     # After initialisation, validate all catalog files
     await validate_all_catalogs(LSP_SERVER)
-
-     # Start periodic revalidation
-    asyncio.create_task(periodic_revalidation(LSP_SERVER))
 
     # Set up file watchers for catalog files
     catalog_pattern = FileSystemWatcher(
@@ -598,62 +590,84 @@ def find_all_catalog_files(root_path):
 
 
 async def validate_catalog_content(ls: KedroLanguageServer, uri: str, content: str):
-    """Validate catalog content using a chain of validators"""
+    """Validate catalog content using a chain of validators.
+
+    Strategy:
+      1. FactoryPatternValidator — always runs (fast, no I/O).
+      2. FullCatalogValidator — validates the catalog as a whole (one DataCatalog call).
+         If it passes, the catalog is valid; skip the expensive per-dataset step.
+         If it fails, run DatasetConfigValidator to pin the error to a specific line.
+      3. DatasetConfigValidator — only runs when FullCatalogValidator finds errors.
+         Its per-dataset errors are more precise, so they replace the vague line-0 error.
+         If it finds nothing (cross-dataset issue like duplicate names), fall back to
+         the FullCatalogValidator error.
+    """
     diagnostics = []
-    
-    # List of validators to run in order
-    validators = [
-        FactoryPatternValidator(),
-        FullCatalogValidator(),
-        DatasetConfigValidator(),
-    ]
-    
+
     try:
-        # Parse the YAML content
         catalog_config = yaml.load(content, Loader=SafeLineLoader)
         if not isinstance(catalog_config, dict):
-            # Handle invalid catalog format
-            diagnostic = create_diagnostic(
+            ls.publish_diagnostics(uri, [create_diagnostic(
                 range_start=Position(line=0, character=0),
                 range_end=Position(line=0, character=0),
                 message="Invalid catalog format: root must be a mapping/dictionary"
-            )
-            diagnostics.append(diagnostic)
-            ls.publish_diagnostics(uri, diagnostics)
+            )])
             return
-            
-        # Run each validator in sequence
-        for validator in validators:
+
+        # Step 1: factory-pattern syntax check (no DataCatalog instantiation)
+        try:
+            diagnostics.extend(FactoryPatternValidator().validate(catalog_config, content))
+        except Exception as e:
+            log_error(f"Error in FactoryPatternValidator: {e}")
+
+        # Step 2: whole-catalog validation (one DataCatalog.from_config call)
+        full_errors = []
+        try:
+            full_errors = FullCatalogValidator().validate(catalog_config, content)
+        except Exception as e:
+            log_error(f"Error in FullCatalogValidator: {e}")
+
+        if full_errors:
+            # Step 3: per-dataset validation to get precise line numbers
+            dataset_errors = []
             try:
-                validator_diagnostics = validator.validate(catalog_config, content)
-                diagnostics.extend(validator_diagnostics)
-            except Exception as validator_error:
-                log_error(f"Error in validator {validator.__class__.__name__}: {validator_error}")
-                
+                dataset_errors = DatasetConfigValidator().validate(catalog_config, content)
+            except Exception as e:
+                log_error(f"Error in DatasetConfigValidator: {e}")
+
+            if dataset_errors:
+                # Per-dataset errors pinpoint the bad line — prefer them
+                diagnostics.extend(dataset_errors)
+            else:
+                # Likely a cross-dataset issue (e.g. duplicate names); show full error
+                diagnostics.extend(full_errors)
+
     except Exception as e:
-        # Handle YAML parsing errors
         log_error(f"Error parsing catalog content: {e}")
-        diagnostic = create_diagnostic(
+        diagnostics.append(create_diagnostic(
             range_start=Position(line=0, character=0),
             range_end=Position(line=0, character=0),
             message=f"YAML parsing error: {e}"
-        )
-        diagnostics.append(diagnostic)
+        ))
 
-    # Publish diagnostics for the file
     ls.publish_diagnostics(uri, diagnostics)
 
 
 async def validate_catalog(ls: KedroLanguageServer, uri: str):
     """Validate a catalog file, preferring in-memory content over disk content."""
     file_path = pathlib.Path(uris.to_fs_path(uri))
-    
-    # Try to get the content from the open document
+
+    # pygls returns a document object even for unopened files, but source may be empty.
+    # Only use in-memory content when it is non-empty.
+    content = None
     try:
         document = ls.workspace.get_text_document(uri)
-        content = document.source
+        if document.source:
+            content = document.source
     except Exception:
-        # Document not open in editor, read from disk
+        pass
+
+    if content is None:
         if not file_path.exists():
             ls.publish_diagnostics(uri, [])
             return
@@ -666,15 +680,6 @@ async def validate_catalog(ls: KedroLanguageServer, uri: str):
 
     await validate_catalog_content(ls, uri, content)
 
-
-async def periodic_revalidation(ls: KedroLanguageServer, interval: int = 5):
-    """Periodically revalidate all catalog files."""
-    while True:
-        try:
-            await validate_all_catalogs(ls)
-        except Exception as e:
-            log_error(f"Error during periodic revalidation: {e}")
-        await asyncio.sleep(interval)
 
 
 def is_dataset_importable(dataset_type: str) -> Tuple[bool, Optional[str]]:

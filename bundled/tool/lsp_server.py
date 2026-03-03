@@ -241,6 +241,8 @@ def _get_conf_paths(server: KedroLanguageServer, key):
 
     """
     config_loader: OmegaConfigLoader = server.config_loader
+    if not config_loader:
+        return []
     patterns = config_loader.config_patterns.get(key, [])
     # By default is local
     run_env = str(Path(config_loader.conf_source) / server.run_env)

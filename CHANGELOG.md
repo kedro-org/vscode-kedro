@@ -1,5 +1,9 @@
 # Change Log
 
+# Unreleased
+## Major changes and new features
+- Added a native VS Code right-click action in Kedro Viz task nodes to open a prefilled debug notebook with `%load_node <canonicalName>`.
+
 # 0.6.0
 ## Major changes and new features
 - Improved catalog validation with new layers including factory patterns, dataset configuration, and full catalog validation.

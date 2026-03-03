@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import { getWorkspaceFolders } from './vscodeapi';
 import { LanguageClient, State } from 'vscode-languageclient/node';
 import { getKedroProjectPath, isKedroProject, updateKedroVizPanel } from './utilities';
+import { traceInfo, traceWarn } from './log/logging';
 export async function selectEnvironment() {
     let kedroProjectPath = await getKedroProjectPath();
     let kedroProjectRootDir: string | undefined = undefined;
@@ -184,16 +185,26 @@ type DebugNodeRequest = {
     type?: string;
 };
 
+function formatDebugPayload(payload?: DebugNodeRequest): string {
+    try {
+        return JSON.stringify(payload);
+    } catch {
+        return '[unserializable payload]';
+    }
+}
+
 function resolveCanonicalNodeName(payload?: DebugNodeRequest): string | undefined {
     const canonicalName = payload?.canonicalName?.trim();
     return canonicalName || undefined;
 }
 
 export async function executeDebugNodeWithNewNotebookCommand(payload?: DebugNodeRequest) {
+    const debugPayload = formatDebugPayload(payload);
+    traceInfo(`[debugNodeWithNewNotebook] payload=${debugPayload}`);
+
     if (!payload) {
-        await vscode.window.showInformationMessage(
-            'Debug node notebook command requires selecting a task node in Kedro Viz.',
-        );
+        traceWarn('[debugNodeWithNewNotebook] missing payload from webview context');
+        await vscode.window.showInformationMessage('Debug node notebook command requires selecting a task node in Kedro Viz.');
         return;
     }
 
@@ -204,6 +215,8 @@ export async function executeDebugNodeWithNewNotebookCommand(payload?: DebugNode
 
     const canonicalName = resolveCanonicalNodeName(payload);
     if (!canonicalName) {
+        const payloadKeys = Object.keys(payload).join(', ') || '(none)';
+        traceWarn(`[debugNodeWithNewNotebook] missing canonicalName. keys=${payloadKeys} payload=${debugPayload}`);
         await vscode.window.showInformationMessage('Missing canonical Kedro task node name.');
         return;
     }

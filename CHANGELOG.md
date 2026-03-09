@@ -1,5 +1,9 @@
 # Change Log
 
+# Upcoming Changes
+## Bug fix
+- Fixed AttributeError on startup failure for LSP server.
+
 # 0.6.0
 ## Major changes and new features
 - Improved catalog validation with new layers including factory patterns, dataset configuration, and full catalog validation.

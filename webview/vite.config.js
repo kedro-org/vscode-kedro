@@ -9,8 +9,9 @@ export default defineConfig({
       input: 'public/index.html',
       output: {
         entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].chunk.js',
-        assetFileNames: 'assets/[name].[ext]'
+        assetFileNames: 'assets/[name].[ext]',
+        manualChunks: undefined,
+        inlineDynamicImports: true
       }
     }
   },

@@ -154,7 +154,7 @@ class KedroLanguageServer(LanguageServer):
             self.config_loader = config_loader
             self.dummy_catalog = self._get_dummy_catalog()
             self.run_env = run_env
-            log_to_output(f"_set_project_with_workspace: project_metadata={self.project_metadata is not None}, config_loader={self.config_loader is not None}, self.config_loader={self.config_loader}, dummy_catalog={self.dummy_catalog is not None}")
+            log_to_output(f"_set_project_with_workspace: project_metadata={self.project_metadata is not None}, config_loader={self.config_loader is not None}, dummy_catalog={self.dummy_catalog is not None}")
 
     def _get_dummy_catalog(self):
         if self.config_loader is None:
@@ -259,7 +259,7 @@ def _get_conf_paths(server: KedroLanguageServer, key):
     run_env = str(Path(config_loader.conf_source) / server.run_env)
     base_env = str(Path(config_loader.conf_source) / config_loader.base_env)
 
-    log_to_output(f"_get_conf_paths: key={key}, patterns={patterns}, run_env={run_env}, base_env={base_env}")
+    log_for_lsp_debug(f"_get_conf_paths: key={key}, patterns={patterns}, run_env={run_env}, base_env={base_env}")
 
     # Extract from OmegaConfigLoader source code
     paths = []
@@ -354,8 +354,6 @@ def definition(
                 params.position, RE_START_WORD, RE_END_WORD
             )
         catalog_paths = _get_conf_paths(server, "catalog")
-        log_to_output(f"Attempt to search `{word}` from catalog")
-        log_to_output(f"{catalog_paths=}")
         log_for_lsp_debug(f"Attempt to search `{word}` from catalog")
         log_for_lsp_debug(f"{catalog_paths=}")
 
@@ -492,7 +490,7 @@ def hover(ls: KedroLanguageServer, params: HoverParams):
     _check_project()
     if not ls.is_kedro_project():
         return None
-    if not ls.dummy_catalog:
+    if ls.dummy_catalog is None:
         return None
 
     pos = params.position

@@ -9,7 +9,7 @@
 # run the above commands manually.
 
 # Required packages
-pygls
+pygls>=1.3.1,<2.0.0
 packaging
 
 # TODO: Add your tool here

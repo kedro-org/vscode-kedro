@@ -5,12 +5,13 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: 'dist',
+    cssCodeSplit: false,
     rollupOptions: {
-      input: 'public/index.html',
+      input: 'src/index.jsx',
       output: {
+        format: 'iife',
         entryFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name].[ext]',
-        manualChunks: undefined,
+        assetFileNames: 'assets/index.[ext]',
         inlineDynamicImports: true
       }
     }

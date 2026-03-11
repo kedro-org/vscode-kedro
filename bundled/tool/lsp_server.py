@@ -377,6 +377,42 @@ def definition(
                 log_for_lsp_debug(f"{location=}")
                 return [location]
 
+    def _query_pipeline_from_catalog(document, word=None):
+        """When in a catalog file, find where the dataset is used in pipeline.py files."""
+        document_uri = params.text_document.uri
+        file_path = Path(uris.to_fs_path(document_uri))
+
+        # Only do this for catalog YAML files
+        if not (file_path.name.startswith("catalog") and file_path.suffix in {".yml", ".yaml"}):
+            return None
+
+        if not word:
+            word = document.word_at_position(params.position, RE_START_WORD, RE_END_WORD)
+        # Strip trailing colon from YAML keys (e.g. "shuttles:" -> "shuttles")
+        word = word.rstrip(":")
+        log_for_lsp_debug(f"_query_pipeline_from_catalog: word={word}, file={file_path.name}")
+
+        try:
+            from importlib.resources import files
+            from kedro.framework.project import PACKAGE_NAME
+
+            pipelines_package = files(f"{PACKAGE_NAME}.pipelines")
+            log_for_lsp_debug(f"_query_pipeline_from_catalog: searching in {pipelines_package}")
+
+            for pipeline_file in glob.glob(f"{str(pipelines_package)}/**/*.py", recursive=True):
+                abs_path = Path(pipeline_file).absolute()
+                try:
+                    content = abs_path.read_text(encoding='utf-8').splitlines()
+                    for i, line in enumerate(content):
+                        if f'"{word}"' in line:
+                            return [reference_location(abs_path, i)]
+                except (IOError, UnicodeDecodeError):
+                    continue
+        except Exception as e:
+            log_for_lsp_debug(f"Error searching pipelines from catalog: {e}")
+
+        return None
+
     if params:
         document: TextDocument = server.workspace.get_text_document(
             params.text_document.uri
@@ -387,6 +423,9 @@ def definition(
     if result:
         return result
     result = _query_catalog(document, word)
+    if result:
+        return result
+    result = _query_pipeline_from_catalog(document, word)
     if result:
         return result
 

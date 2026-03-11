@@ -121,12 +121,14 @@ class KedroLanguageServer(LanguageServer):
 
     def _set_project_with_workspace(self):
         if self.project_metadata:
+            log_to_output("_set_project_with_workspace: already initialized, skipping")
             return
         try:
             self.workspace_settings = next(iter(WORKSPACE_SETTINGS.values()))
             root_path = pathlib.Path(
                 self.workspace_settings.get("kedroProjectPath") or self.workspace.root_path
             )  # todo: From language server, can we get it from client initialise response instead?
+            log_to_output(f"_set_project_with_workspace: bootstrapping project at {root_path}")
             project_metadata = bootstrap_project(root_path)
             env = None
             if self.workspace_settings.get("environment"):
@@ -141,7 +143,7 @@ class KedroLanguageServer(LanguageServer):
             run_env = context.env if context.env else config_loader.default_run_env
 
         except Exception as e:
-            log_for_lsp_debug(str(e))
+            log_to_output(f"_set_project_with_workspace: FAILED: {e}")
             project_metadata = None
             context = None
             config_loader = None
@@ -152,17 +154,22 @@ class KedroLanguageServer(LanguageServer):
             self.config_loader = config_loader
             self.dummy_catalog = self._get_dummy_catalog()
             self.run_env = run_env
+            log_to_output(f"_set_project_with_workspace: project_metadata={self.project_metadata is not None}, config_loader={self.config_loader is not None}, self.config_loader={self.config_loader}, dummy_catalog={self.dummy_catalog is not None}")
 
     def _get_dummy_catalog(self):
-        if not self.config_loader:
+        if self.config_loader is None:
             return None
-        # '**/catalog*' reads modular pipeline configs
-        conf_catalog = self.config_loader["catalog"]
-        params = self.config_loader["parameters"]
-        
-        # The DummyDataCatalog now handles internally
-        catalog = DummyDataCatalog(conf_catalog=conf_catalog, feed_dict=params)
-        return catalog
+        try:
+            # '**/catalog*' reads modular pipeline configs
+            conf_catalog = self.config_loader["catalog"]
+            params = self.config_loader["parameters"]
+
+            # The DummyDataCatalog now handles internally
+            catalog = DummyDataCatalog(conf_catalog=conf_catalog, feed_dict=params)
+            return catalog
+        except Exception as e:
+            log_to_output(f"Failed to create DummyDataCatalog: {e}")
+            return None
 
 
 LSP_SERVER = KedroLanguageServer("pygls-kedro-example", "v0.1")
@@ -210,23 +217,26 @@ async def initialize(params: lsp.InitializeParams) -> None:
     await validate_all_catalogs(LSP_SERVER)
 
     # Set up file watchers for catalog files
-    catalog_pattern = FileSystemWatcher(
-        glob_pattern="**/catalog*.y?(a)ml",
-        kind=(WatchKind.Create | WatchKind.Change | WatchKind.Delete)
-    )
-    await LSP_SERVER.register_capability_async(
-        RegistrationParams(
-            registrations=[
-                Registration(
-                    id="catalogWatcher",
-                    method="workspace/didChangeWatchedFiles",
-                    register_options=DidChangeWatchedFilesRegistrationOptions(
-                        watchers=[catalog_pattern]
-                    ),
-                )
-            ]
+    try:
+        catalog_pattern = FileSystemWatcher(
+            glob_pattern="**/catalog*.y?(a)ml",
+            kind=(WatchKind.Create | WatchKind.Change | WatchKind.Delete)
         )
-    )
+        await LSP_SERVER.register_capability_async(
+            RegistrationParams(
+                registrations=[
+                    Registration(
+                        id="catalogWatcher",
+                        method="workspace/didChangeWatchedFiles",
+                        register_options=DidChangeWatchedFilesRegistrationOptions(
+                            watchers=[catalog_pattern]
+                        ),
+                    )
+                ]
+            )
+        )
+    except Exception as e:
+        log_to_output(f"File watcher registration not supported by client: {e}")
 
 ### Kedro LSP logic
 def _get_conf_paths(server: KedroLanguageServer, key):
@@ -241,12 +251,15 @@ def _get_conf_paths(server: KedroLanguageServer, key):
 
     """
     config_loader: OmegaConfigLoader = server.config_loader
-    if not config_loader:
+    if config_loader is None:
+        log_to_output(f"_get_conf_paths: config_loader is None")
         return []
     patterns = config_loader.config_patterns.get(key, [])
     # By default is local
     run_env = str(Path(config_loader.conf_source) / server.run_env)
     base_env = str(Path(config_loader.conf_source) / config_loader.base_env)
+
+    log_to_output(f"_get_conf_paths: key={key}, patterns={patterns}, run_env={run_env}, base_env={base_env}")
 
     # Extract from OmegaConfigLoader source code
     paths = []
@@ -341,6 +354,8 @@ def definition(
                 params.position, RE_START_WORD, RE_END_WORD
             )
         catalog_paths = _get_conf_paths(server, "catalog")
+        log_to_output(f"Attempt to search `{word}` from catalog")
+        log_to_output(f"{catalog_paths=}")
         log_for_lsp_debug(f"Attempt to search `{word}` from catalog")
         log_for_lsp_debug(f"{catalog_paths=}")
 
@@ -377,14 +392,8 @@ def definition(
     if result:
         return result
 
-    # If no result, return current location
-    # This is a VSCode specific logic called Alternative Definition Command
-    # By default, it triggers Go to Reference so it supports using mouse click for both directions
-    # from pipeline to config and config to pipeline
-    uri = params.text_document.uri
-    pos = params.position
-    curr_pos = Position(line=pos.line, character=pos.character)
-    return Location(uri=uri, range=Range(start=curr_pos, end=curr_pos))
+    # Return None so VS Code falls through to other definition providers (e.g. Pylance)
+    return None
 
 
 def reference_location(path, line):
@@ -418,11 +427,11 @@ def references(
 
     log_for_lsp_debug(f"Query Reference keyword: {word}")
     word = word.strip(":")
-    import importlib_resources
+    from importlib.resources import files
     from kedro.framework.project import PACKAGE_NAME
 
     # Find pipelines module
-    pipelines_package = importlib_resources.files(f"{PACKAGE_NAME}.pipelines")
+    pipelines_package = files(f"{PACKAGE_NAME}.pipelines")
 
     # Iterate on pipelines/**/*.py that fits both modular or flat pipeline structure.
     result = []
@@ -479,6 +488,12 @@ def completions(server: KedroLanguageServer, params: CompletionParams):
 @LSP_SERVER.feature(TEXT_DOCUMENT_HOVER)
 def hover(ls: KedroLanguageServer, params: HoverParams):
     import pprint
+
+    _check_project()
+    if not ls.is_kedro_project():
+        return None
+    if not ls.dummy_catalog:
+        return None
 
     pos = params.position
     document_uri = params.text_document.uri

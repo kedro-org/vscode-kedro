@@ -75,6 +75,7 @@ export async function getWorkspaceSettings(
         isExperimental: config.get<string>(`isExperimental`) ?? 'yes',
         environment: config.get<string>(`environment`) ?? '',
         kedroProjectPath: config.get<string>(`kedroProjectPath`) ?? '',
+        autoReloadKedroViz: config.get<boolean>(`autoReloadKedroViz`) ?? false,
     };
     return workspaceSetting;
 }
@@ -106,6 +107,7 @@ export async function getGlobalSettings(namespace: string, includeInterpreter?: 
         isExperimental: getGlobalValue<string>(config, 'isExperimental', 'yes'),
         environment: getGlobalValue<string>(config, 'environment', ''),
         kedroProjectPath: getGlobalValue<string>(config, 'kedroProjectPath', ''),
+        autoReloadKedroViz: getGlobalValue<boolean>(config, 'autoReloadKedroViz', false),
     };
     return setting;
 }

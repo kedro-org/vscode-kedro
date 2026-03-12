@@ -12,13 +12,14 @@ import os
 import pathlib
 import re
 import sys
-import asyncio
 from pathlib import Path
-from typing import Any, Dict, Tuple, Optional
+from typing import Any, Dict, Tuple, Optional, List
+
+# Must be set before any Kedro import to prevent kedro.framework.project from
+# overriding the logging config with rich_logging.yml (which breaks pygls).
+os.environ["KEDRO_LOGGING_CONFIG"] = str(Path(__file__).parent / "dummy_logging.yml")
 
 from common import update_sys_path
-
-from kedro.io import DataCatalog
 
 # **********************************************************
 # Update sys.path before importing any bundled libraries.
@@ -81,14 +82,6 @@ from pygls import uris, workspace
 from pygls.workspace import TextDocument
 
 """Kedro Language Server."""
-# todo: we should either investigate why logging interact with lsp or find a better way.
-# Need to stop kedro.framework.project.LOGGING from changing logging settings, otherwise pygls fails with unknown reason.
-import os
-
-os.environ["KEDRO_LOGGING_CONFIG"] = str(Path(__file__).parent / "dummy_logging.yml")
-
-from typing import List
-
 import yaml
 from _lsp_server import DummyDataCatalog, SafeLineLoader
 from kedro.config import OmegaConfigLoader
@@ -98,7 +91,16 @@ from kedro.framework.startup import (
     ProjectMetadata,
     bootstrap_project,
 )
+from kedro.io import DataCatalog
 from pygls.server import LanguageServer
+
+# Import validators
+from validators import (
+    FactoryPatternValidator,
+    DatasetConfigValidator,
+    FullCatalogValidator,
+    create_diagnostic,
+)
 
 
 class KedroLanguageServer(LanguageServer):
@@ -108,6 +110,10 @@ class KedroLanguageServer(LanguageServer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.context = None
+        self.config_loader = None
+        self.dummy_catalog = None
+        self.run_env = None
 
     def is_kedro_project(self) -> bool:
         """Returns whether the current workspace is a kedro project."""
@@ -115,12 +121,14 @@ class KedroLanguageServer(LanguageServer):
 
     def _set_project_with_workspace(self):
         if self.project_metadata:
+            log_to_output("_set_project_with_workspace: already initialized, skipping")
             return
         try:
             self.workspace_settings = next(iter(WORKSPACE_SETTINGS.values()))
             root_path = pathlib.Path(
                 self.workspace_settings.get("kedroProjectPath") or self.workspace.root_path
             )  # todo: From language server, can we get it from client initialise response instead?
+            log_to_output(f"_set_project_with_workspace: bootstrapping project at {root_path}")
             project_metadata = bootstrap_project(root_path)
             env = None
             if self.workspace_settings.get("environment"):
@@ -134,8 +142,8 @@ class KedroLanguageServer(LanguageServer):
             # context.env is set when KEDRO_ENV or kedro run --env is set
             run_env = context.env if context.env else config_loader.default_run_env
 
-        except RuntimeError as e:
-            log_for_lsp_debug(str(e))
+        except Exception as e:
+            log_to_output(f"_set_project_with_workspace: FAILED: {e}")
             project_metadata = None
             context = None
             config_loader = None
@@ -146,17 +154,22 @@ class KedroLanguageServer(LanguageServer):
             self.config_loader = config_loader
             self.dummy_catalog = self._get_dummy_catalog()
             self.run_env = run_env
+            log_to_output(f"_set_project_with_workspace: project_metadata={self.project_metadata is not None}, config_loader={self.config_loader is not None}, dummy_catalog={self.dummy_catalog is not None}")
 
     def _get_dummy_catalog(self):
-        # '**/catalog*' reads modular pipeline configs
-        conf_catalog = self.config_loader["catalog"]
-        params = self.config_loader["parameters"]
-        catalog: DummyDataCatalog = DummyDataCatalog(
-            conf_catalog=conf_catalog, feed_dict=params
-        )
-        feed_dict = catalog._get_feed_dict()
-        catalog.add_feed_dict(feed_dict)
-        return catalog
+        if self.config_loader is None:
+            return None
+        try:
+            # '**/catalog*' reads modular pipeline configs
+            conf_catalog = self.config_loader["catalog"]
+            params = self.config_loader["parameters"]
+
+            # The DummyDataCatalog now handles internally
+            catalog = DummyDataCatalog(conf_catalog=conf_catalog, feed_dict=params)
+            return catalog
+        except Exception as e:
+            log_to_output(f"Failed to create DummyDataCatalog: {e}")
+            return None
 
 
 LSP_SERVER = KedroLanguageServer("pygls-kedro-example", "v0.1")
@@ -185,6 +198,7 @@ async def initialize(params: lsp.InitializeParams) -> None:
 
     # Read the first workspace only in case there are multiples of them.
     workspace_settings = next(iter(WORKSPACE_SETTINGS.values()))
+    global IS_EXPERIMENTAL
     if not workspace_settings.get("isExperimental") == "yes":
         IS_EXPERIMENTAL = workspace_settings.get("isExperimental")
 
@@ -202,27 +216,27 @@ async def initialize(params: lsp.InitializeParams) -> None:
     # After initialisation, validate all catalog files
     await validate_all_catalogs(LSP_SERVER)
 
-     # Start periodic revalidation
-    asyncio.create_task(periodic_revalidation(LSP_SERVER))
-
     # Set up file watchers for catalog files
-    catalog_pattern = FileSystemWatcher(
-        glob_pattern="**/catalog*.y?(a)ml",
-        kind=(WatchKind.Create | WatchKind.Change | WatchKind.Delete)
-    )
-    await LSP_SERVER.register_capability_async(
-        RegistrationParams(
-            registrations=[
-                Registration(
-                    id="catalogWatcher",
-                    method="workspace/didChangeWatchedFiles",
-                    register_options=DidChangeWatchedFilesRegistrationOptions(
-                        watchers=[catalog_pattern]
-                    ),
-                )
-            ]
+    try:
+        catalog_pattern = FileSystemWatcher(
+            glob_pattern="**/catalog*.y?(a)ml",
+            kind=(WatchKind.Create | WatchKind.Change | WatchKind.Delete)
         )
-    )
+        await LSP_SERVER.register_capability_async(
+            RegistrationParams(
+                registrations=[
+                    Registration(
+                        id="catalogWatcher",
+                        method="workspace/didChangeWatchedFiles",
+                        register_options=DidChangeWatchedFilesRegistrationOptions(
+                            watchers=[catalog_pattern]
+                        ),
+                    )
+                ]
+            )
+        )
+    except Exception as e:
+        log_to_output(f"File watcher registration not supported by client: {e}")
 
 ### Kedro LSP logic
 def _get_conf_paths(server: KedroLanguageServer, key):
@@ -237,10 +251,15 @@ def _get_conf_paths(server: KedroLanguageServer, key):
 
     """
     config_loader: OmegaConfigLoader = server.config_loader
+    if config_loader is None:
+        log_to_output(f"_get_conf_paths: config_loader is None")
+        return []
     patterns = config_loader.config_patterns.get(key, [])
     # By default is local
     run_env = str(Path(config_loader.conf_source) / server.run_env)
     base_env = str(Path(config_loader.conf_source) / config_loader.base_env)
+
+    log_for_lsp_debug(f"_get_conf_paths: key={key}, patterns={patterns}, run_env={run_env}, base_env={base_env}")
 
     # Extract from OmegaConfigLoader source code
     paths = []
@@ -358,6 +377,42 @@ def definition(
                 log_for_lsp_debug(f"{location=}")
                 return [location]
 
+    def _query_pipeline_from_catalog(document, word=None):
+        """When in a catalog file, find where the dataset is used in pipeline.py files."""
+        document_uri = params.text_document.uri
+        file_path = Path(uris.to_fs_path(document_uri))
+
+        # Only do this for catalog YAML files
+        if not (file_path.name.startswith("catalog") and file_path.suffix in {".yml", ".yaml"}):
+            return None
+
+        if not word:
+            word = document.word_at_position(params.position, RE_START_WORD, RE_END_WORD)
+        # Strip trailing colon from YAML keys (e.g. "shuttles:" -> "shuttles")
+        word = word.rstrip(":")
+        log_for_lsp_debug(f"_query_pipeline_from_catalog: word={word}, file={file_path.name}")
+
+        try:
+            from importlib.resources import files
+            from kedro.framework.project import PACKAGE_NAME
+
+            pipelines_package = files(f"{PACKAGE_NAME}.pipelines")
+            log_for_lsp_debug(f"_query_pipeline_from_catalog: searching in {pipelines_package}")
+
+            for pipeline_file in glob.glob(f"{str(pipelines_package)}/**/*.py", recursive=True):
+                abs_path = Path(pipeline_file).absolute()
+                try:
+                    content = abs_path.read_text(encoding='utf-8').splitlines()
+                    for i, line in enumerate(content):
+                        if f'"{word}"' in line:
+                            return [reference_location(abs_path, i)]
+                except (IOError, UnicodeDecodeError):
+                    continue
+        except Exception as e:
+            log_for_lsp_debug(f"Error searching pipelines from catalog: {e}")
+
+        return None
+
     if params:
         document: TextDocument = server.workspace.get_text_document(
             params.text_document.uri
@@ -370,15 +425,12 @@ def definition(
     result = _query_catalog(document, word)
     if result:
         return result
+    result = _query_pipeline_from_catalog(document, word)
+    if result:
+        return result
 
-    # If no result, return current location
-    # This is a VSCode specific logic called Alternative Definition Command
-    # By default, it triggers Go to Reference so it supports using mouse click for both directions
-    # from pipeline to config and config to pipeline
-    uri = params.text_document.uri
-    pos = params.position
-    curr_pos = Position(line=pos.line, character=pos.character)
-    return Location(uri=uri, range=Range(start=curr_pos, end=curr_pos))
+    # Return None so VS Code falls through to other definition providers (e.g. Pylance)
+    return None
 
 
 def reference_location(path, line):
@@ -412,11 +464,11 @@ def references(
 
     log_for_lsp_debug(f"Query Reference keyword: {word}")
     word = word.strip(":")
-    import importlib_resources
+    from importlib.resources import files
     from kedro.framework.project import PACKAGE_NAME
 
     # Find pipelines module
-    pipelines_package = importlib_resources.files(f"{PACKAGE_NAME}.pipelines")
+    pipelines_package = files(f"{PACKAGE_NAME}.pipelines")
 
     # Iterate on pipelines/**/*.py that fits both modular or flat pipeline structure.
     result = []
@@ -473,6 +525,12 @@ def completions(server: KedroLanguageServer, params: CompletionParams):
 @LSP_SERVER.feature(TEXT_DOCUMENT_HOVER)
 def hover(ls: KedroLanguageServer, params: HoverParams):
     import pprint
+
+    _check_project()
+    if not ls.is_kedro_project():
+        return None
+    if ls.dummy_catalog is None:
+        return None
 
     pos = params.position
     document_uri = params.text_document.uri
@@ -585,100 +643,90 @@ def find_all_catalog_files(root_path):
     return catalog_files
 
 
-def remove_line_numbers(config):
-    if isinstance(config, dict):
-        return {k: remove_line_numbers(v) for k, v in config.items() if k != '__line__'}
-    elif isinstance(config, list):
-        return [remove_line_numbers(i) for i in config]
-    else:
-        return config
-    
-
 async def validate_catalog_content(ls: KedroLanguageServer, uri: str, content: str):
-    """Validate catalog content dynamically."""
+    """Validate catalog content using a chain of validators.
+
+    Strategy:
+      1. FactoryPatternValidator — always runs (fast, no I/O).
+      2. DatasetConfigValidator — always runs. It does catalog[dataset_name] which
+         triggers the actual class import, catching typos in dataset types. Produces
+         precise per-line diagnostics.
+      3. FullCatalogValidator — only runs when DatasetConfigValidator found nothing,
+         as a fallback for cross-dataset issues (e.g. conflicts between entries) that
+         per-dataset validation cannot detect. Its errors land on line 0.
+    """
     diagnostics = []
 
     try:
-        # Parse the YAML content
         catalog_config = yaml.load(content, Loader=SafeLineLoader)
         if not isinstance(catalog_config, dict):
-            return  # Invalid catalog format
+            ls.publish_diagnostics(uri, [create_diagnostic(
+                range_start=Position(line=0, character=0),
+                range_end=Position(line=0, character=0),
+                message="Invalid catalog format: root must be a mapping/dictionary"
+            )])
+            return
 
-        # Remove '__line__' keys
-        clean_catalog_config = remove_line_numbers(catalog_config)
-
+        # Step 1: factory-pattern syntax check (no DataCatalog instantiation)
         try:
-            # Attempt to create a DataCatalog with the cleaned catalog config
-            DataCatalog.from_config(clean_catalog_config)
+            diagnostics.extend(FactoryPatternValidator().validate(catalog_config, content))
         except Exception as e:
-            # Check each dataset individually if the entire catalog fails
-            for dataset_name, dataset_config in catalog_config.items():
-                if dataset_name.startswith("_"):
-                    continue  # Skip private datasets
+            log_error(f"Error in FactoryPatternValidator: {e}")
 
-                clean_dataset_config = remove_line_numbers(dataset_config)
+        # Step 2: per-dataset validation (catches bad types, missing fields, etc.)
+        dataset_errors = []
+        try:
+            dataset_errors = DatasetConfigValidator().validate(catalog_config, content)
+        except Exception as e:
+            log_error(f"Error in DatasetConfigValidator: {e}")
 
-                try:
-                    DataCatalog.from_config({dataset_name: clean_dataset_config})
-                except Exception as dataset_exception:
-                    # Add diagnostic for invalid dataset
-                    line_info = find_line_number_and_character(content, dataset_name, "type")
-                    if line_info:
-                        line_number, start_char = line_info
-                        dataset_type = dataset_config.get("type", "Unknown")
-                        end_char = start_char + len(f"type: {dataset_type}")
-                        diagnostic = Diagnostic(
-                            range=Range(
-                                start=Position(line=line_number, character=start_char),
-                                end=Position(line=line_number, character=end_char),
-                            ),
-                            message=f"Dataset '{dataset_name}' has an invalid type '{dataset_type}'. {dataset_exception}",
-                            severity=DiagnosticSeverity.Error,
-                            source="Kedro LSP",
-                        )
-                        diagnostics.append(diagnostic)
+        if dataset_errors:
+            diagnostics.extend(dataset_errors)
+        else:
+            # Step 3: whole-catalog validation as fallback for cross-dataset issues
+            try:
+                diagnostics.extend(FullCatalogValidator().validate(catalog_config, content))
+            except Exception as e:
+                log_error(f"Error in FullCatalogValidator: {e}")
+
     except Exception as e:
-        # Handle YAML parsing errors
         log_error(f"Error parsing catalog content: {e}")
-        diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=0, character=0),
-                end=Position(line=0, character=0),
-            ),
-            message=f"YAML parsing error: {e}",
-            severity=DiagnosticSeverity.Error,
-            source="Kedro LSP",
-        )
-        diagnostics.append(diagnostic)
+        diagnostics.append(create_diagnostic(
+            range_start=Position(line=0, character=0),
+            range_end=Position(line=0, character=0),
+            message=f"YAML parsing error: {e}"
+        ))
 
-    # Publish diagnostics for the file
     ls.publish_diagnostics(uri, diagnostics)
 
 
 async def validate_catalog(ls: KedroLanguageServer, uri: str):
-    """Validate a catalog file by reading its content from disk."""
+    """Validate a catalog file, preferring in-memory content over disk content."""
     file_path = pathlib.Path(uris.to_fs_path(uri))
-    if not file_path.exists():
-        # Clear diagnostics if the file does not exist
-        ls.publish_diagnostics(uri, [])
-        return
 
+    # pygls returns a document object even for unopened files, but source may be empty.
+    # Only use in-memory content when it is non-empty.
+    content = None
     try:
-        content = file_path.read_text(encoding='utf-8')
-        await validate_catalog_content(ls, uri, content)
-    except Exception as e:
-        log_error(f"Error reading file {file_path}: {e}")
-        ls.publish_diagnostics(uri, [])  # Clear diagnostics if reading fails
+        document = ls.workspace.get_text_document(uri)
+        if document.source:
+            content = document.source
+    except Exception:
+        pass
 
-
-async def periodic_revalidation(ls: KedroLanguageServer, interval: int = 5):
-    """Periodically revalidate all catalog files."""
-    while True:
+    if content is None:
+        if not file_path.exists():
+            ls.publish_diagnostics(uri, [])
+            return
         try:
-            await validate_all_catalogs(ls)
+            content = file_path.read_text(encoding='utf-8')
         except Exception as e:
-            log_error(f"Error during periodic revalidation: {e}")
-        await asyncio.sleep(interval)
+            log_error(f"Error reading file {file_path}: {e}")
+            ls.publish_diagnostics(uri, [])
+            return
+
+    await validate_catalog_content(ls, uri, content)
+
 
 
 def is_dataset_importable(dataset_type: str) -> Tuple[bool, Optional[str]]:
@@ -693,22 +741,6 @@ def is_dataset_importable(dataset_type: str) -> Tuple[bool, Optional[str]]:
         return False, f"Class '{class_name}' not found in module '{module_name}'."
     except ValueError:
         return False, "Invalid dataset type format. It should be 'module.ClassName'."
-
-
-def find_line_number_and_character(text: str, dataset_name: str, field_name: str) -> Optional[Tuple[int, int]]:
-    lines = text.split('\n')
-    in_dataset = False
-    for idx, line in enumerate(lines):
-        stripped_line = line.strip()
-        if stripped_line.startswith(f"{dataset_name}:"):
-            in_dataset = True
-        elif in_dataset and stripped_line.startswith(f"{field_name}:"):
-            # Calculate the character position accounting for indentation
-            start_char = len(line) - len(line.lstrip())
-            return idx, start_char
-        elif stripped_line and not stripped_line.startswith(' '):
-            in_dataset = False  # End of current dataset
-    return None
 
 
 def _get_global_defaults():
@@ -797,8 +829,12 @@ def definition_from_flowchart(ls, word):
 
 
 @LSP_SERVER.command("kedro.getProjectData")
-def get_project_data_from_viz(lsClient):
-    """Get project data from kedro viz"""
+def get_project_data_from_viz(ls, args=None):
+    """Get project data from kedro viz
+    
+    Args:
+        args: List of command arguments. The first element is used as the pipeline name.
+    """
     from kedro_viz.server import load_and_populate_data
     try:
         # For kedro-viz > 10.0.0
@@ -811,8 +847,12 @@ def get_project_data_from_viz(lsClient):
     try:
         workspace_settings = next(iter(WORKSPACE_SETTINGS.values()))
         kedro_project_path = Path(workspace_settings.get("kedroProjectPath")) or Path.cwd()
+
+        # Extract the pipeline name from the args list
+        pipeline_name = args[0] if args and len(args) > 0 else None
+
         load_and_populate_data(kedro_project_path)
-        data = get_kedro_project_json_data()
+        data = get_kedro_project_json_data(pipeline_name=pipeline_name)
         return data
     except Exception as e:
         print(f"Kedro-Viz: {e}")

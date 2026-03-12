@@ -7,15 +7,20 @@ function App() {
   const [data, setData] = React.useState({ nodes: [], edges: [] });
   const [error, setError] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
+  const [theme, setTheme] = React.useState('dark');
 
   const toolbarOptions = {
     labelBtn: true,
     layerBtn: true,
-    expandPipelinesBtn: false,
+    expandPipelinesBtn: true,
     exportBtn: false,
+    filterBtn: true,
   };
 
   useEffect(() => {
+    // Clear local storage to avoid persisting data
+    localStorage.clear();
+
     // Handle messages sent from the extension to the webview
     window.addEventListener("message", (event) => {
       console.log("Received message from extension", event);
@@ -30,15 +35,19 @@ function App() {
             setError(true);
           }
           break;
+        case "updateTheme":
+          if (message.theme) {
+            setTheme(message.theme);
+          }
+          break;
         default:
-          break;  
+          break;
       }
     });
 
     return () => {
       window.removeEventListener("message", () => {console.log("removed")});
     };
-
   }, []);
 
   const handleNodeClick = (node) => {
@@ -51,6 +60,12 @@ function App() {
         },
       });
     }
+  };
+
+  const handlePipelineFilterClick = () => {
+    vscodeApi.postMessage({
+      command: "showPipelineFilter",
+    });
   };
 
   const handleOutputClick = () => {
@@ -85,6 +100,9 @@ function App() {
       switch (action.type) {
         case "TOGGLE_NODE_CLICKED":
           handleNodeClick(action.payload);
+          break;          
+        case "SHOW_PIPELINE_FILTER":
+          handlePipelineFilterClick();
           break;
         default:
           break;
@@ -105,13 +123,15 @@ function App() {
               sidebar: true,
               ...toolbarOptions,
             },
-            behaviour: { 
+            behaviour: {
               reFocus: false,
             },
             visible: {
               slicing: false,
+              sidebar: false,
             },
             layer: {visible: false},
+            theme: theme,
           }}
         />)}
     </div>

@@ -5,6 +5,8 @@ import {
     executeServerCommand,
     executeServerDefinitionCommand,
     setKedroProjectPath,
+    filterPipelines,
+    toggleVizTheme,
 } from './commands';
 
 import * as vscode from 'vscode';
@@ -13,6 +15,7 @@ import { checkVersion, getInterpreterDetails, onDidChangePythonInterpreter, reso
 import { sendHeapEventWithMetadata } from './telemetry';
 import { restartServer } from './server';
 import { checkIfConfigurationChanged, getInterpreterFromSetting } from './settings';
+import { setupKedroProjectFileWatchers } from './kedroProjectFileWatchers';
 import { loadServerDefaults } from './setup';
 import { createStatusBar } from './status_bar';
 import { getLSClientTraceLevel, updateKedroVizPanel } from './utilities';
@@ -20,6 +23,8 @@ import { createOutputChannel, onDidChangeConfiguration, registerCommand } from '
 import KedroVizPanel from '../webview/vizWebView';
 import { handleKedroViz } from '../webview/createOrShowKedroVizPanel';
 import { LanguageClient } from 'vscode-languageclient/node';
+
+let isFilterPipelinesCommandRegistered = false;
 
 /**
  * Runs the language server based on current environment and interpreter settings.
@@ -46,9 +51,6 @@ export const runServer = async (
     }
 
     const interpreterDetails = await getInterpreterDetails();
-    console.log('===============DEBUG============');
-    console.log(interpreterDetails);
-    console.log('===============DEBUG============');
 
     if (interpreterDetails.path) {
         traceVerbose(`Using interpreter from Python extension: ${interpreterDetails.path.join(' ')}`);
@@ -89,6 +91,8 @@ export const registerCommandsAndEvents = (
     const CMD_DEFINITION_REQUEST = `${serverId}.sendDefinitionRequest`;
     const CMD_SHOW_OUTPUT_CHANNEL = `${serverId}.showOutputChannel`;
     const CMD_SET_PROJECT_PATH = `${serverId}.kedroProjectPath`;
+    const CMD_FILTER_PIPELINES = `${serverId}.filterPipelines`;
+    const CMD_TOGGLE_VIZ_THEME = `${serverId}.toggleVizTheme`;
 
     (async () => {
         // Status Bar
@@ -122,6 +126,11 @@ export const registerCommandsAndEvents = (
                 setLSClient(newClient);
             }),
             onDidChangeConfiguration(async (e: vscode.ConfigurationChangeEvent) => {
+                // Handle autoReloadKedroViz setting change specifically
+                if (e.affectsConfiguration(`${serverId}.autoReloadKedroViz`)) {
+                    setupKedroProjectFileWatchers(context);
+                }
+
                 if (checkIfConfigurationChanged(e, serverId)) {
                     const newClient = await runServer(getLSClient());
                     setLSClient(newClient);
@@ -155,12 +164,33 @@ export const registerCommandsAndEvents = (
             }),
             registerCommand(CMD_RUN_KEDRO_VIZ, async () => {
                 await handleKedroViz(context, getLSClient());
+
+                // Register filter pipelines command only once
+                if (!isFilterPipelinesCommandRegistered) {
+                    // Register filter pipelines command after KedroVizPanel is created
+                    context.subscriptions.push(
+                        registerCommand(CMD_FILTER_PIPELINES, async () => {
+                            await filterPipelines(getLSClient());
+                            await sendHeapEventWithMetadata(CMD_FILTER_PIPELINES, context);
+                        }),
+                    );
+                    isFilterPipelinesCommandRegistered = true;
+                }
             }),
             registerCommand(CMD_SHOW_OUTPUT_CHANNEL, () => {
                 outputChannel.show();
             }),
             registerCommand(CMD_SET_PROJECT_PATH, () => {
                 setKedroProjectPath();
+            }),
+            registerCommand(CMD_TOGGLE_VIZ_THEME, async () => {
+                await toggleVizTheme();
+                // If KedroVizPanel is open, update the theme
+                if (KedroVizPanel.currentPanel) {
+                    const config = vscode.workspace.getConfiguration('kedro');
+                    const theme = config.get<string>('vizTheme', 'dark');
+                    KedroVizPanel.currentPanel.updateTheme(theme);
+                }
             }),
         );
     })();

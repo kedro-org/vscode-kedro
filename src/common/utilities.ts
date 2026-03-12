@@ -13,7 +13,7 @@ import { DEPENDENCIES_INSTALLED, EXTENSION_ROOT_DIR, PROJECT_METADATA, TELEMETRY
 import { traceError, traceLog } from './log/logging';
 import KedroVizPanel from '../webview/vizWebView';
 import { executeGetProjectDataCommand } from './commands';
-import { getWorkspaceSettings } from './settings';
+import { getWorkspaceSettings, resolveWorkspacePath } from './settings';
 
 function logLevelToTrace(logLevel: LogLevel): Trace {
     switch (logLevel) {
@@ -45,7 +45,9 @@ export function getLSClientTraceLevel(channelLogLevel: LogLevel, globalLogLevel:
 
 export async function getProjectRoot(): Promise<WorkspaceFolder> {
     const config = vscode.workspace.getConfiguration('kedro');
-    let kedroProjectPath = config.get<string>('kedroProjectPath');
+    const workspaceFolders = getWorkspaceFolders();
+    const defaultWorkspace = workspaceFolders.length > 0 ? workspaceFolders[0] : undefined;
+    let kedroProjectPath = resolveWorkspacePath(config.get<string>('kedroProjectPath') ?? '', defaultWorkspace);
 
     if (kedroProjectPath && kedroProjectPath.trim()) {
         return {
@@ -145,7 +147,9 @@ export async function checkKedroViz(context: vscode.ExtensionContext): Promise<b
 export async function checkKedroProjectConsent(context: vscode.ExtensionContext): Promise<Boolean> {
     const pathToScript = 'bundled/tool/check_consent.py';
     const config = vscode.workspace.getConfiguration('kedro');
-    let rootDir = config.get<string>('kedroProjectPath') || EXTENSION_ROOT_DIR;
+    const workspaceFolders = getWorkspaceFolders();
+    const defaultWorkspace = workspaceFolders.length > 0 ? workspaceFolders[0] : undefined;
+    let rootDir = resolveWorkspacePath(config.get<string>('kedroProjectPath') ?? '', defaultWorkspace) || EXTENSION_ROOT_DIR;
 
     try {
         const stdout = await callPythonScript(pathToScript, rootDir, context);
@@ -234,6 +238,30 @@ async function checkPyprojectToml(projectPath: string): Promise<boolean> {
         traceError(`Error reading ${pyprojectPath}: ${error}`);
     }
     return false;
+}
+
+export interface KedroProjectInfo {
+    name: string;
+    path: string;
+}
+
+export async function discoverKedroProjects(): Promise<KedroProjectInfo[]> {
+    const files = await vscode.workspace.findFiles('**/pyproject.toml', undefined);
+    const seen = new Set<string>();
+    const projects: KedroProjectInfo[] = [];
+
+    for (const file of files) {
+        const projectDir = path.dirname(file.fsPath);
+        if (seen.has(projectDir)) {
+            continue;
+        }
+        if (await checkPyprojectToml(projectDir)) {
+            seen.add(projectDir);
+            projects.push({ name: path.basename(projectDir), path: projectDir });
+        }
+    }
+
+    return projects;
 }
 
 export async function getKedroProjectPath(): Promise<string> {

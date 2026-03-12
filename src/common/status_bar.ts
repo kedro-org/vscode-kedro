@@ -1,3 +1,4 @@
+import * as path from 'path';
 import * as vscode from 'vscode';
 import {
     getWorkspaceSettings,
@@ -17,7 +18,18 @@ export async function createStatusBar(commandName: string, serverId: string): Pr
         environment = workspaceSetting.environment;
     }
 
-    statusBarItem.text = `$(kedro-logo) base + ${environment}`;
+    const projectName = workspaceSetting.kedroProjectPath
+        ? path.basename(workspaceSetting.kedroProjectPath)
+        : projectRoot.name;
+
+    statusBarItem.text = `$(kedro-logo) ${projectName} | ${environment}`;
+    statusBarItem.tooltip = `Kedro: ${projectName} (${environment})`;
     statusBarItem.show();
     return statusBarItem;
+}
+
+export function updateStatusBarProject(statusBarItem: vscode.StatusBarItem, projectPath: string, environment: string) {
+    const projectName = path.basename(projectPath);
+    statusBarItem.text = `$(kedro-logo) ${projectName} | ${environment}`;
+    statusBarItem.tooltip = `Kedro: ${projectName} (${environment})`;
 }

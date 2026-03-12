@@ -245,6 +245,11 @@
                 "command": "kedro.toggleVizTheme",
                 "title": "Toggle Kedro Viz Theme",
                 "category": "kedro"
+            },
+            {
+                "command": "kedro.selectProject",
+                "title": "Switch Kedro Project",
+                "category": "kedro"
             }
         ]
     },

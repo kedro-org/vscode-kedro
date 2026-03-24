@@ -98,7 +98,7 @@ export const registerCommandsAndEvents = (
 
     (async () => {
         // Status Bar
-        const statusBarItem = await createStatusBar(CMD_SELECT_PROJECT, serverId);
+        const statusBarItem = await createStatusBar(CMD_SELECT_ENV, serverId);
         context.subscriptions.push(statusBarItem);
 
         // Setup logging

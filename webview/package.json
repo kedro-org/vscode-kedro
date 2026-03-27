@@ -29,7 +29,8 @@
     "d3-color": "^3.1.0",
     "nth-check": "^2.1.1",
     "undici": "^7.24.0",
-    "flatted": "^3.4.2"
+    "flatted": "^3.4.2",
+    "yaml@>=1.0.0 <1.10.3": "1.10.3"
   },
   "devDependencies": {
     "@types/react-dom": "^18.3.0",

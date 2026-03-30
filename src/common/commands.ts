@@ -217,7 +217,7 @@ export async function selectKedroProject(): Promise<string | undefined> {
     const projects = await discoverKedroProjects();
 
     if (projects.length === 0) {
-        traceLog('No Kedro projects found in the workspace.');
+        vscode.window.showWarningMessage('No Kedro projects found in the workspace.');
         return undefined;
     }
 

@@ -213,6 +213,25 @@ export async function filterPipelines(lsClient?: LanguageClient) {
     }
 }
 
+function showQuickPickWithActiveItem(
+    items: vscode.QuickPickItem[],
+    placeholder: string,
+    activePath?: string,
+): Promise<vscode.QuickPickItem | undefined> {
+    return new Promise((resolve) => {
+        const qp = vscode.window.createQuickPick();
+        qp.items = items;
+        qp.placeholder = placeholder;
+        const active = items.find((i) => i.description === activePath);
+        if (active) {
+            qp.activeItems = [active];
+        }
+        qp.onDidAccept(() => { resolve(qp.selectedItems[0]); qp.dispose(); });
+        qp.onDidHide(() => { resolve(undefined); qp.dispose(); });
+        qp.show();
+    });
+}
+
 export async function selectKedroProject(): Promise<string | undefined> {
     const projects = await discoverKedroProjects();
 
@@ -225,18 +244,11 @@ export async function selectKedroProject(): Promise<string | undefined> {
     const items: vscode.QuickPickItem[] = projects.map((p) => ({
         label: p.name,
         description: p.path,
-        picked: p.path === currentPath,
     }));
 
-    const picked = await vscode.window.showQuickPick(items, {
-        placeHolder: 'Select a Kedro project',
-    });
+    const picked = await showQuickPickWithActiveItem(items, 'Select a Kedro project', currentPath);
 
-    if (!picked) {
-        return undefined;
-    }
-
-    if (picked.description === currentPath) {
+    if (!picked || picked.description === currentPath) {
         return undefined;
     }
 

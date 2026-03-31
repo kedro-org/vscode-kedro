@@ -4,6 +4,9 @@
 ## Major changes and new features
 - Added a native VS Code right-click action in Kedro Viz task nodes to open a prefilled debug notebook with `%load_node <canonicalName>`.
 
+## Bug fix
+- Fixed AttributeError on startup failure for LSP server.
+
 # 0.6.0
 ## Major changes and new features
 - Improved catalog validation with new layers including factory patterns, dataset configuration, and full catalog validation.

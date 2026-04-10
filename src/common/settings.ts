@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+import * as path from 'path';
 import { ConfigurationChangeEvent, ConfigurationScope, WorkspaceConfiguration, WorkspaceFolder } from 'vscode';
 import { getInterpreterDetails } from './python';
 import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
@@ -22,7 +23,7 @@ export function getExtensionSettings(namespace: string, includeInterpreter?: boo
     return Promise.all(getWorkspaceFolders().map((w) => getWorkspaceSettings(namespace, w, includeInterpreter)));
 }
 
-function resolveVariables(value: string[], workspace?: WorkspaceFolder): string[] {
+function buildSubstitutions(workspace?: WorkspaceFolder): Map<string, string> {
     const substitutions = new Map<string, string>();
     const home = process.env.HOME || process.env.USERPROFILE;
     if (home) {
@@ -35,13 +36,33 @@ function resolveVariables(value: string[], workspace?: WorkspaceFolder): string[
     getWorkspaceFolders().forEach((w) => {
         substitutions.set('${workspaceFolder:' + w.name + '}', w.uri.fsPath);
     });
+    return substitutions;
+}
 
+function resolveVariables(value: string[], workspace?: WorkspaceFolder): string[] {
+    const substitutions = buildSubstitutions(workspace);
     return value.map((s) => {
-        for (const [key, value] of substitutions) {
-            s = s.replace(key, value);
+        for (const [key, sub] of substitutions) {
+            s = s.replace(key, sub);
         }
         return s;
     });
+}
+
+export function resolveWorkspacePath(value: string, workspace?: WorkspaceFolder): string {
+    if (!value) {
+        return value;
+    }
+    const substitutions = buildSubstitutions(workspace);
+    let result = value;
+    for (const [key, sub] of substitutions) {
+        result = result.replace(key, sub);
+    }
+    // Treat relative paths as relative to the workspace folder
+    if (!path.isAbsolute(result) && workspace) {
+        result = path.join(workspace.uri.fsPath, result);
+    }
+    return result;
 }
 
 export function getInterpreterFromSetting(namespace: string, scope?: ConfigurationScope) {
@@ -74,7 +95,7 @@ export async function getWorkspaceSettings(
         showNotifications: config.get<string>(`showNotifications`) ?? 'off',
         isExperimental: config.get<string>(`isExperimental`) ?? 'yes',
         environment: config.get<string>(`environment`) ?? '',
-        kedroProjectPath: config.get<string>(`kedroProjectPath`) ?? '',
+        kedroProjectPath: resolveWorkspacePath(config.get<string>(`kedroProjectPath`) ?? '', workspace),
         autoReloadKedroViz: config.get<boolean>(`autoReloadKedroViz`) ?? false,
     };
     return workspaceSetting;

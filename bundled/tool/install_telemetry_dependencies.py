@@ -2,6 +2,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+
 def install_dependencies(extension_root_dir):
     """
     Install dependencies required for the Kedro extension.
@@ -20,7 +21,7 @@ def install_dependencies(extension_root_dir):
         from packaging.version import parse
 
         version = parse(kedro_telemetry.__version__)
-        if version.major<1 and version.minor<6: # at least >0.6.0
+        if version.major < 1 and version.minor < 6:  # at least >0.6.0
             raise ImportError("kedro-telemetry version must be >=0.6.0")
     except ImportError:
         subprocess.check_call(
@@ -34,7 +35,7 @@ def install_dependencies(extension_root_dir):
                 "-t",
                 Path(libs_path),
                 "--no-cache-dir",
-                "--no-deps"
+                "--no-deps",
             ]
         )
 
@@ -44,4 +45,13 @@ if __name__ == "__main__":
         extension_root_dir = sys.argv[1]
     else:
         extension_root_dir = None
-    install_dependencies(extension_root_dir)
+    try:
+        install_dependencies(extension_root_dir)
+    except Exception as e:
+        print(
+            f"Warning: Failed to install telemetry dependencies: {e}", file=sys.stderr
+        )
+        print(
+            "Kedro telemetry will be disabled. This does not affect other extension functionality.",
+            file=sys.stderr,
+        )

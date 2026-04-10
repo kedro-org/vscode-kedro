@@ -15,11 +15,11 @@ If you encounter issue, report it in [Github](https://github.com/kedro-org/vscod
   - [To navigate between the flowchart and the code editor in Kedro-Viz:](#to-navigate-between-the-flowchart-and-the-code-editor-in-kedro-viz)
   - [Auto Reload Kedro-Viz](#auto-reload-kedro-viz)
   - [Toggle Kedro-Viz Theme](#toggle-kedro-viz-theme)
+  - [Switch Kedro Project](#switch-kedro-project)
   - [Settings](#settings)
     - [Change Configuration Environment](#change-configuration-environment)
   - [How to restart a server if there are error](#how-to-restart-a-server-if-there-are-error)
   - [Assumptions](#assumptions)
-    - [Single Kedro Project](#single-kedro-project)
     - [Configure Kedro Environment](#configure-kedro-environment)
     - [Pipeline Discovery](#pipeline-discovery)
   - [Visualisation with Kedro-Viz](#visualisation-with-kedro-viz)
@@ -205,6 +205,16 @@ Using settings.json:
 ```
 
 ![Toggle Kedro-Viz theme](assets/viz-toggle-theme.gif)
+
+### Switch Kedro Project
+
+If your workspace contains multiple Kedro projects, you can switch between them:
+
+1. Open Command Palette: `Cmd` + `Shift` + `P` (macOS) or `Ctrl` + `Shift` + `P` (Windows/Linux)
+2. Type `Kedro: Switch Kedro Project` and select it
+3. Pick a project from the list
+
+The extension auto-discovers all Kedro projects in your workspace by scanning for `pyproject.toml` files with a `[tool.kedro]` section. The current project name is shown in the status bar.
 
 ## Settings
 ### Change Configuration Environment

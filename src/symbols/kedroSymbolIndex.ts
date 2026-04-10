@@ -104,4 +104,13 @@ export class KedroSymbolIndex {
         }
         return cache.referencesByDataset.get(datasetName) || [];
     }
+
+    async getAllDatasetReferences(projectPath: string): Promise<Map<string, DatasetReference[]>> {
+        await this.ensureLoaded(projectPath);
+        const cache = this.cacheByProject.get(projectPath);
+        if (!cache) {
+            return new Map<string, DatasetReference[]>();
+        }
+        return new Map(cache.referencesByDataset);
+    }
 }

@@ -1,9 +1,13 @@
 import * as vscode from 'vscode';
 import { PipelineItem, DatasetItem } from './treeItems';
+import { KedroSymbolIndex } from '../symbols/kedroSymbolIndex';
+import { LspSymbolSource } from '../symbols/sources/lspSymbolSource';
+import { DatasetReference } from '../symbols/types';
 
 export interface DatasetInfo {
     name: string;
     type: string;
+    usageSummary?: string;
 }
 
 export interface PipelineDatasets {
@@ -11,43 +15,25 @@ export interface PipelineDatasets {
     datasets: DatasetInfo[];
 }
 
-const MOCK_CATALOG_DATA: PipelineDatasets[] = [
-    {
-        name: '__default__',
-        datasets: [
-            { name: 'companies', type: 'CSVDataset' },
-            { name: 'shuttles', type: 'ExcelDataset' },
-            { name: 'reviews', type: 'CSVDataset' },
-        ],
-    },
-    {
-        name: 'data_processing',
-        datasets: [
-            { name: 'preprocessed_companies', type: 'ParquetDataset' },
-            { name: 'preprocessed_shuttles', type: 'ParquetDataset' },
-        ],
-    },
-    {
-        name: 'data_science',
-        datasets: [
-            { name: 'model_input_table', type: 'ParquetDataset' },
-            { name: 'regressor', type: 'PickleDataset' },
-        ],
-    },
-];
-
 export class CatalogTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | void>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+    private readonly symbolIndex = new KedroSymbolIndex(new LspSymbolSource());
+    private projectPath: string | undefined;
+    private data: PipelineDatasets[] = [];
+    private hasLoaded = false;
 
-    private data: PipelineDatasets[] = MOCK_CATALOG_DATA;
+    constructor(projectPath?: string) {
+        this.projectPath = projectPath;
+    }
 
     refresh(): void {
+        this.hasLoaded = false;
         this._onDidChangeTreeData.fire();
     }
 
-    setData(data: PipelineDatasets[]): void {
-        this.data = data;
+    setProjectPath(projectPath: string): void {
+        this.projectPath = projectPath;
         this.refresh();
     }
 
@@ -56,6 +42,8 @@ export class CatalogTreeProvider implements vscode.TreeDataProvider<vscode.TreeI
     }
 
     async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
+        await this.ensureLoaded();
+
         if (!element) {
             return this.data.map(
                 (pipeline) => new PipelineItem(pipeline.name, pipeline.datasets.length),
@@ -67,9 +55,69 @@ export class CatalogTreeProvider implements vscode.TreeDataProvider<vscode.TreeI
             if (!pipeline) {
                 return [];
             }
-            return pipeline.datasets.map((ds) => new DatasetItem(ds.name, ds.type));
+            return pipeline.datasets.map((ds) => new DatasetItem(ds.name, ds.type, ds.usageSummary));
         }
 
         return [];
+    }
+
+    private async ensureLoaded(): Promise<void> {
+        if (this.hasLoaded || !this.projectPath) {
+            return;
+        }
+        this.hasLoaded = true;
+
+        try {
+            const symbols = await this.symbolIndex.searchSymbols(this.projectPath, '');
+            const datasetSymbols = symbols.filter((symbol) => symbol.kind === 'dataset');
+            const pipelineSymbols = symbols.filter((symbol) => symbol.kind === 'pipeline');
+            const refsByDataset = await this.symbolIndex.getAllDatasetReferences(this.projectPath);
+            const datasetTypeByName = new Map(datasetSymbols.map((symbol) => [symbol.name, symbol.detail || 'Dataset']));
+
+            const pipelineData: PipelineDatasets[] = [];
+            for (const pipeline of pipelineSymbols) {
+                const datasets: DatasetInfo[] = [];
+                for (const [datasetName, references] of refsByDataset.entries()) {
+                    const refsInPipeline = references.filter((reference) => reference.pipelineName === pipeline.name);
+                    if (refsInPipeline.length === 0) {
+                        continue;
+                    }
+                    datasets.push({
+                        name: datasetName,
+                        type: datasetTypeByName.get(datasetName) || 'Dataset',
+                        usageSummary: this.buildUsageSummary(references),
+                    });
+                }
+                pipelineData.push({
+                    name: pipeline.name,
+                    datasets: datasets.sort((a, b) => a.name.localeCompare(b.name)),
+                });
+            }
+
+            this.data = pipelineData
+                .filter((pipeline) => pipeline.datasets.length > 0)
+                .sort((a, b) => a.name.localeCompare(b.name));
+        } catch {
+            this.data = [];
+        }
+    }
+
+    private buildUsageSummary(references: DatasetReference[]): string | undefined {
+        const producedIn = [...new Set(
+            references.filter((reference) => reference.relation === 'produces').map((reference) => reference.pipelineName),
+        )];
+        const consumedIn = [...new Set(
+            references.filter((reference) => reference.relation !== 'produces').map((reference) => reference.pipelineName),
+        )];
+
+        const parts: string[] = [];
+        if (producedIn.length > 0) {
+            parts.push(`produced: ${producedIn.slice(0, 2).join(', ')}${producedIn.length > 2 ? ` +${producedIn.length - 2}` : ''}`);
+        }
+        if (consumedIn.length > 0) {
+            parts.push(`consumed: ${consumedIn.slice(0, 2).join(', ')}${consumedIn.length > 2 ? ` +${consumedIn.length - 2}` : ''}`);
+        }
+
+        return parts.length > 0 ? parts.join(' • ') : undefined;
     }
 }

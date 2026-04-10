@@ -857,9 +857,22 @@ def get_project_data_from_viz(ls, args=None):
     except Exception as e:
         print(f"Kedro-Viz: {e}")
         log_error(f"Kedro-Viz: {e}")
-    finally:
-        print("Execution completed.")
-        return data
+    print("Execution completed.")
+    return data
+
+
+@LSP_SERVER.command("kedro.getSymbolIndex")
+def get_symbol_index(ls, args=None):
+    """Get Kedro symbol index using native Kedro pipeline APIs."""
+    try:
+        _check_project()
+        from inspect_symbols import get_symbol_index as build_symbol_index
+
+        return build_symbol_index(LSP_SERVER)
+    except Exception as e:
+        print(f"Kedro-Symbol-Index: {e}")
+        log_error(f"Kedro-Symbol-Index: {e}")
+    return None
 
 
 ### End of  kedro-lsp

@@ -45,15 +45,19 @@ export class DatasetItem extends vscode.TreeItem {
     constructor(
         public readonly datasetName: string,
         public readonly datasetType: string,
+        public readonly usageSummary?: string,
     ) {
         super(datasetName, vscode.TreeItemCollapsibleState.None);
-        this.description = datasetType;
+        this.description = usageSummary ? `${datasetType} • ${usageSummary}` : datasetType;
         this.iconPath = new vscode.ThemeIcon('database');
         this.command = {
             command: 'kedro.sendDefinitionRequest',
             title: 'Go to Definition',
             arguments: [datasetName],
         };
+        if (usageSummary) {
+            this.tooltip = `${datasetName}\n${datasetType}\n${usageSummary}`;
+        }
         this.contextValue = 'dataset';
     }
 }

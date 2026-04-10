@@ -9,7 +9,7 @@ export async function registerTreeViews(context: vscode.ExtensionContext): Promi
     const projectPath = await getKedroProjectPath();
 
     const configProvider = new ConfigTreeProvider(projectPath || undefined);
-    const catalogProvider = new CatalogTreeProvider();
+    const catalogProvider = new CatalogTreeProvider(projectPath || undefined);
     const undefinedProvider = new UndefinedDatasetProvider();
 
     context.subscriptions.push(
@@ -45,6 +45,7 @@ export async function registerTreeViews(context: vscode.ExtensionContext): Promi
             getKedroProjectPath().then((newPath) => {
                 if (newPath) {
                     configProvider.setProjectPath(newPath);
+                    catalogProvider.setProjectPath(newPath);
                 }
             });
         }

@@ -94,7 +94,7 @@ export class SymbolSearchController {
 
             const updateItems = async (value: string) => {
                 const symbols = await this.symbolIndex.searchSymbols(projectPath, value);
-                qp.items = this.toSymbolQuickPickItems(symbols);
+                qp.items = await this.toSymbolQuickPickItems(projectPath, symbols);
                 qp.busy = false;
             };
 
@@ -120,7 +120,7 @@ export class SymbolSearchController {
         });
     }
 
-    private toSymbolQuickPickItems(symbols: KedroSymbol[]): SymbolQuickPickItem[] {
+    private async toSymbolQuickPickItems(projectPath: string, symbols: KedroSymbol[]): Promise<SymbolQuickPickItem[]> {
         const grouped = new Map<KedroSymbolKind, KedroSymbol[]>();
         for (const symbol of symbols) {
             const existing = grouped.get(symbol.kind) || [];
@@ -143,10 +143,45 @@ export class SymbolSearchController {
             });
 
             for (const symbol of group) {
+                let detail = symbol.detail;
+                if (symbol.kind === 'dataset' || symbol.kind === 'parameter') {
+                    const references = await this.symbolIndex.getDatasetReferences(projectPath, symbol.name);
+                    const producedPipelines = [
+                        ...new Set(
+                            references
+                                .filter((reference) => reference.relation === 'produces')
+                                .map((reference) => reference.pipelineName),
+                        ),
+                    ];
+                    const consumedPipelines = [
+                        ...new Set(
+                            references
+                                .filter((reference) => reference.relation !== 'produces')
+                                .map((reference) => reference.pipelineName),
+                        ),
+                    ];
+
+                    const hints: string[] = [];
+                    if (producedPipelines.length > 0) {
+                        const producedHint = producedPipelines.slice(0, 2).join(', ');
+                        const producedSuffix = producedPipelines.length > 2 ? ` +${producedPipelines.length - 2}` : '';
+                        hints.push(`produced in: ${producedHint}${producedSuffix}`);
+                    }
+                    if (consumedPipelines.length > 0) {
+                        const consumedHint = consumedPipelines.slice(0, 2).join(', ');
+                        const consumedSuffix = consumedPipelines.length > 2 ? ` +${consumedPipelines.length - 2}` : '';
+                        hints.push(`consumed in: ${consumedHint}${consumedSuffix}`);
+                    }
+
+                    if (hints.length > 0) {
+                        const usageHint = hints.join(' • ');
+                        detail = detail ? `${detail} • ${usageHint}` : usageHint;
+                    }
+                }
                 items.push({
                     label: `${getKindIcon(symbol.kind)} ${symbol.name}`,
                     description: KIND_LABEL[symbol.kind],
-                    detail: symbol.detail,
+                    detail,
                     symbol,
                 });
             }

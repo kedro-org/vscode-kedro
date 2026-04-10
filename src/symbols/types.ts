@@ -23,6 +23,7 @@ export interface DatasetReference {
     datasetName: string;
     pipelineName: string;
     nodeName: string;
+    relation?: 'produces' | 'consumes';
     location?: KedroLocation;
     projectPath: string;
 }

@@ -8,6 +8,7 @@ import {
     setKedroProjectPath,
     filterPipelines,
     toggleVizTheme,
+    executeKedroSymbolSearchCommand,
 } from './commands';
 
 import * as vscode from 'vscode';
@@ -96,6 +97,7 @@ export const registerCommandsAndEvents = (
     const CMD_FILTER_PIPELINES = `${serverId}.filterPipelines`;
     const CMD_TOGGLE_VIZ_THEME = `${serverId}.toggleVizTheme`;
     const CMD_SELECT_PROJECT = `${serverId}.selectProject`;
+    const CMD_SEARCH_SYMBOLS = `${serverId}.searchSymbols`;
 
     (async () => {
         // Status Bar
@@ -210,6 +212,10 @@ export const registerCommandsAndEvents = (
                     const theme = config.get<string>('vizTheme', 'dark');
                     KedroVizPanel.currentPanel.updateTheme(theme);
                 }
+            }),
+            registerCommand(CMD_SEARCH_SYMBOLS, async () => {
+                await executeKedroSymbolSearchCommand();
+                await sendHeapEventWithMetadata(CMD_SEARCH_SYMBOLS, context);
             }),
         );
     })();

@@ -6,6 +6,11 @@ import * as vscode from 'vscode';
 import { getWorkspaceFolders } from './vscodeapi';
 import { LanguageClient, State } from 'vscode-languageclient/node';
 import { discoverKedroProjects, getKedroProjectPath, isKedroProject, updateKedroVizPanel } from './utilities';
+import { KedroSymbolIndex } from '../symbols/kedroSymbolIndex';
+import { SymbolSearchController } from '../symbols/symbolSearchController';
+import { LspSymbolSource } from '../symbols/sources/lspSymbolSource';
+
+const symbolSearchController = new SymbolSearchController(new KedroSymbolIndex(new LspSymbolSource()));
 export async function selectEnvironment() {
     let kedroProjectPath = await getKedroProjectPath();
     let kedroProjectRootDir: string | undefined = undefined;
@@ -247,4 +252,8 @@ export async function toggleVizTheme() {
 
     await config.update('vizTheme', newTheme, vscode.ConfigurationTarget.Workspace);
     vscode.window.showInformationMessage(`Kedro Viz theme changed to ${newTheme}`);
+}
+
+export async function executeKedroSymbolSearchCommand() {
+    await symbolSearchController.run();
 }

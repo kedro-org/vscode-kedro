@@ -1,11 +1,27 @@
 # Change Log
 
-# Unreleased
+# Upcoming Release
+
 ## Major changes and new features
 - Added a native VS Code right-click action in Kedro Viz task nodes to open a prefilled debug notebook with `%load_node <canonicalName>`.
 
-## Bug fix
-- Fixed AttributeError on startup failure for LSP server.
+# 0.7.0
+## Major changes and new features
+- Auto reload Kedro-Viz on Kedro project file change.
+- Toggle Kedro-Viz theme from VS Code.
+- Migrate Webview from react-scripts to Vite.
+- Support relative paths in `kedroProjectPath`, auto-detect Kedro projects, and multiple projects support.
+
+## Bug fixes
+- Fixes "Go to Definition" for extension.
+- Initialise `KedroLanguageServer` attributes to prevent `AttributeError` on startup failure.
+
+## Other improvements
+- Add explicit permissions block to GitHub Actions workflows.
+- Security fixes and dependency updates.
+
+## Community contributions
+- [pascalwhoop](https://github.com/pascalwhoop)
 
 # 0.6.0
 ## Major changes and new features

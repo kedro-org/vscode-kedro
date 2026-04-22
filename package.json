@@ -2,7 +2,7 @@
     "name": "Kedro",
     "displayName": "Kedro",
     "description": "A Kedro VSCode Extension.",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "preview": false,
     "serverInfo": {
         "name": "Kedro",
@@ -266,6 +266,11 @@
                 "command": "kedro.toggleVizTheme",
                 "title": "Toggle Kedro Viz Theme",
                 "category": "kedro"
+            },
+            {
+                "command": "kedro.selectProject",
+                "title": "Select Kedro Project",
+                "category": "kedro"
             }
         ],
         "menus": {
@@ -282,6 +287,7 @@
         "@vscode/python-extension": "^1.0.6",
         "axios": "^1.13.5",
         "fs-extra": "^11.2.0",
+        "globby": "^11.1.0",
         "vscode-languageclient": "^8.1.0"
     },
     "overrides": {
@@ -302,7 +308,7 @@
         "@types/glob": "^8.1.0",
         "@types/jest": "^29.5.12",
         "@types/node": "16.x",
-        "@types/vscode": "1.78.0",
+        "@types/vscode": "^1.78.0",
         "@typescript-eslint/eslint-plugin": "^7.14.1",
         "@typescript-eslint/parser": "^7.11.0",
         "@vscode/test-electron": "^2.3.8",

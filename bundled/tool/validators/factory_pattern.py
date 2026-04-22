@@ -8,7 +8,8 @@ from .utils import (
     find_line_number_and_character,
     create_diagnostic,
     has_config_references,
-    is_valid_dataset_entry
+    is_valid_dataset_entry,
+    remove_line_numbers,
 )
 
 
@@ -81,7 +82,7 @@ class FactoryPatternValidator(CatalogValidator):
             
             # Find all variables in the configuration
             config_variables = set()
-            dataset_str = json.dumps(dataset_config)
+            dataset_str = json.dumps(remove_line_numbers(dataset_config))
             for match in factory_pattern_regex.finditer(dataset_str):
                 config_variables.add(match.group(1))
             

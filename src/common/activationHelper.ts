@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 import {
     selectEnvironment,
+    selectKedroProject,
     executeServerCommand,
     executeServerDefinitionCommand,
     setKedroProjectPath,
@@ -15,11 +16,11 @@ import { registerLogger, traceError, traceLog, traceVerbose } from './log/loggin
 import { checkVersion, getInterpreterDetails, onDidChangePythonInterpreter, resolveInterpreter } from './python';
 import { sendHeapEventWithMetadata } from './telemetry';
 import { restartServer } from './server';
-import { checkIfConfigurationChanged, getInterpreterFromSetting } from './settings';
+import { checkIfConfigurationChanged, getInterpreterFromSetting, getWorkspaceSettings } from './settings';
 import { setupKedroProjectFileWatchers } from './kedroProjectFileWatchers';
 import { loadServerDefaults } from './setup';
-import { createStatusBar } from './status_bar';
-import { getLSClientTraceLevel, updateKedroVizPanel } from './utilities';
+import { createStatusBar, updateStatusBarProject } from './status_bar';
+import { getLSClientTraceLevel, getProjectRoot, updateKedroVizPanel } from './utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './vscodeapi';
 import KedroVizPanel from '../webview/vizWebView';
 import { handleKedroViz } from '../webview/createOrShowKedroVizPanel';
@@ -52,9 +53,6 @@ export const runServer = async (
     }
 
     const interpreterDetails = await getInterpreterDetails();
-    console.log('===============DEBUG============');
-    console.log(interpreterDetails);
-    console.log('===============DEBUG============');
 
     if (interpreterDetails.path) {
         traceVerbose(`Using interpreter from Python extension: ${interpreterDetails.path.join(' ')}`);
@@ -98,6 +96,7 @@ export const registerCommandsAndEvents = (
     const CMD_DEBUG_NODE_WITH_NEW_NOTEBOOK = `${serverId}.debugNodeWithNewNotebook`;
     const CMD_FILTER_PIPELINES = `${serverId}.filterPipelines`;
     const CMD_TOGGLE_VIZ_THEME = `${serverId}.toggleVizTheme`;
+    const CMD_SELECT_PROJECT = `${serverId}.selectProject`;
 
     (async () => {
         // Status Bar
@@ -156,7 +155,10 @@ export const registerCommandsAndEvents = (
                 const newClient = await runServer(getLSClient(), result);
                 setLSClient(newClient);
                 if (result) {
-                    statusBarItem.text = `$(kedro-logo) base + ${result.label}`;
+                    const projectRoot = await getProjectRoot();
+                    const settings = await getWorkspaceSettings(serverId, projectRoot);
+                    const projectPath = settings.kedroProjectPath || projectRoot.uri.fsPath;
+                    updateStatusBarProject(statusBarItem, projectPath, result.label);
                 }
                 await sendHeapEventWithMetadata(CMD_SELECT_ENV, context);
             }),
@@ -190,6 +192,15 @@ export const registerCommandsAndEvents = (
             }),
             registerCommand(CMD_DEBUG_NODE_WITH_NEW_NOTEBOOK, async (payload) => {
                 await executeDebugNodeWithNewNotebookCommand(payload);
+            }),
+            registerCommand(CMD_SELECT_PROJECT, async () => {
+                const selectedPath = await selectKedroProject();
+                if (selectedPath) {
+                    // Server restart is triggered automatically by onDidChangeConfiguration
+                    const projectRoot = await getProjectRoot();
+                    const settings = await getWorkspaceSettings(serverId, projectRoot);
+                    updateStatusBarProject(statusBarItem, selectedPath, settings.environment || 'local');
+                }
             }),
             registerCommand(CMD_TOGGLE_VIZ_THEME, async () => {
                 await toggleVizTheme();

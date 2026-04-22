@@ -11,4 +11,4 @@ Please refer to “Set Custom Kedro Project Path” in https://marketplace.visua
 
 **Note:** This step is applicable to those who have their kedro project not at the root directory or they have multiple kedro projects.
 
-
+**Tip:** If your workspace contains multiple Kedro projects, you can also use `Kedro: Switch Kedro Project` from the Command Palette to quickly switch between them.

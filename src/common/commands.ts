@@ -5,8 +5,8 @@ import * as vscode from 'vscode';
 
 import { getWorkspaceFolders } from './vscodeapi';
 import { LanguageClient, State } from 'vscode-languageclient/node';
-import { getKedroProjectPath, isKedroProject, updateKedroVizPanel } from './utilities';
 import { traceInfo, traceWarn } from './log/logging';
+import { discoverKedroProjects, getKedroProjectPath, isKedroProject, updateKedroVizPanel } from './utilities';
 export async function selectEnvironment() {
     let kedroProjectPath = await getKedroProjectPath();
     let kedroProjectRootDir: string | undefined = undefined;
@@ -204,7 +204,9 @@ export async function executeDebugNodeWithNewNotebookCommand(payload?: DebugNode
 
     if (!payload) {
         traceWarn('[debugNodeWithNewNotebook] missing payload from webview context');
-        await vscode.window.showInformationMessage('Debug node notebook command requires selecting a task node in Kedro Viz.');
+        await vscode.window.showInformationMessage(
+            'Debug node notebook command requires selecting a task node in Kedro Viz.',
+        );
         return;
     }
 
@@ -269,6 +271,56 @@ export async function filterPipelines(lsClient?: LanguageClient) {
             `Error filtering pipelines: ${err instanceof Error ? err.message : String(err)}`,
         );
     }
+}
+
+function showQuickPickWithActiveItem(
+    items: vscode.QuickPickItem[],
+    placeholder: string,
+    activePath?: string,
+): Promise<vscode.QuickPickItem | undefined> {
+    return new Promise((resolve) => {
+        const qp = vscode.window.createQuickPick();
+        qp.items = items;
+        qp.placeholder = placeholder;
+        const active = items.find((i) => i.description === activePath);
+        if (active) {
+            qp.activeItems = [active];
+        }
+        qp.onDidAccept(() => {
+            resolve(qp.selectedItems[0]);
+            qp.dispose();
+        });
+        qp.onDidHide(() => {
+            resolve(undefined);
+            qp.dispose();
+        });
+        qp.show();
+    });
+}
+
+export async function selectKedroProject(): Promise<string | undefined> {
+    const projects = await discoverKedroProjects();
+
+    if (projects.length === 0) {
+        vscode.window.showWarningMessage('No Kedro projects found in the workspace.');
+        return undefined;
+    }
+
+    const currentPath = await getKedroProjectPath();
+    const items: vscode.QuickPickItem[] = projects.map((p) => ({
+        label: p.name,
+        description: p.path,
+    }));
+
+    const picked = await showQuickPickWithActiveItem(items, 'Select a Kedro project', currentPath);
+
+    if (!picked || picked.description === currentPath) {
+        return undefined;
+    }
+
+    const config = vscode.workspace.getConfiguration('kedro');
+    await config.update('kedroProjectPath', picked.description, vscode.ConfigurationTarget.Workspace);
+    return picked.description;
 }
 
 export async function toggleVizTheme() {

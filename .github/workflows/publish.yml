@@ -16,7 +16,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install dependencies & build
         uses: "./.github/actions/installation"
@@ -28,7 +28,7 @@ jobs:
     if: success() && startsWith( github.ref, 'refs/tags/')
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install dependencies & build
         uses: "./.github/actions/installation"
@@ -49,7 +49,7 @@ jobs:
     if: success() && startsWith( github.ref, 'refs/tags/')
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install dependencies & build
         uses: "./.github/actions/installation"

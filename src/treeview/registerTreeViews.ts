@@ -5,8 +5,16 @@ import { UndefinedDatasetProvider } from './undefinedDatasetProvider';
 import { getKedroProjectPath } from '../common/utilities';
 import { registerCommand } from '../common/vscodeapi';
 
+function resolveInitialProjectPath(configuredPath: string | undefined): string | undefined {
+    if (configuredPath && configuredPath.trim() !== '') {
+        return configuredPath;
+    }
+    return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+}
+
 export async function registerTreeViews(context: vscode.ExtensionContext): Promise<void> {
-    const projectPath = await getKedroProjectPath();
+    const configuredProjectPath = await getKedroProjectPath();
+    const projectPath = resolveInitialProjectPath(configuredProjectPath);
 
     const configProvider = new ConfigTreeProvider(projectPath || undefined);
     const catalogProvider = new CatalogTreeProvider(projectPath || undefined);
@@ -43,9 +51,10 @@ export async function registerTreeViews(context: vscode.ExtensionContext): Promi
     vscode.workspace.onDidChangeConfiguration((e) => {
         if (e.affectsConfiguration('kedro.kedroProjectPath')) {
             getKedroProjectPath().then((newPath) => {
-                if (newPath) {
-                    configProvider.setProjectPath(newPath);
-                    catalogProvider.setProjectPath(newPath);
+                const resolvedPath = resolveInitialProjectPath(newPath);
+                if (resolvedPath) {
+                    configProvider.setProjectPath(resolvedPath);
+                    catalogProvider.setProjectPath(resolvedPath);
                 }
             });
         }

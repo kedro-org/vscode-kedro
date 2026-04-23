@@ -22,6 +22,8 @@ export class CatalogTreeProvider implements vscode.TreeDataProvider<vscode.TreeI
     private projectPath: string | undefined;
     private data: PipelineDatasets[] = [];
     private hasLoaded = false;
+    private isLoading = false;
+    private lastErrorMessage: string | undefined;
 
     constructor(projectPath?: string) {
         this.projectPath = projectPath;
@@ -29,6 +31,7 @@ export class CatalogTreeProvider implements vscode.TreeDataProvider<vscode.TreeI
 
     refresh(): void {
         this.hasLoaded = false;
+        this.lastErrorMessage = undefined;
         this._onDidChangeTreeData.fire();
     }
 
@@ -42,9 +45,19 @@ export class CatalogTreeProvider implements vscode.TreeDataProvider<vscode.TreeI
     }
 
     async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
-        await this.ensureLoaded();
-
         if (!element) {
+            if (!this.projectPath) {
+                return [new vscode.TreeItem('No Kedro project selected', vscode.TreeItemCollapsibleState.None)];
+            }
+
+            if (!this.hasLoaded) {
+                this.ensureLoadedInBackground();
+                if (this.lastErrorMessage) {
+                    return [new vscode.TreeItem(`Retrying symbol load... (${this.lastErrorMessage})`, vscode.TreeItemCollapsibleState.None)];
+                }
+                return [new vscode.TreeItem('Loading catalog symbols...', vscode.TreeItemCollapsibleState.None)];
+            }
+
             return this.data.map(
                 (pipeline) => new PipelineItem(pipeline.name, pipeline.datasets.length),
             );
@@ -61,11 +74,27 @@ export class CatalogTreeProvider implements vscode.TreeDataProvider<vscode.TreeI
         return [];
     }
 
-    private async ensureLoaded(): Promise<void> {
-        if (this.hasLoaded || !this.projectPath) {
+    private ensureLoadedInBackground(): void {
+        if (this.isLoading || this.hasLoaded || !this.projectPath) {
             return;
         }
-        this.hasLoaded = true;
+        this.isLoading = true;
+        void this.loadData()
+            .catch(() => {
+                // Error is stored in loadData; keep tree responsive and retryable.
+            })
+            .finally(() => {
+                this.isLoading = false;
+                this._onDidChangeTreeData.fire();
+            });
+    }
+
+    private async loadData(): Promise<void> {
+        if (!this.projectPath) {
+            this.data = [];
+            this.hasLoaded = false;
+            return;
+        }
 
         try {
             const symbols = await this.symbolIndex.searchSymbols(this.projectPath, '');
@@ -97,8 +126,13 @@ export class CatalogTreeProvider implements vscode.TreeDataProvider<vscode.TreeI
             this.data = pipelineData
                 .filter((pipeline) => pipeline.datasets.length > 0)
                 .sort((a, b) => a.name.localeCompare(b.name));
-        } catch {
+            this.hasLoaded = true;
+            this.lastErrorMessage = undefined;
+        } catch (error) {
             this.data = [];
+            this.hasLoaded = false;
+            const message = error instanceof Error ? error.message : 'LSP not ready yet';
+            this.lastErrorMessage = message;
         }
     }
 

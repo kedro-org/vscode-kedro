@@ -5,9 +5,30 @@ function getArray<T>(value: unknown): T[] {
     return Array.isArray(value) ? (value as T[]) : [];
 }
 
+async function executeWithTimeout<T>(command: string, timeoutMs: number): Promise<T> {
+    let timeoutHandle: NodeJS.Timeout | undefined;
+    try {
+        const timeoutPromise = new Promise<never>((_, reject) => {
+            timeoutHandle = setTimeout(() => {
+                reject(new Error(`${command} timed out after ${timeoutMs}ms`));
+            }, timeoutMs);
+        });
+
+        const result = await Promise.race([
+            vscode.commands.executeCommand<T>(command),
+            timeoutPromise,
+        ]);
+        return result as T;
+    } finally {
+        if (timeoutHandle) {
+            clearTimeout(timeoutHandle);
+        }
+    }
+}
+
 export class LspSymbolSource implements SymbolSource {
     async load(projectPath: string): Promise<SymbolSourceData> {
-        const symbolIndex = await vscode.commands.executeCommand<any>('kedro.getSymbolIndex');
+        const symbolIndex = await executeWithTimeout<any>('kedro.getSymbolIndex', 10000);
         if (!symbolIndex || typeof symbolIndex !== 'object') {
             throw new Error('No Kedro symbol index returned from language server.');
         }

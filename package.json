@@ -98,9 +98,14 @@
         "menus": {
             "view/title": [
                 {
+                    "command": "kedro.runKedroViz",
+                    "when": "view == kedroConfigView || view == kedroCatalogView || view == kedroUndefinedView",
+                    "group": "navigation@1"
+                },
+                {
                     "command": "kedro.refreshCatalogView",
                     "when": "view == kedroConfigView || view == kedroCatalogView || view == kedroUndefinedView",
-                    "group": "navigation"
+                    "group": "navigation@2"
                 }
             ]
         },
@@ -307,6 +312,19 @@
                 "title": "Refresh",
                 "category": "kedro",
                 "icon": "$(refresh)"
+            },
+            {
+                "command": "kedro.searchSymbols",
+                "title": "Search Symbols",
+                "category": "kedro"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "kedro.searchSymbols",
+                "key": "ctrl+alt+k",
+                "mac": "cmd+alt+k",
+                "when": "editorTextFocus || !inputFocus"
             }
         ]
     },

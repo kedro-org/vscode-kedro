@@ -11,6 +11,7 @@ import { loadServerDefaults } from './common/setup';
 
 import {
     checkKedroProjectConsent,
+    discoverKedroProjects,
     installTelemetryDependenciesIfNeeded,
     isKedroProject,
     getKedroProjectPath,
@@ -51,22 +52,57 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 return;
             }
         } else {
-            // Not a Kedro project and no path provided
-            console.log('Kedro VSCode extension: No Kedro project detected and no project path set.');
-            traceLog('No Kedro project detected and no kedro.projectPath set. Extension deactivated.');
+            // Not a Kedro project at workspace root, try discovering nested projects
+            const discoveredProjects = await discoverKedroProjects();
 
-            if (!isCommandsAndEventsRegistered) {
-                // Register all commands and events
-                registerCommandsAndEvents(
-                    context,
-                    () => lsClient,
-                    (newClient) => {
-                        lsClient = newClient;
-                    },
-                );
-                isCommandsAndEventsRegistered = true;
+            if (discoveredProjects.length === 1) {
+                // Single nested project found, auto-select it
+                kedroProjectPath = discoveredProjects[0].path;
+                const config = vscode.workspace.getConfiguration('kedro');
+                await config.update('kedroProjectPath', kedroProjectPath, vscode.ConfigurationTarget.Workspace);
+                traceLog(`Auto-selected Kedro project: ${kedroProjectPath}`);
+            } else if (discoveredProjects.length > 1) {
+                // Multiple projects found, show non-intrusive notification
+                traceLog(`Found ${discoveredProjects.length} Kedro projects in workspace.`);
+                vscode.window
+                    .showInformationMessage(
+                        `Found ${discoveredProjects.length} Kedro projects in this workspace.`,
+                        'Select Project',
+                    )
+                    .then(async (selection) => {
+                        if (selection === 'Select Project') {
+                            await vscode.commands.executeCommand('kedro.selectProject');
+                        }
+                    });
+
+                // Register commands so the user can pick a project, but don't start the server yet
+                if (!isCommandsAndEventsRegistered) {
+                    registerCommandsAndEvents(
+                        context,
+                        () => lsClient,
+                        (newClient) => {
+                            lsClient = newClient;
+                        },
+                    );
+                    isCommandsAndEventsRegistered = true;
+                }
+                return;
+            } else {
+                // Nothing found at all
+                traceLog('No Kedro project detected. Extension deactivated.');
+
+                if (!isCommandsAndEventsRegistered) {
+                    registerCommandsAndEvents(
+                        context,
+                        () => lsClient,
+                        (newClient) => {
+                            lsClient = newClient;
+                        },
+                    );
+                    isCommandsAndEventsRegistered = true;
+                }
+                return;
             }
-            return;
         }
     }
 

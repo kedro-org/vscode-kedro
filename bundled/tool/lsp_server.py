@@ -83,6 +83,7 @@ from pygls.workspace import TextDocument
 
 """Kedro Language Server."""
 import yaml
+from yaml.nodes import MappingNode, Node, ScalarNode, SequenceNode
 from _lsp_server import DummyDataCatalog, SafeLineLoader
 from kedro.config import OmegaConfigLoader
 from kedro.framework.hooks.manager import _NullPluginManager
@@ -92,6 +93,7 @@ from kedro.framework.startup import (
     bootstrap_project,
 )
 from kedro.io import DataCatalog
+from omegaconf import OmegaConf
 from pygls.server import LanguageServer
 
 # Import validators
@@ -325,6 +327,180 @@ def _get_param_location(server: KedroLanguageServer, word: str) -> Optional[Loca
         return
 
 
+def _is_conf_yaml(server: KedroLanguageServer, uri: str) -> bool:
+    if server.config_loader is None:
+        return False
+    try:
+        file_path = Path(uris.to_fs_path(uri)).resolve()
+        conf_source = Path(os.fspath(server.config_loader.conf_source)).resolve()
+    except Exception:
+        return False
+    return (
+        file_path.suffix in {".yml", ".yaml"}
+        and conf_source in file_path.parents
+    )
+
+
+def _position_in_node(position: Position, node: Node) -> bool:
+    current = (position.line, position.character)
+    start = (node.start_mark.line, node.start_mark.column)
+    end = (node.end_mark.line, node.end_mark.column)
+    return start <= current <= end
+
+
+def _yaml_path_from_node(node: Node, position: Position, path: List[Any]) -> Optional[List[Any]]:
+    if not _position_in_node(position, node):
+        return None
+
+    if isinstance(node, MappingNode):
+        for key_node, value_node in node.value:
+            key_token = key_node.value if isinstance(key_node, ScalarNode) else None
+            if _position_in_node(position, key_node):
+                return path + ([key_token] if key_token is not None else [])
+
+            value_path = path + ([key_token] if key_token is not None else [])
+            nested_path = _yaml_path_from_node(value_node, position, value_path)
+            if nested_path is not None:
+                return nested_path
+        return path
+
+    if isinstance(node, SequenceNode):
+        for index, item_node in enumerate(node.value):
+            nested_path = _yaml_path_from_node(item_node, position, path + [index])
+            if nested_path is not None:
+                return nested_path
+        return path
+
+    if isinstance(node, ScalarNode):
+        return path
+
+    return path
+
+
+def _yaml_path_at_position(document: TextDocument, position: Position) -> Optional[List[Any]]:
+    try:
+        root_node = yaml.compose(document.source)
+    except yaml.YAMLError:
+        return None
+    if root_node is None:
+        return None
+    return _yaml_path_from_node(root_node, position, [])
+
+
+def _get_config_key_for_uri(server: KedroLanguageServer, uri: str) -> Optional[str]:
+    if server.config_loader is None:
+        return None
+    try:
+        target_path = Path(uris.to_fs_path(uri)).resolve()
+    except Exception:
+        return None
+
+    for key in server.config_loader.config_patterns:
+        for conf_path in _get_conf_paths(server, key):
+            try:
+                if conf_path.resolve() == target_path:
+                    return key
+            except Exception:
+                continue
+    return None
+
+
+def _provenance_to_location(provenance: Any) -> Optional[Location]:
+    if provenance is None:
+        return None
+    if getattr(provenance, "kind", None) != "file":
+        return None
+    source = getattr(provenance, "source", None)
+    line = getattr(provenance, "line", None)
+    column = getattr(provenance, "column", None)
+    if not source or line is None:
+        return None
+
+    source_path = Path(source).expanduser()
+    if not source_path.is_absolute():
+        source_path = Path(os.path.abspath(os.fspath(source_path)))
+
+    start_line = max(line - 1, 0)
+    start_character = max((column or 1) - 1, 0)
+    return Location(
+        uri=source_path.resolve().as_uri(),
+        range=Range(
+            start=Position(line=start_line, character=start_character),
+            end=Position(line=start_line, character=start_character + 1),
+        ),
+    )
+
+
+def _lookup_provenance_location(resolved_cfg: Any, path_tokens: List[Any]) -> Tuple[Optional[Location], str]:
+    try:
+        if not path_tokens:
+            provenance = OmegaConf.get_provenance(resolved_cfg)
+            location = _provenance_to_location(provenance)
+            if location:
+                return location, ""
+            if provenance is None:
+                return None, "provenance_unavailable"
+            return None, "provenance_non_file"
+
+        current_node = resolved_cfg
+        parent_node = None
+        last_token = None
+        for token in path_tokens:
+            parent_node = current_node
+            last_token = token
+            current_node = current_node[token]
+
+        provenance = (
+            OmegaConf.get_provenance(parent_node, last_token)
+            if parent_node is not None
+            else OmegaConf.get_provenance(current_node)
+        )
+        location = _provenance_to_location(provenance)
+        if location:
+            return location, ""
+        if provenance is None:
+            return None, "provenance_unavailable"
+        return None, "provenance_non_file"
+    except KeyError:
+        return None, "path_not_resolved"
+    except Exception:
+        return None, "exception"
+
+
+def _definition_from_yaml_provenance(
+    server: KedroLanguageServer, params: TextDocumentPositionParams, document: TextDocument
+) -> Optional[List[Location]]:
+    log_for_lsp_debug(
+        f"provenance_nav_attempt uri={params.text_document.uri} line={params.position.line} character={params.position.character}"
+    )
+
+    path_tokens = _yaml_path_at_position(document, params.position)
+    if path_tokens is None:
+        log_for_lsp_debug("provenance_nav_fallback reason=path_not_resolved")
+        return None
+
+    config_key = _get_config_key_for_uri(server, params.text_document.uri)
+    if config_key is None:
+        log_for_lsp_debug("provenance_nav_fallback reason=path_not_resolved")
+        return None
+
+    try:
+        resolved_cfg = server.config_loader[config_key]
+    except Exception:
+        log_for_lsp_debug("provenance_nav_fallback reason=exception")
+        return None
+
+    location, reason = _lookup_provenance_location(resolved_cfg, path_tokens)
+    if location:
+        log_for_lsp_debug(
+            f"provenance_nav_hit source={location.uri} line={location.range.start.line} column={location.range.start.character}"
+        )
+        return [location]
+
+    log_for_lsp_debug(f"provenance_nav_fallback reason={reason}")
+    return None
+
+
 @LSP_SERVER.feature(TEXT_DOCUMENT_DEFINITION)
 def definition(
     server: KedroLanguageServer, params: TextDocumentPositionParams, word=None
@@ -419,14 +595,23 @@ def definition(
         )
     else:
         document = None
+
+    if params and document and _is_conf_yaml(server, params.text_document.uri):
+        provenance_result = _definition_from_yaml_provenance(server, params, document)
+        if provenance_result:
+            return provenance_result
+
     result = _query_parameter(document, word)
     if result:
+        log_for_lsp_debug("legacy_nav_hit branch=parameter")
         return result
     result = _query_catalog(document, word)
     if result:
+        log_for_lsp_debug("legacy_nav_hit branch=catalog")
         return result
     result = _query_pipeline_from_catalog(document, word)
     if result:
+        log_for_lsp_debug("legacy_nav_hit branch=pipeline_from_catalog")
         return result
 
     # Return None so VS Code falls through to other definition providers (e.g. Pylance)

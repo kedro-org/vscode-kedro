@@ -93,6 +93,7 @@ from kedro.framework.startup import (
 )
 from kedro.io import DataCatalog
 from omegaconf import OmegaConf
+from omegaconf.errors import OmegaConfBaseException
 from pygls.server import LanguageServer
 
 # Import validators
@@ -404,26 +405,19 @@ def _lookup_provenance_location(resolved_cfg: Any, path_tokens: List[Any]) -> Tu
                 return None, "provenance_unavailable"
             return None, "provenance_non_file"
 
-        current_node = resolved_cfg
-        parent_node = None
-        last_token = None
-        for token in path_tokens:
-            parent_node = current_node
-            last_token = token
-            current_node = current_node[token]
+        parent_node = resolved_cfg
+        for token in path_tokens[:-1]:
+            parent_node = parent_node[token]
+        last_token = path_tokens[-1]
 
-        provenance = (
-            OmegaConf.get_provenance(parent_node, last_token)
-            if parent_node is not None
-            else OmegaConf.get_provenance(current_node)
-        )
+        provenance = OmegaConf.get_provenance(parent_node, last_token)
         location = _provenance_to_location(provenance)
         if location:
             return location, ""
         if provenance is None:
             return None, "provenance_unavailable"
         return None, "provenance_non_file"
-    except KeyError:
+    except (KeyError, IndexError, TypeError, OmegaConfBaseException):
         return None, "path_not_resolved"
     except Exception:
         return None, "exception"

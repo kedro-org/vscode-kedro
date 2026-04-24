@@ -82,6 +82,9 @@ def interpolation_reference_path_at_position(
     for match in _INTERPOLATION_RE.finditer(line_text):
         if not (match.start() <= character < match.end()):
             continue
+        # Ignore delimiter positions: '$', '{', and '}' should not trigger navigation.
+        if character <= match.start() + 1 or character >= match.end() - 1:
+            return None
         expression = match.group(1).strip()
         # Resolver interpolations (e.g. ${oc.env:HOME}) are out of scope.
         if ":" in expression:
@@ -101,4 +104,50 @@ def interpolation_expression_at_position(
     for match in _INTERPOLATION_RE.finditer(line_text):
         if match.start() <= character < match.end():
             return match.group(1).strip()
+    return None
+
+
+def key_position_for_path(
+    source: str, path_tokens: List[Any]
+) -> Optional[tuple[int, int]]:
+    """Return 0-based (line, character) for the final key/index path target."""
+    try:
+        root_node = yaml.compose(source)
+    except yaml.YAMLError:
+        return None
+    if root_node is None:
+        return None
+
+    node: Node = root_node
+    for idx, token in enumerate(path_tokens):
+        is_last = idx == len(path_tokens) - 1
+
+        if isinstance(node, MappingNode):
+            if not isinstance(token, str):
+                return None
+            matched = False
+            for key_node, value_node in node.value:
+                if isinstance(key_node, ScalarNode) and key_node.value == token:
+                    matched = True
+                    if is_last:
+                        return (key_node.start_mark.line, key_node.start_mark.column)
+                    node = value_node
+                    break
+            if not matched:
+                return None
+            continue
+
+        if isinstance(node, SequenceNode):
+            if not isinstance(token, int):
+                return None
+            if token < 0 or token >= len(node.value):
+                return None
+            item_node = node.value[token]
+            if is_last:
+                return (item_node.start_mark.line, item_node.start_mark.column)
+            node = item_node
+            continue
+
+        return None
+
     return None

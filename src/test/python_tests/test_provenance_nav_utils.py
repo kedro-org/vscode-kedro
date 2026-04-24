@@ -12,6 +12,7 @@ sys.path.insert(0, str(BUNDLED_PATH))
 from provenance_nav_utils import (
     interpolation_expression_at_position,
     interpolation_reference_path_at_position,
+    key_position_for_path,
     yaml_path_at_position,
 )
 
@@ -64,8 +65,8 @@ def test_interpolation_reference_path_at_position_simple_reference():
         c: ${a.b}
         """
     )
-    # Cursor on '{' in "${a.b}"
-    assert interpolation_reference_path_at_position(content, 3, 4) == ["a", "b"]
+    # Cursor on 'a' in "${a.b}"
+    assert interpolation_reference_path_at_position(content, 3, 6) == ["a", "b"]
 
 
 def test_interpolation_reference_path_at_position_list_reference():
@@ -81,6 +82,13 @@ def test_interpolation_reference_path_at_position_resolver_returns_none():
 def test_interpolation_reference_path_at_position_outside_token_returns_none():
     content = "c: ${a.b}\n"
     assert interpolation_reference_path_at_position(content, 0, 1) is None
+
+
+def test_interpolation_reference_path_at_dollar_or_braces_returns_none():
+    content = "c: ${a.b}\n"
+    assert interpolation_reference_path_at_position(content, 0, 3) is None  # $
+    assert interpolation_reference_path_at_position(content, 0, 4) is None  # {
+    assert interpolation_reference_path_at_position(content, 0, 8) is None  # }
 
 
 def test_interpolation_expression_at_position_returns_raw_expression():
@@ -109,8 +117,8 @@ def test_interpolation_reference_resolves_provenance_same_file():
         c: ${a.b}
         """
     )
-    # Cursor at '{' on "c: ${a.b}"
-    path_tokens = interpolation_reference_path_at_position(content, 3, 4)
+    # Cursor on 'a' in "c: ${a.b}"
+    path_tokens = interpolation_reference_path_at_position(content, 3, 6)
     assert path_tokens == ["a", "b"]
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -142,7 +150,7 @@ def test_interpolation_reference_resolves_provenance_across_merge():
     )
 
     # Cursor at '$' in interpolation on second line
-    path_tokens = interpolation_reference_path_at_position(override_content, 1, 15)
+    path_tokens = interpolation_reference_path_at_position(override_content, 1, 17)
     assert path_tokens == ["shuttle_passenger_capacity_plot_exp", "plotly_args"]
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -158,3 +166,18 @@ def test_interpolation_reference_resolves_provenance_across_merge():
         assert Path(provenance.source).resolve() == base_path.resolve()
         # Value node under "plotly_args:" line (1-based) in base file
         assert provenance.line == 3
+
+
+def test_key_position_for_path_points_to_mapping_key_line():
+    content = dedent(
+        """\
+        shuttle_passenger_capacity_plot_exp:
+          type: plotly.PlotlyDataset
+          plotly_args:
+            type: bar
+        """
+    )
+    pos = key_position_for_path(
+        content, ["shuttle_passenger_capacity_plot_exp", "plotly_args"]
+    )
+    assert pos == (2, 2)

@@ -106,6 +106,7 @@ from validators import (
 from provenance_nav_utils import (
     interpolation_expression_at_position,
     interpolation_reference_path_at_position,
+    key_position_for_path,
     yaml_path_at_position,
 )
 
@@ -434,6 +435,27 @@ def _provenance_to_location(provenance: Any) -> Optional[Location]:
     )
 
 
+def _refine_location_to_yaml_key(location: Location, path_tokens: List[Any]) -> Location:
+    try:
+        source_path = Path(uris.to_fs_path(location.uri))
+        source = source_path.read_text(encoding="utf-8")
+    except Exception:
+        return location
+
+    key_pos = key_position_for_path(source, path_tokens)
+    if key_pos is None:
+        return location
+
+    line, character = key_pos
+    return Location(
+        uri=location.uri,
+        range=Range(
+            start=Position(line=line, character=character),
+            end=Position(line=line, character=character + 1),
+        ),
+    )
+
+
 def _lookup_provenance_location(resolved_cfg: Any, path_tokens: List[Any]) -> Tuple[Optional[Location], str]:
     try:
         if not path_tokens:
@@ -506,6 +528,7 @@ def _definition_from_yaml_provenance(
 
     location, reason = _lookup_provenance_location(resolved_cfg, path_tokens)
     if location:
+        location = _refine_location_to_yaml_key(location, path_tokens)
         log_to_output(
             f"provenance_nav_hit source={location.uri} line={location.range.start.line} column={location.range.start.character}"
         )

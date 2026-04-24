@@ -83,7 +83,6 @@ from pygls.workspace import TextDocument
 
 """Kedro Language Server."""
 import yaml
-from yaml.nodes import MappingNode, Node, ScalarNode, SequenceNode
 from _lsp_server import DummyDataCatalog, SafeLineLoader
 from kedro.config import OmegaConfigLoader
 from kedro.framework.hooks.manager import _NullPluginManager
@@ -103,6 +102,7 @@ from validators import (
     FullCatalogValidator,
     create_diagnostic,
 )
+from provenance_nav_utils import yaml_path_at_position
 
 
 class KedroLanguageServer(LanguageServer):
@@ -341,50 +341,8 @@ def _is_conf_yaml(server: KedroLanguageServer, uri: str) -> bool:
     )
 
 
-def _position_in_node(position: Position, node: Node) -> bool:
-    current = (position.line, position.character)
-    start = (node.start_mark.line, node.start_mark.column)
-    end = (node.end_mark.line, node.end_mark.column)
-    return start <= current <= end
-
-
-def _yaml_path_from_node(node: Node, position: Position, path: List[Any]) -> Optional[List[Any]]:
-    if not _position_in_node(position, node):
-        return None
-
-    if isinstance(node, MappingNode):
-        for key_node, value_node in node.value:
-            key_token = key_node.value if isinstance(key_node, ScalarNode) else None
-            if _position_in_node(position, key_node):
-                return path + ([key_token] if key_token is not None else [])
-
-            value_path = path + ([key_token] if key_token is not None else [])
-            nested_path = _yaml_path_from_node(value_node, position, value_path)
-            if nested_path is not None:
-                return nested_path
-        return path
-
-    if isinstance(node, SequenceNode):
-        for index, item_node in enumerate(node.value):
-            nested_path = _yaml_path_from_node(item_node, position, path + [index])
-            if nested_path is not None:
-                return nested_path
-        return path
-
-    if isinstance(node, ScalarNode):
-        return path
-
-    return path
-
-
 def _yaml_path_at_position(document: TextDocument, position: Position) -> Optional[List[Any]]:
-    try:
-        root_node = yaml.compose(document.source)
-    except yaml.YAMLError:
-        return None
-    if root_node is None:
-        return None
-    return _yaml_path_from_node(root_node, position, [])
+    return yaml_path_at_position(document.source, position.line, position.character)
 
 
 def _get_config_key_for_uri(server: KedroLanguageServer, uri: str) -> Optional[str]:

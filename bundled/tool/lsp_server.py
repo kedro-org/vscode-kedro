@@ -102,7 +102,10 @@ from validators import (
     FullCatalogValidator,
     create_diagnostic,
 )
-from provenance_nav_utils import yaml_path_at_position
+from provenance_nav_utils import (
+    interpolation_reference_path_at_position,
+    yaml_path_at_position,
+)
 
 
 class KedroLanguageServer(LanguageServer):
@@ -432,7 +435,14 @@ def _definition_from_yaml_provenance(
         f"provenance_nav_attempt uri={params.text_document.uri} line={params.position.line} character={params.position.character}"
     )
 
-    path_tokens = _yaml_path_at_position(document, params.position)
+    path_tokens = interpolation_reference_path_at_position(
+        document.source, params.position.line, params.position.character
+    )
+    if path_tokens:
+        log_for_lsp_debug(f"provenance_nav_interpolation_ref path={path_tokens}")
+    else:
+        path_tokens = _yaml_path_at_position(document, params.position)
+
     if path_tokens is None:
         log_for_lsp_debug("provenance_nav_fallback reason=path_not_resolved")
         return None

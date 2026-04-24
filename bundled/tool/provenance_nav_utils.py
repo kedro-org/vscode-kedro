@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any, List, Optional
 
 import yaml
@@ -52,3 +53,38 @@ def yaml_path_at_position(source: str, line: int, character: int) -> Optional[Li
     if root_node is None:
         return None
     return _yaml_path_from_node(root_node, line, character, [])
+
+
+_INTERPOLATION_RE = re.compile(r"\$\{([^{}]+)\}")
+_PATH_SEGMENT_RE = re.compile(r"([A-Za-z_][A-Za-z0-9_]*)(\[(\d+)\])?")
+
+
+def _parse_reference_path(path_expr: str) -> Optional[List[Any]]:
+    tokens: List[Any] = []
+    for segment in path_expr.split("."):
+        match = _PATH_SEGMENT_RE.fullmatch(segment)
+        if not match:
+            return None
+        tokens.append(match.group(1))
+        if match.group(3) is not None:
+            tokens.append(int(match.group(3)))
+    return tokens
+
+
+def interpolation_reference_path_at_position(
+    source: str, line: int, character: int
+) -> Optional[List[Any]]:
+    lines = source.splitlines()
+    if line < 0 or line >= len(lines):
+        return None
+
+    line_text = lines[line]
+    for match in _INTERPOLATION_RE.finditer(line_text):
+        if not (match.start() <= character < match.end()):
+            continue
+        expression = match.group(1).strip()
+        # Resolver interpolations (e.g. ${oc.env:HOME}) are out of scope.
+        if ":" in expression:
+            return None
+        return _parse_reference_path(expression)
+    return None

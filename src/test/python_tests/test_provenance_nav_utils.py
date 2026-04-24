@@ -7,6 +7,7 @@ BUNDLED_PATH = Path(__file__).parents[3] / "bundled" / "tool"
 sys.path.insert(0, str(BUNDLED_PATH))
 
 from provenance_nav_utils import (
+    interpolation_expression_at_position,
     interpolation_reference_path_at_position,
     yaml_path_at_position,
 )
@@ -77,3 +78,13 @@ def test_interpolation_reference_path_at_position_resolver_returns_none():
 def test_interpolation_reference_path_at_position_outside_token_returns_none():
     content = "c: ${a.b}\n"
     assert interpolation_reference_path_at_position(content, 0, 1) is None
+
+
+def test_interpolation_expression_at_position_returns_raw_expression():
+    content = "c: ${a.b}\n"
+    assert interpolation_expression_at_position(content, 0, 5) == "a.b"
+
+
+def test_interpolation_expression_at_position_outside_token_returns_none():
+    content = "c: ${a.b}\n"
+    assert interpolation_expression_at_position(content, 0, 0) is None

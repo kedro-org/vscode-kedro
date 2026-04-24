@@ -103,6 +103,7 @@ from validators import (
     create_diagnostic,
 )
 from provenance_nav_utils import (
+    interpolation_expression_at_position,
     interpolation_reference_path_at_position,
     yaml_path_at_position,
 )
@@ -431,41 +432,52 @@ def _lookup_provenance_location(resolved_cfg: Any, path_tokens: List[Any]) -> Tu
 def _definition_from_yaml_provenance(
     server: KedroLanguageServer, params: TextDocumentPositionParams, document: TextDocument
 ) -> Optional[List[Location]]:
-    log_for_lsp_debug(
+    log_to_output(
         f"provenance_nav_attempt uri={params.text_document.uri} line={params.position.line} character={params.position.character}"
     )
 
-    path_tokens = interpolation_reference_path_at_position(
+    interpolation_expression = interpolation_expression_at_position(
         document.source, params.position.line, params.position.character
     )
-    if path_tokens:
-        log_for_lsp_debug(f"provenance_nav_interpolation_ref path={path_tokens}")
+    if interpolation_expression is not None:
+        path_tokens = interpolation_reference_path_at_position(
+            document.source, params.position.line, params.position.character
+        )
+        log_to_output(
+            f"provenance_nav_interpolation expression={interpolation_expression} path={path_tokens}"
+        )
     else:
         path_tokens = _yaml_path_at_position(document, params.position)
+        log_to_output(f"provenance_nav_yaml_path path={path_tokens}")
 
     if path_tokens is None:
-        log_for_lsp_debug("provenance_nav_fallback reason=path_not_resolved")
+        if interpolation_expression is not None:
+            log_to_output(
+                "provenance_nav_fallback reason=interpolation_not_supported_or_unresolved"
+            )
+        else:
+            log_to_output("provenance_nav_fallback reason=path_not_resolved")
         return None
 
     config_key = _get_config_key_for_uri(server, params.text_document.uri)
     if config_key is None:
-        log_for_lsp_debug("provenance_nav_fallback reason=path_not_resolved")
+        log_to_output("provenance_nav_fallback reason=path_not_resolved")
         return None
 
     try:
         resolved_cfg = server.config_loader[config_key]
     except Exception:
-        log_for_lsp_debug("provenance_nav_fallback reason=exception")
+        log_to_output("provenance_nav_fallback reason=exception")
         return None
 
     location, reason = _lookup_provenance_location(resolved_cfg, path_tokens)
     if location:
-        log_for_lsp_debug(
+        log_to_output(
             f"provenance_nav_hit source={location.uri} line={location.range.start.line} column={location.range.start.character}"
         )
         return [location]
 
-    log_for_lsp_debug(f"provenance_nav_fallback reason={reason}")
+    log_to_output(f"provenance_nav_fallback reason={reason} path={path_tokens}")
     return None
 
 

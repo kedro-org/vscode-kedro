@@ -88,3 +88,17 @@ def interpolation_reference_path_at_position(
             return None
         return _parse_reference_path(expression)
     return None
+
+
+def interpolation_expression_at_position(
+    source: str, line: int, character: int
+) -> Optional[str]:
+    lines = source.splitlines()
+    if line < 0 or line >= len(lines):
+        return None
+
+    line_text = lines[line]
+    for match in _INTERPOLATION_RE.finditer(line_text):
+        if match.start() <= character < match.end():
+            return match.group(1).strip()
+    return None

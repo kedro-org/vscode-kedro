@@ -1,6 +1,9 @@
 from pathlib import Path
+import tempfile
 from textwrap import dedent
 import sys
+
+from omegaconf import OmegaConf
 
 
 BUNDLED_PATH = Path(__file__).parents[3] / "bundled" / "tool"
@@ -88,3 +91,70 @@ def test_interpolation_expression_at_position_returns_raw_expression():
 def test_interpolation_expression_at_position_outside_token_returns_none():
     content = "c: ${a.b}\n"
     assert interpolation_expression_at_position(content, 0, 0) is None
+
+
+def _provenance_for_reference(cfg, path_tokens):
+    parent = cfg
+    for token in path_tokens[:-1]:
+        parent = parent[token]
+    return OmegaConf.get_provenance(parent, path_tokens[-1])
+
+
+def test_interpolation_reference_resolves_provenance_same_file():
+    content = dedent(
+        """\
+        a:
+          b: 2
+
+        c: ${a.b}
+        """
+    )
+    # Cursor at '{' on "c: ${a.b}"
+    path_tokens = interpolation_reference_path_at_position(content, 3, 4)
+    assert path_tokens == ["a", "b"]
+
+    with tempfile.TemporaryDirectory() as tmp:
+        yaml_path = Path(tmp) / "example.yaml"
+        yaml_path.write_text(content, encoding="utf-8")
+        cfg = OmegaConf.load(yaml_path)
+
+        provenance = _provenance_for_reference(cfg, path_tokens)
+        assert provenance is not None
+        assert provenance.kind == "file"
+        assert Path(provenance.source).resolve() == yaml_path.resolve()
+        # "b: 2" line (1-based)
+        assert provenance.line == 2
+
+
+def test_interpolation_reference_resolves_provenance_across_merge():
+    base_content = dedent(
+        """\
+        shuttle_passenger_capacity_plot_exp:
+          plotly_args:
+            title: "From base"
+        """
+    )
+    override_content = dedent(
+        """\
+        dummy_confusion_matrix:
+          something: "${shuttle_passenger_capacity_plot_exp.plotly_args}"
+        """
+    )
+
+    # Cursor at '$' in interpolation on second line
+    path_tokens = interpolation_reference_path_at_position(override_content, 1, 15)
+    assert path_tokens == ["shuttle_passenger_capacity_plot_exp", "plotly_args"]
+
+    with tempfile.TemporaryDirectory() as tmp:
+        base_path = Path(tmp) / "base.yaml"
+        override_path = Path(tmp) / "override.yaml"
+        base_path.write_text(base_content, encoding="utf-8")
+        override_path.write_text(override_content, encoding="utf-8")
+
+        merged = OmegaConf.merge(OmegaConf.load(base_path), OmegaConf.load(override_path))
+        provenance = _provenance_for_reference(merged, path_tokens)
+        assert provenance is not None
+        assert provenance.kind == "file"
+        assert Path(provenance.source).resolve() == base_path.resolve()
+        # Value node under "plotly_args:" line (1-based) in base file
+        assert provenance.line == 3

@@ -109,8 +109,8 @@ def interpolation_expression_at_position(
 
 def key_position_for_path(
     source: str, path_tokens: List[Any]
-) -> Optional[tuple[int, int]]:
-    """Return 0-based (line, character) for the final key/index path target."""
+) -> Optional[tuple[int, int, int]]:
+    """Return 0-based (line, character, width) for final key/index target."""
     try:
         root_node = yaml.compose(source)
     except yaml.YAMLError:
@@ -130,7 +130,11 @@ def key_position_for_path(
                 if isinstance(key_node, ScalarNode) and key_node.value == token:
                     matched = True
                     if is_last:
-                        return (key_node.start_mark.line, key_node.start_mark.column)
+                        return (
+                            key_node.start_mark.line,
+                            key_node.start_mark.column,
+                            len(key_node.value),
+                        )
                     node = value_node
                     break
             if not matched:
@@ -144,7 +148,7 @@ def key_position_for_path(
                 return None
             item_node = node.value[token]
             if is_last:
-                return (item_node.start_mark.line, item_node.start_mark.column)
+                return (item_node.start_mark.line, item_node.start_mark.column, 1)
             node = item_node
             continue
 

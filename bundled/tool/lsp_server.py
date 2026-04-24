@@ -446,12 +446,13 @@ def _refine_location_to_yaml_key(location: Location, path_tokens: List[Any]) -> 
     if key_pos is None:
         return location
 
-    line, character = key_pos
+    line, character, width = key_pos
+    highlight_width = max(width, 1)
     return Location(
         uri=location.uri,
         range=Range(
             start=Position(line=line, character=character),
-            end=Position(line=line, character=character + 1),
+            end=Position(line=line, character=character + highlight_width),
         ),
     )
 

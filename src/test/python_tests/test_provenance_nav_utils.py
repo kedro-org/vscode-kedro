@@ -180,4 +180,4 @@ def test_key_position_for_path_points_to_mapping_key_line():
     pos = key_position_for_path(
         content, ["shuttle_passenger_capacity_plot_exp", "plotly_args"]
     )
-    assert pos == (2, 2)
+    assert pos == (2, 2, len("plotly_args"))

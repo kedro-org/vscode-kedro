@@ -368,6 +368,46 @@ def _get_config_key_for_uri(server: KedroLanguageServer, uri: str) -> Optional[s
     return None
 
 
+def _build_provenance_config_for_key(server: KedroLanguageServer, key: str) -> Optional[Any]:
+    if server.config_loader is None:
+        return None
+
+    conf_source = Path(os.fspath(server.config_loader.conf_source))
+    base_prefix = conf_source / server.config_loader.base_env
+    run_env = server.run_env or server.config_loader.base_env
+    run_prefix = conf_source / run_env
+
+    unique_paths = []
+    seen = set()
+    for path in _get_conf_paths(server, key):
+        resolved = path.resolve()
+        if resolved not in seen:
+            seen.add(resolved)
+            unique_paths.append(resolved)
+
+    base_paths = [path for path in unique_paths if base_prefix in path.parents]
+    run_paths = [path for path in unique_paths if run_prefix in path.parents]
+    other_paths = [
+        path
+        for path in unique_paths
+        if path not in base_paths and path not in run_paths
+    ]
+
+    # Merge order mirrors effective config semantics: base first, then run env.
+    merge_order = sorted(base_paths) + sorted(other_paths) + sorted(run_paths)
+    if not merge_order:
+        return None
+
+    merged = None
+    for path in merge_order:
+        try:
+            loaded = OmegaConf.load(path)
+        except Exception:
+            continue
+        merged = loaded if merged is None else OmegaConf.merge(merged, loaded)
+    return merged
+
+
 def _provenance_to_location(provenance: Any) -> Optional[Location]:
     if provenance is None:
         return None
@@ -419,7 +459,8 @@ def _lookup_provenance_location(resolved_cfg: Any, path_tokens: List[Any]) -> Tu
         return None, "provenance_non_file"
     except (KeyError, IndexError, TypeError, OmegaConfBaseException):
         return None, "path_not_resolved"
-    except Exception:
+    except Exception as e:
+        log_to_output(f"provenance_nav_exception type={type(e).__name__} message={e}")
         return None, "exception"
 
 
@@ -458,10 +499,9 @@ def _definition_from_yaml_provenance(
         log_to_output("provenance_nav_fallback reason=path_not_resolved")
         return None
 
-    try:
-        resolved_cfg = server.config_loader[config_key]
-    except Exception:
-        log_to_output("provenance_nav_fallback reason=exception")
+    resolved_cfg = _build_provenance_config_for_key(server, config_key)
+    if resolved_cfg is None:
+        log_to_output("provenance_nav_fallback reason=provenance_unavailable")
         return None
 
     location, reason = _lookup_provenance_location(resolved_cfg, path_tokens)

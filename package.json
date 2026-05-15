@@ -253,6 +253,10 @@
                 "category": "kedro"
             },
             {
+                "command": "kedro.debugNodeWithNewNotebook",
+                "title": "Debug Kedro node with a notebook"
+            },
+            {
                 "command": "kedro.filterPipelines",
                 "title": "Select Pipeline View",
                 "category": "kedro"
@@ -267,7 +271,22 @@
                 "title": "Select Kedro Project",
                 "category": "kedro"
             }
-        ]
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "kedro.debugNodeWithNewNotebook",
+                    "when": "false"
+                }
+            ],
+            "webview/context": [
+                {
+                    "command": "kedro.debugNodeWithNewNotebook",
+                    "when": "webviewId == 'vizvscode' && webviewSection == 'kedroTaskNode'",
+                    "group": "navigation"
+                }
+            ]
+        }
     },
     "dependencies": {
         "@vscode/python-extension": "^1.0.6",

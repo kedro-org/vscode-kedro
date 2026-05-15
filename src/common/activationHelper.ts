@@ -6,6 +6,7 @@ import {
     executeServerCommand,
     executeServerDefinitionCommand,
     setKedroProjectPath,
+    executeDebugNodeWithNewNotebookCommand,
     filterPipelines,
     toggleVizTheme,
 } from './commands';
@@ -92,6 +93,7 @@ export const registerCommandsAndEvents = (
     const CMD_DEFINITION_REQUEST = `${serverId}.sendDefinitionRequest`;
     const CMD_SHOW_OUTPUT_CHANNEL = `${serverId}.showOutputChannel`;
     const CMD_SET_PROJECT_PATH = `${serverId}.kedroProjectPath`;
+    const CMD_DEBUG_NODE_WITH_NEW_NOTEBOOK = `${serverId}.debugNodeWithNewNotebook`;
     const CMD_FILTER_PIPELINES = `${serverId}.filterPipelines`;
     const CMD_TOGGLE_VIZ_THEME = `${serverId}.toggleVizTheme`;
     const CMD_SELECT_PROJECT = `${serverId}.selectProject`;
@@ -187,6 +189,9 @@ export const registerCommandsAndEvents = (
             }),
             registerCommand(CMD_SET_PROJECT_PATH, () => {
                 setKedroProjectPath();
+            }),
+            registerCommand(CMD_DEBUG_NODE_WITH_NEW_NOTEBOOK, async (payload) => {
+                await executeDebugNodeWithNewNotebookCommand(payload);
             }),
             registerCommand(CMD_SELECT_PROJECT, async () => {
                 const selectedPath = await selectKedroProject();

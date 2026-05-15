@@ -6,13 +6,15 @@ If you encounter issue, report it in [Github](https://github.com/kedro-org/vscod
 - [vscode-kedro](#vscode-kedro)
   - [Requirements](#requirements)
   - [How to use this extension](#how-to-use-this-extension)
-- [Feature](#feature)
+- [Recently added](#recently-added)
+- [Features](#features)
   - [Go to Definition from pipeline.py to configuration files](#go-to-definition-from-pipelinepy-to-configuration-files)
   - [Go to Reference from configuration files to pipeline.py](#go-to-reference-from-configuration-files-to-pipelinepy)
   - [Autocompletion in Python](#autocompletion-in-python)
   - [Schema Validation](#schema-validation)
   - [Hover](#hover)
   - [To navigate between the flowchart and the code editor in Kedro-Viz:](#to-navigate-between-the-flowchart-and-the-code-editor-in-kedro-viz)
+  - [Debug Kedro node with a notebook](#debug-kedro-node-with-a-notebook)
   - [Auto Reload Kedro-Viz](#auto-reload-kedro-viz)
   - [Toggle Kedro-Viz Theme](#toggle-kedro-viz-theme)
   - [Select Kedro Project](#select-kedro-project)
@@ -40,13 +42,20 @@ p.s. If you can `kedro run` with the environment, you are good to go.
 The extension requires `bootstrap_project` in Kedro, you need to make sure you can do `kedro run` without getting any immediate error, otherwise you may get a server panic error.
 
 
+## Recently added
 
-# Feature
-## Go to Definition from pipeline.py to configuration files
+### Debug Kedro node with a notebook
+
+Right-click a task node in the Kedro-Viz flowchart and select **Debug Kedro node with a notebook**. The extension opens an untitled notebook prefilled with `%load_node <node_name>`, so you can load the node code and inputs into an interactive notebook for debugging.
+
+![Debug Kedro node with a notebook](assets/debug-notebook.gif)
+
+## Features
+### Go to Definition from pipeline.py to configuration files
 Use `Cmd` (Mac)/ `Ctrl` (Window) + `Click` or `F12` to trigger `Go to Definition`
 ![go to definition](assets/lsp-go-to-definition.gif)
 
-## Go to Reference from configuration files to pipeline.py
+### Go to Reference from configuration files to pipeline.py
 - `Cmd` or `Ctrl` (Window) + `Click` on the definition.
 - Use `Find Reference`
 - Use the shortcut `Shift` + `F12`
@@ -61,18 +70,18 @@ Use `Cmd` (Mac)/ `Ctrl` (Window) + `Click` or `F12` to trigger `Go to Definition
         - pipeline_data_processing_1.py
 ```
 
-## Autocompletion in Python
+### Autocompletion in Python
 Type `"` in any `pipeline.py` and it should trigger the autocompletion list.
 ![autocompletion](assets/lsp-autocompletion.gif)
 
-## Schema Validation
+### Schema Validation
 ![schema validation](assets/lsp-schema-validation.gif)
 
-## Hover
+### Hover
 Just hover your mouse over any `params:`, datasets or hit the command `Show or Focus Hover`
 ![hover](assets/lsp-hover.gif)
 
-## To navigate between the flowchart and the code editor with Kedro-Viz:
+### To navigate between the flowchart and the code editor with Kedro-Viz:
 To visualize your Kedro project using Kedro-Viz in Visual Studio Code, follow these steps:
 
 1. **Open the Command Palette**:
@@ -92,9 +101,13 @@ Navigate to DataCatalog:
 Clicking on a data node in the flowchart will open the corresponding dataset in the Data Catalog.
 ![navigation to dataset](assets/viz-vsc-nav-data-node.gif)
 
-### Filter Pipelines
+#### Debug Kedro node with a notebook
 
-#### Using the Command Palette
+See [Recently added](#recently-added) for the quick overview and demo.
+
+#### Filter Pipelines
+
+##### Using the Command Palette
 
 1. Open the Command Palette by pressing `Cmd + Shift + P` (macOS) or `Ctrl + Shift + P` (Windows/Linux)
 2. Type `Kedro: Select Pipeline View` and select it
@@ -102,7 +115,7 @@ Clicking on a data node in the flowchart will open the corresponding dataset in 
 
 ![Filter pipeline through Command Palette](assets/pipeline-filter-using-command-palette.gif)
 
-#### Using the filter icon
+##### Using the filter icon
 
 1. Open VS Code settings by pressing `Cmd + ,` (macOS) or `Ctrl + ,` (Windows/Linux)
 2. Type `Kedro: Run Kedro Viz` and select the command to launch the Viz
@@ -111,7 +124,7 @@ Clicking on a data node in the flowchart will open the corresponding dataset in 
 
 ![Filter pipeline through icon](assets/pipeline-filter-using-icon.gif)
 
-### Collapse and expand pipeline
+#### Collapse and expand pipeline
 
 1. Open VS Code settings by pressing `Cmd + ,` (macOS) or `Ctrl + ,` (Windows/Linux)
 2. Type `Kedro: Run Kedro Viz` and select the command to launch the Viz

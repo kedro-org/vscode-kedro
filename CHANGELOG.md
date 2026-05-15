@@ -2,8 +2,10 @@
 
 # Upcoming Release
 
+# 0.8.0
+
 ## Major changes and new features
-- Added a native VS Code right-click action in Kedro Viz task nodes to open a prefilled debug notebook with `%load_node <canonicalName>`.
+- Added a native VS Code right-click action on Kedro Viz task nodes to open an untitled debug notebook prefilled with `%load_node <node_name>`.
 
 # 0.7.0
 ## Major changes and new features

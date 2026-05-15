@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { goToDefinition } from './goToDefinition';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { executeServerDefinitionCommand } from '../common/commands';
+
 /**
  * Manages Kedro viz webview panels
  */

@@ -2,8 +2,6 @@ import * as vscode from 'vscode';
 import { goToDefinition } from './goToDefinition';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { executeServerDefinitionCommand } from '../common/commands';
-import { traceInfo } from '../common/log/logging';
-
 /**
  * Manages Kedro viz webview panels
  */
@@ -80,15 +78,6 @@ export default class KedroVizPanel {
                         return;
                     case 'showPipelineFilter':
                         await vscode.commands.executeCommand('kedro.filterPipelines');
-                        return;
-                    case 'debugLog':
-                        try {
-                            traceInfo(
-                                `[KedroVizWebview] ${message.text ?? 'debug'} ${JSON.stringify(message.data ?? {})}`,
-                            );
-                        } catch {
-                            traceInfo(`[KedroVizWebview] ${message.text ?? 'debug'} [unserializable data]`);
-                        }
                         return;
                 }
             },

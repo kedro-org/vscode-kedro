@@ -254,8 +254,7 @@
             },
             {
                 "command": "kedro.debugNodeWithNewNotebook",
-                "title": "Debug node with new notebook",
-                "category": "kedro"
+                "title": "Debug Kedro node with a notebook"
             },
             {
                 "command": "kedro.filterPipelines",
@@ -274,6 +273,12 @@
             }
         ],
         "menus": {
+            "commandPalette": [
+                {
+                    "command": "kedro.debugNodeWithNewNotebook",
+                    "when": "false"
+                }
+            ],
             "webview/context": [
                 {
                     "command": "kedro.debugNodeWithNewNotebook",

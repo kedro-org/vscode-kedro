@@ -271,13 +271,13 @@
     },
     "dependencies": {
         "@vscode/python-extension": "^1.0.6",
-        "axios": "^1.13.5",
-        "fs-extra": "^11.2.0",
+        "axios": "^1.15.2",
+        "fs-extra": "^11.3.5",
         "globby": "^11.1.0",
         "vscode-languageclient": "^8.1.0"
     },
     "overrides": {
-        "serialize-javascript@<7.0.3": "7.0.3",
+        "serialize-javascript@<7.0.5": "7.0.5",
         "jws@>=3.0.0 <3.2.3": "3.2.3",
         "jws@>=4.0.0 <4.0.1": "4.0.1",
         "js-yaml@>=3.0.0 <3.14.2": "3.14.2",
@@ -286,8 +286,10 @@
         "brace-expansion@>=2.0.0 <2.0.3": "2.0.3",
         "handlebars": "^4.7.9",
         "picomatch": "^2.3.2",
-        "lodash": "^4.17.23",
-        "js-yaml@>=4.0.0 <4.1.1": "4.1.1"
+        "lodash": "^4.18.1",
+        "lodash-es": "^4.18.1",
+        "js-yaml@>=4.0.0 <4.1.1": "4.1.1",
+        "fast-uri": "^3.1.2"
     },
     "devDependencies": {
         "@types/fs-extra": "^11.0.4",

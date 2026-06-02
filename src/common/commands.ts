@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 
 import { getWorkspaceFolders } from './vscodeapi';
 import { LanguageClient, State } from 'vscode-languageclient/node';
-import { traceLog } from './log/logging';
+import { traceInfo, traceWarn } from './log/logging';
 import { discoverKedroProjects, getKedroProjectPath, isKedroProject, updateKedroVizPanel } from './utilities';
 export async function selectEnvironment() {
     let kedroProjectPath = await getKedroProjectPath();
@@ -180,6 +180,65 @@ export async function executeGetProjectDataCommand(
     return result;
 }
 
+type DebugNodeRequest = {
+    canonicalName?: string;
+    type?: string;
+};
+
+function formatDebugPayload(payload?: DebugNodeRequest): string {
+    try {
+        return JSON.stringify(payload);
+    } catch {
+        return '[unserializable payload]';
+    }
+}
+
+function resolveCanonicalNodeName(payload?: DebugNodeRequest): string | undefined {
+    const canonicalName = payload?.canonicalName?.trim();
+    return canonicalName || undefined;
+}
+
+export async function executeDebugNodeWithNewNotebookCommand(payload?: DebugNodeRequest) {
+    const debugPayload = formatDebugPayload(payload);
+    traceInfo(`[debugNodeWithNewNotebook] payload=${debugPayload}`);
+
+    if (!payload) {
+        traceWarn('[debugNodeWithNewNotebook] missing payload from webview context');
+        await vscode.window.showInformationMessage(
+            'Debug node notebook command requires selecting a task node in Kedro Viz.',
+        );
+        return;
+    }
+
+    if (payload.type && payload.type !== 'task') {
+        await vscode.window.showInformationMessage('Debug node notebook currently supports task nodes only.');
+        return;
+    }
+
+    const canonicalName = resolveCanonicalNodeName(payload);
+    if (!canonicalName) {
+        const payloadKeys = Object.keys(payload).join(', ') || '(none)';
+        traceWarn(`[debugNodeWithNewNotebook] missing canonicalName. keys=${payloadKeys} payload=${debugPayload}`);
+        await vscode.window.showInformationMessage('Missing canonical Kedro task node name.');
+        return;
+    }
+
+    const cellSource = [
+        '%load_ext kedro.ipython',
+        '%reload_kedro',
+        '',
+        `%load_node ${canonicalName}`,
+    ].join('\n');
+
+    const notebook = new vscode.NotebookData([
+        new vscode.NotebookCellData(vscode.NotebookCellKind.Code, cellSource, 'python'),
+    ]);
+    const notebookDocument = await vscode.workspace.openNotebookDocument('jupyter-notebook', notebook);
+    await vscode.window.showNotebookDocument(notebookDocument, {
+        preview: false,
+        viewColumn: vscode.ViewColumn.Active,
+    });
+}
 export async function filterPipelines(lsClient?: LanguageClient) {
     try {
         const projectData: any = await executeGetProjectDataCommand(lsClient);
@@ -226,8 +285,14 @@ function showQuickPickWithActiveItem(
         if (active) {
             qp.activeItems = [active];
         }
-        qp.onDidAccept(() => { resolve(qp.selectedItems[0]); qp.dispose(); });
-        qp.onDidHide(() => { resolve(undefined); qp.dispose(); });
+        qp.onDidAccept(() => {
+            resolve(qp.selectedItems[0]);
+            qp.dispose();
+        });
+        qp.onDidHide(() => {
+            resolve(undefined);
+            qp.dispose();
+        });
         qp.show();
     });
 }

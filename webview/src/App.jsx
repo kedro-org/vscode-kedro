@@ -3,11 +3,32 @@ import '@quantumblack/kedro-viz/lib/styles/styles.min.css';
 import KedroViz from "@quantumblack/kedro-viz";
 const vscodeApi = window.acquireVsCodeApi();
 
+const DEFAULT_WEBVIEW_CONTEXT = {
+  webviewSection: "kedroViz",
+  preventDefaultContextMenuItems: false,
+};
+
+const createTaskNodeContext = (fullName) => ({
+  webviewSection: "kedroTaskNode",
+  canonicalName: fullName,
+  type: "task",
+  preventDefaultContextMenuItems: false,
+});
+
+const getTaskNodeContextFromTarget = (target) => {
+  const nodeElement = target?.closest?.('[data-node-type="task"]');
+  const fullName = nodeElement?.getAttribute("data-node-fullname");
+
+  return fullName ? createTaskNodeContext(fullName) : DEFAULT_WEBVIEW_CONTEXT;
+};
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
 function App() {
   const [data, setData] = React.useState({ nodes: [], edges: [] });
   const [error, setError] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [theme, setTheme] = React.useState('dark');
+  const containerRef = React.useRef(null);
 
   const toolbarOptions = {
     labelBtn: true,
@@ -16,6 +37,11 @@ function App() {
     exportBtn: false,
     filterBtn: true,
   };
+
+  const defaultContext = React.useMemo(
+    () => JSON.stringify(DEFAULT_WEBVIEW_CONTEXT),
+    []
+  );
 
   useEffect(() => {
     // Clear local storage to avoid persisting data
@@ -46,7 +72,7 @@ function App() {
     });
 
     return () => {
-      window.removeEventListener("message", () => {console.log("removed")});
+      window.removeEventListener("message", () => {console.log("removed");});
     };
   }, []);
 
@@ -62,6 +88,24 @@ function App() {
     }
   };
 
+  // Set data-vscode-context on right-click using Kedro Viz's data-node-type/data-node-fullname attributes
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const handleNativeContextMenu = (event) => {
+      container.setAttribute("data-vscode-context", JSON.stringify(getTaskNodeContextFromTarget(event.target)));
+    };
+
+    // Capture phase ensures context is prepared before VS Code evaluates menu conditions.
+    container.addEventListener("contextmenu", handleNativeContextMenu, true);
+    return () => {
+      container.removeEventListener("contextmenu", handleNativeContextMenu, true);
+    };
+  }, []);
+
   const handlePipelineFilterClick = () => {
     vscodeApi.postMessage({
       command: "showPipelineFilter",
@@ -73,7 +117,7 @@ function App() {
         command: "showOutput",
         showOutput: true,
       });
-    
+
   };
 
   const showMessages = () => {
@@ -111,7 +155,11 @@ function App() {
   };
 
   return (
-      <div style={{ height: `90vh`, width: `100%` }}>
+      <div
+        ref={containerRef}
+        style={{ height: `90vh`, width: `100%`, position: "relative" }}
+        data-vscode-context={defaultContext}
+      >
         {loading ? showMessages() : (<KedroViz
           data={data}
           onActionCallback={handleActionCallback}

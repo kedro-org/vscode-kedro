@@ -28,7 +28,7 @@ If you encounter issue, report it in [Github](https://github.com/kedro-org/vscod
   - [Troubleshooting](#troubleshooting)
 
 ## Requirements
-1. VS Code 1.64.0 or greater
+1. VS Code 1.78.0 or greater
 2. Python extension for VS Code
 3. Kedro Project >= 0.19
 

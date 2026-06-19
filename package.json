@@ -1,7 +1,7 @@
 {
     "name": "Kedro",
     "displayName": "Kedro",
-    "description": "A Kedro VSCode Extension.",
+    "description": "A Kedro extension for Visual Studio Code and Cursor.",
     "version": "0.8.0",
     "preview": false,
     "serverInfo": {
@@ -27,7 +27,8 @@
         "python",
         "kedro",
         "development tool",
-        "machine learning"
+        "machine learning",
+        "cursor"
     ],
     "engines": {
         "vscode": "^1.78.0"
@@ -167,7 +168,7 @@
             {
                 "id": "kedro-extension-setup",
                 "title": "Get Started with Kedro",
-                "description": "Learn how to set up and run a Kedro project, and visualize your pipeline in VS Code using the Kedro extension.",
+                "description": "Learn how to set up and run a Kedro project, and visualize your pipeline in VS Code or Cursor using the Kedro extension.",
                 "steps": [
                     {
                         "id": "setup-kedro",

@@ -27,7 +27,7 @@ assignees: ''
 <!-- Tell us what should happen. -->
 
 ## Actual Result
-<!-- Tell us what happens instead. Click `Output` and select `Kedro` in VSCode, share the log if it is possible-->
+<!-- Tell us what happens instead. Click `Output` and select `Kedro` in VS Code / Cursor, share the log if it is possible-->
 
 ```
 -- If you received an error, place it here.
@@ -41,6 +41,7 @@ assignees: ''
 <!-- Include as many relevant details about the environment in which you experienced the bug: -->
 
 * Kedro version used (`pip show kedro` or `kedro -V`):
-* Kedro VSCode version used
+* Kedro extension version used
+* Editor and version used (VS Code or Cursor):
 * Python version used (`python -V`):
 * Operating system and version:

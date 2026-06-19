@@ -1,6 +1,6 @@
 # Install dependencies and run Kedro-Viz
 
-**Note:** For Kedro VS Code extension to work, please open a `.py` or `.yaml` file.
+**Note:** For the Kedro extension to work (in VS Code or Cursor), please open a `.py` or `.yaml` file.
 
 ### 5.1 Run Kedro Viz
    - Press `Cmd` + `Shift` + `P` (on macOS) or `Ctrl` + `Shift` + `P` (on Windows/Linux)

@@ -32,7 +32,7 @@ If you encounter issue, report it in [Github](https://github.com/kedro-org/vscod
   - [Troubleshooting](#troubleshooting)
 
 ## Requirements
-1. VS Code 1.78.0 or greater, **or [Cursor](https://cursor.com)** (Cursor is built on VS Code and supports VS Code extensions; see [Use the extension in Cursor](#use-the-extension-in-cursor))
+1. VS Code 1.78.0 or greater, **or [Cursor](https://cursor.com)** (See [Use the extension in Cursor](#use-the-extension-in-cursor))
 2. Python extension for VS Code
 3. Kedro Project >= 0.19
 
@@ -55,7 +55,7 @@ This extension also works in **[Cursor](https://cursor.com)**. Cursor is built o
 3. Make sure the **Python** extension is also installed—the Kedro extension depends on it.
 4. Select the Python interpreter for your Kedro project with `> Python: Select Interpreter`, then open your Cursor workspace at the root of the Kedro project.
 
-> **Note:** Setup is identical to VS Code—the only difference is that you install from Cursor's Extensions panel (Open VSX) rather than the VS Code Marketplace. Cursor needs no extra configuration, and testing found no editor-specific limitations.
+> **Note:** Setup is identical to VS Code—the only difference is that you install from Cursor's Extensions panel (Open VSX) rather than the VS Code Marketplace. Cursor needs no extra configuration.
 
 ## Recently added
 

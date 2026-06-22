@@ -5,7 +5,7 @@ Please refer to “Set Custom Kedro Project Path” in https://marketplace.visua
 
 ### 2.2 How to get the absolute path of your Kedro project
 
-   - Press `Cmd` + `Shift` + `E` (on macOS) or `Ctrl` + `Shift` + `E` (on Windows/Linux) to open VSCode explorer
+   - Press `Cmd` + `Shift` + `E` (on macOS) or `Ctrl` + `Shift` + `E` (on Windows/Linux) to open the VS Code (or Cursor) explorer
    - Locate your Kedro project folder
    - Right click on it and select `Copy path`
 

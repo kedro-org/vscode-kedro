@@ -1,6 +1,7 @@
 # Change Log
 
 # Upcoming Release
+- Documented that the extension also works in [Cursor](https://cursor.com), which supports VS Code extensions and installs them from the Open VSX Registry.
 
 # 0.8.0
 

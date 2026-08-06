@@ -96,7 +96,12 @@ def _update_npm_packages(session: nox.Session) -> None:
 
 
 def _setup_template_environment(session: nox.Session) -> None:
-    session.install("wheel", "pip-tools")
+    # pip-tools 7.6.0 has two packaging problems we have to work around:
+    #  * it imports `typing_extensions` on Python < 3.11 without declaring it,
+    #  * it calls pip's internal `make_requirement_preparer()`, whose signature
+    #    changed in pip 26.2.
+    # Both make `pip-compile` fail on import/run rather than at resolution time.
+    session.install("wheel", "pip<26.2", "pip-tools", "typing_extensions")
     session.run(
         "pip-compile",
         # "--generate-hashes",

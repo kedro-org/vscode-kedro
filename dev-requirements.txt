@@ -1,5 +1,5 @@
 -r requirements.txt
-pre-commit>=4.6.1
+pre-commit>=4.6.2
 nox
 pytest
 pytest-lsp

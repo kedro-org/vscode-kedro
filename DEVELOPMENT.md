@@ -26,6 +26,8 @@
  1. [VSCode Marketplace](https://marketplace.visualstudio.com/manage/publishers/kedro/extensions/kedro)
  2. [Open VSX Registry](https://open-vsx.org/extension/kedro/Kedro)
 
+ > **Note:** The Open VSX Registry release makes the extension installable in [Cursor](https://cursor.com) (and other VS Code-compatible editors), which use Open VSX instead of the VS Code Marketplace. Keep both targets in sync when releasing.
+
  The release processes are as follow:
  1. Create a release branch named release/<version> from the HEAD of main. Following the release/<version> naming convention is essential when creating a tag/release in GitHub.
  2. Bump version number.

@@ -1,7 +1,7 @@
 {
     "name": "Kedro",
     "displayName": "Kedro",
-    "description": "A Kedro VSCode Extension.",
+    "description": "A Kedro extension for Visual Studio Code and Cursor.",
     "version": "0.8.0",
     "preview": false,
     "serverInfo": {
@@ -27,7 +27,8 @@
         "python",
         "kedro",
         "development tool",
-        "machine learning"
+        "machine learning",
+        "cursor"
     ],
     "engines": {
         "vscode": "^1.78.0"
@@ -167,7 +168,7 @@
             {
                 "id": "kedro-extension-setup",
                 "title": "Get Started with Kedro",
-                "description": "Learn how to set up and run a Kedro project, and visualize your pipeline in VS Code using the Kedro extension.",
+                "description": "Learn how to set up and run a Kedro project, and visualize your pipeline in VS Code or Cursor using the Kedro extension.",
                 "steps": [
                     {
                         "id": "setup-kedro",
@@ -290,7 +291,7 @@
     },
     "dependencies": {
         "@vscode/python-extension": "^1.0.6",
-        "axios": "^1.15.2",
+        "axios": "^1.18.0",
         "fs-extra": "^11.3.5",
         "globby": "^11.1.0",
         "vscode-languageclient": "^8.1.0"
@@ -299,16 +300,24 @@
         "serialize-javascript@<7.0.5": "7.0.5",
         "jws@>=3.0.0 <3.2.3": "3.2.3",
         "jws@>=4.0.0 <4.0.1": "4.0.1",
-        "js-yaml@>=3.0.0 <3.14.2": "3.14.2",
-        "qs@<6.14.2": "6.14.2",
         "flatted": "^3.4.2",
-        "brace-expansion@>=2.0.0 <2.0.3": "2.0.3",
         "handlebars": "^4.7.9",
         "picomatch": "^2.3.2",
         "lodash": "^4.18.1",
         "lodash-es": "^4.18.1",
-        "js-yaml@>=4.0.0 <4.1.1": "4.1.1",
-        "fast-uri": "^3.1.2"
+        "fast-uri": "^3.1.4",
+        "js-yaml@>=3.0.0 <3.15.0": "3.15.0",
+        "js-yaml@>=4.0.0 <4.3.0": "4.3.0",
+        "qs@<6.15.2": "6.15.2",
+        "brace-expansion@>=1.0.0 <1.1.16": "1.1.16",
+        "brace-expansion@>=2.0.0 <2.0.3": "2.0.3",
+        "brace-expansion@>=3.0.0 <5.0.7": "5.0.7",
+        "linkify-it": "^5.0.2",
+        "shell-quote": "^1.10.0",
+        "form-data": "^4.0.6",
+        "markdown-it": "^14.2.0",
+        "tmp": "^0.2.6",
+        "@babel/core": "^7.29.6"
     },
     "devDependencies": {
         "@types/fs-extra": "^11.0.4",
@@ -324,7 +333,7 @@
         "eslint": "^8.56.0",
         "glob": "^11.1.0",
         "jest": "^30.4.2",
-        "prettier": "^3.8.3",
+        "prettier": "^3.9.4",
         "ts-jest": "^29.4.5",
         "ts-loader": "^9.5.1",
         "typescript": "^5.6.3",

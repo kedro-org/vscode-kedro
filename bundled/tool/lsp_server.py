@@ -633,8 +633,18 @@ async def validate_all_catalogs(ls: KedroLanguageServer):
 
 def find_all_catalog_files(root_path):
     """Find all catalog files in the workspace."""
+    # Directories that hold third-party packages or tooling state rather than
+    # the user's project (e.g. kedro ships a cookiecutter template whose
+    # catalog.yml is intentionally invalid). Descending into these produces
+    # spurious "Invalid catalog format" diagnostics, so skip them.
+    ignored_dirs = {"node_modules", "__pycache__", "site-packages", "venv", "env"}
     catalog_files = []
-    for dirpath, _, filenames in os.walk(root_path):
+    for dirpath, dirnames, filenames in os.walk(root_path):
+        # Prune hidden dirs (e.g. .venv, .git, .tox) and dependency dirs in
+        # place so os.walk does not descend into them.
+        dirnames[:] = [
+            d for d in dirnames if not d.startswith(".") and d not in ignored_dirs
+        ]
         for filename in filenames:
             if filename.startswith('catalog') and filename.endswith(('.yml', '.yaml')):
                 file_path = os.path.join(dirpath, filename)
